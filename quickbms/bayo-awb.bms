@@ -1,0 +1,20 @@
+# AWB AFS2
+# script for QuickBMS http://quickbms.aluigi.org
+
+idstring "AFS2"
+get DUMMY long
+get FILES long
+get DUMMY long
+for i = 0 < FILES
+    get DUMMY short
+next i
+
+    get OFFSET long
+for i = 0 < FILES
+    get NEXT_OFFSET long
+    math OFFSET x= 0x10
+    math SIZE = NEXT_OFFSET
+    math SIZE -= OFFSET
+    log "" OFFSET SIZE
+    math OFFSET = NEXT_OFFSET
+next i

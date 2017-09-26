@@ -1,0 +1,32 @@
+# Bayonetta PC eff files
+
+idstring "EF2\x00"
+get BNAME FILENAME
+get FNUMBER long
+print "Found %FNUMBER% files"
+
+for i = 0 < FNUMBER
+  get INDEX[i] long
+  get FSTART long
+  putarray FSTARTS i FSTART
+next i
+get FSIZE ASIZE
+putarray FSTARTS i FSIZE
+
+for i = 0 < FNUMBER
+  math FINDEX = i
+  math FINDEX += 1
+  getarray FEND FSTARTS FINDEX
+  getarray FSTART FSTARTS i
+  math FEND -= FSTART
+  set FSIZES[i] FEND
+next i
+
+
+for i = 0 < FNUMBER
+  getarray FSTART FSTARTS i
+  goto FSTART
+  getdstring FTYPE 4
+  string FNAME p "%s.%04d(%d).%s" BNAME i INDEX[i] FTYPE
+  log FNAME FSTART FSIZES[i]
+next i

@@ -1,0 +1,85 @@
+# Bayonetta PC wmb files
+
+idstring "WMB\x00"
+get BNAME FILENAME
+
+get unknownA long
+get unknownB short
+get unknownC short
+
+get numVerts long
+
+get unknownD short
+get unknownE short
+get unknownF long
+
+get offVerts long
+get offVertExData long
+
+get unknownG1 long
+get unknownG2 long
+get unknownG3 long
+get unknownG4 long
+
+get numBones long
+get ofsBoneHie long
+get ofsBoneDataA long
+get ofsBoneDataB long
+get ofsBoneHieB long
+
+get numMaterials long
+get ofsMaterialsOfs long
+get ofsMaterials long
+
+get numMeshes long
+get ofsMeshesOfs long //upper limit on materials?
+get ofsMeshes long
+
+get unknownK long
+get unknownL long
+get ofsUnknownJ long
+get ofsUnknownK long
+get ofsUnknownL long
+get exMatInfo1 long
+get exMatInfo2 long
+get exMatInfo3 long
+get exMatInfo4 long
+
+print "Found %numMaterials% materials"
+
+/* read file starts */
+goto ofsMaterialsOfs
+for i = 0 < numMaterials
+  get matStart long
+  math matStart += ofsMaterials
+  print "%matStart%"
+  putarray matStarts i matStart
+next i
+goto matStart
+findloc delim long 0xfbfbfbfb 0 0
+print "%delim%"
+if delim == 0
+  get delim ASIZE
+endif
+print "%delim% > %ofsMeshesOfs%"
+if delim > ofsMeshesOfs
+  math delim = ofsMeshesOfs
+endif
+putarray matStarts i delim
+
+for i = 0 < numMaterials
+  math FINDEX = i
+  math FINDEX += 1
+  getarray FEND matStarts FINDEX
+  getarray FSTART matStarts i
+  math FEND -= FSTART
+  set matSizes[i] FEND
+next i
+
+
+/* dump files */
+for i = 0 < numMaterials
+  getarray FSTART matStarts i
+  string FNAME p "%s.%04d.%s" BNAME i "mat"
+  log FNAME FSTART matSizes[i]
+next i

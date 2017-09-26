@@ -1,0 +1,30 @@
+# Bayonetta PC wtb files
+
+idstring "WTB\x00"
+get BNAME FILENAME
+get DUMMY long
+get FNUMBER long
+print "Found %FNUMBER% textures"
+get FILE_STARTS_OFFSET long
+get FILE_SIZES_OFFSET long
+get UNKNOWN_OFFSET long
+
+/* read file starts */
+goto FILE_STARTS_OFFSET
+for i = 0 < FNUMBER
+  get FSTARTS[i] long
+next i
+
+/* read file sizes */
+goto FILE_SIZES_OFFSET
+for i = 0 < FNUMBER
+  get FSIZES[i] long
+next i
+
+/* dump files */
+for i = 0 < FNUMBER
+  goto FSTARTS[i]
+  getdstring FTYPE 4
+  string FNAME p "%s.%04d.%s" BNAME i FTYPE
+  log FNAME FSTARTS[i] FSIZES[i]
+next i
