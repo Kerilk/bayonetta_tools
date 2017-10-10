@@ -233,6 +233,71 @@ motion_items.each { |it|
   puts it
 }
 
+puts motion_items.find_index { |e| e[:bone_index] == 21 && e[:index] == 3 }
+
+#puts motion_items[72][:index]
+#puts motion_items[73][:index]
+#puts motion_items[74][:index]
+#motion_items[72][:index] = 7 #3
+#motion_items[73][:index] = 8 #4
+#motion_items[74][:index] = 9 #5
+#puts motion_items[72].value[:header][:values][0]
+#puts motion_items[73][:value][:float]
+#puts motion_items[74][:value][:float]
+#motion_items[72].value[:header][:values][0].value = 1.0 #0.1552734375
+#motion_items[73][:value][:float] = 1.0 #-3.4906582868643454e-07
+#motion_items[74][:value][:float] = 2.0 #2.3736477032798575e-06
+
+
+#puts motion_items[6][:index]
+#puts motion_items[7][:index]
+#puts motion_items[8][:index]
+#motion_items[6][:index] = 7 #3
+#motion_items[7][:index] = 8 #4
+#motion_items[8][:index] = 9 #5
+#puts motion_items[6].value[:header][:values][0]
+#puts motion_items[7].value[:header][:values][0]
+#puts motion_items[8].value[:header][:values][0]
+#motion_items[6].value[:header][:values][0].value = 1.0
+#motion_items[7].value[:header][:values][0].value = 1.0
+#motion_items[8].value[:header][:values][0].value = 1.0
+#
+#
+#puts motion_items[117][:index]
+#puts motion_items[118][:index]
+#puts motion_items[119][:index]
+#motion_items[117][:index] = 7 #3
+#motion_items[118][:index] = 8 #4
+#motion_items[119][:index] = 9 #5
+#puts motion_items[117].value[:header][:values][0]
+#puts motion_items[118].value[:header][:values][0]
+#puts motion_items[119].value[:header][:values][0]
+#motion_items[117].value[:header][:values][0].value = 1.0
+#motion_items[118].value[:header][:values][0].value = 1.0
+#motion_items[119].value[:header][:values][0].value = 1.0
+#
+#
+#puts motion_items[107][:index]
+#motion_items[107][:index] = 5
+#puts motion_items[107].value[:header][:values][0]
+#motion_items[107].value[:header][:values][0].value = 0.0
+#
+#
+#
+#puts motion_items[60][:index]
+#puts motion_items[61][:index]
+#puts motion_items[62][:index]
+#motion_items[60][:index] = 3
+#motion_items[61][:index] = 4
+#motion_items[62][:index] = 5
+#puts motion_items[60].value[:header][:values][0]
+#puts motion_items[61].value[:header][:values][0]
+#puts motion_items[62].value[:header][:values][0]
+#motion_items[60].value[:header][:values][0].value = -2.0625
+#motion_items[61].value[:header][:values][0].value = 0.0
+#motion_items[62].value[:header][:values][0].value = 0.0
+#
+
 #puts motion_items[7].value[:header][:values][0]
 #motion_items[7].value[:header][:values][0].value = 0#Math::sqrt(2*Math::PI/64) * 256#62.73
 #puts motion_items[7].value[:header][:values][0]
