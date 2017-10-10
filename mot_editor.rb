@@ -121,7 +121,7 @@ class MotionItem < FFI::Struct
     case self[:flag]
     when 0, -1
       return self[:value][:float]
-    when 6, 4, 7
+    when 1, 6, 4, 7
       return @value
     else
       raise "Unsupported type! #{self[:flag]}"
