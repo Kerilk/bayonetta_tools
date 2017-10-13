@@ -233,7 +233,7 @@ motion_items.each { |it|
   puts it
 }
 
-puts motion_items.find_index { |e| e[:bone_index] == 21 && e[:index] == 3 }
+#puts motion_items.find_index { |e| e[:bone_index] == 21 && e[:index] == 3 }
 
 #puts motion_items[72][:index]
 #puts motion_items[73][:index]
