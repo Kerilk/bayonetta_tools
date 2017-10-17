@@ -1,0 +1,114 @@
+LittleEndian();
+
+typedef uint16 pghalf;
+
+struct {
+	char      id[4]; // "mot\0"
+	uint16    flag; //sometimes seem to indicate that out of bound bone index are used no idea why.
+	int16     frameCount;
+	uint32    recordOffset;
+	uint32    recordNumber;
+} header;
+
+FSeek( header.recordOffset );
+
+struct {
+	int16    boneIndex;
+	char     index;
+	char     flag;
+	int16    elemNumber;
+	int16    unknown; //always -1
+	union {
+		float    flt;
+		uint32   offset;
+	} value;
+} records[header.recordNumber];
+
+local int i;
+for ( i = 0; i < header.recordNumber; i++) {
+
+	// 0: constant value for each frame. The value is in records[i].value.flt. -1: only found on terminator (bone index 0x7fff).
+	if( records[i].flag == 0 || records[i].flag == -1)
+		continue;
+
+	FSeek( records[i].value.offset );
+
+	switch ( records[i].flag ) {
+
+	// usually one value per frame, if some are missing the last is to be repeated
+	case 1:
+        struct {
+		    float values[records[i].elemNumber];
+        } interpol1;
+		break;
+
+	// quantized hermit spline coeffs values at key point index :
+	// value: p + dp * cp
+	// incoming derivative: m0 + dm0 * cm0
+	// outcoming derivative: m1 + dm1 * cm1
+	// if some ranges are missing at start or after last index, first value or last value should be repeated for missing values.
+	case 4:
+        struct {
+		    struct {
+			    float p;
+    			float dp;
+	    		float m0;
+	    		float dm0;
+	    		float m1;
+	    		float dm1;
+		    } values;
+    		struct {
+    			uint16 index; // absolute frame index
+    			uint16 cp;
+    			uint16 cm0;
+    			uint16 cm1;
+	    	} keys[records[i].elemNumber];
+        } interpol4;
+		break;
+
+	// same as 4 with reduced precision and relative frame index encoding
+	case 6:
+        struct {
+    		struct {
+    			pghalf p;
+    			pghalf dp;
+    			pghalf m0;
+    			pghalf dm0;
+    			pghalf m1;
+    			pghalf dm1;
+    		} values;
+    		struct {
+    			ubyte index; // frame index relative to previous key
+    			ubyte cp;
+    			ubyte cm0;
+    			ubyte cm1;
+    		} keys[records[i].elemNumber];
+        } interpol6;
+		break;
+
+	// same as 6 but with absolute frame index (at least one relative frame index would have been > 255)
+	case 7:
+        struct {
+		    struct {
+			    pghalf p;
+    			pghalf dp;
+    			pghalf m0;
+    			pghalf dm0;
+    			pghalf m1;
+    			pghalf dm1;
+    		} values;
+    		struct {
+    			uint16 index; // absolute frame index
+    			ubyte dummy;
+    			ubyte cp;
+    			ubyte cm0;
+    			ubyte cm1;
+    		} keys[records[i].elemNumber];
+        } interpol7;
+		break;
+
+	// unkown flag, I have yet to find another for Bayonetta
+	default:
+		break;
+	}
+}
