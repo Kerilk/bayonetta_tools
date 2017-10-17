@@ -46,6 +46,7 @@ string pghalfRead( pghalf value )
             if( sign ) {
                 f *= -1;
             }
+            f *= Pow(2.0, -46);
             SPrintf( s, "%e", f );
         } else if (sign) {
             SPrintf( s, "-0.0" );
