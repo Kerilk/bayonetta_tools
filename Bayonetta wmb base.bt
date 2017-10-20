@@ -1,0 +1,229 @@
+struct {
+	char    id[4]; //WMB
+    int32   unknownA;
+    int16   unknownB;
+    int16   unknownC;
+    int32   numVertexes;
+    int16   unknownD;
+    int16   unknownE;
+    int32   unknownF;
+    uint32  offsetVertexes;
+    uint32  offsetVertexesExData;
+    int32   unknownG[4];
+    int32   numBones;
+    uint32  offsetBoneHierarchy;
+    uint32  offsetBoneRelativePosition;
+    uint32  offsetBonePosition;
+    uint32  offsetBoneIndexTranslateTable;
+    int32   numMaterials;
+    uint32  offsetMaterialsOffsets;
+    uint32  offsetMaterials;
+    int32   numMeshes;
+    uint32  offsetMeshesOffsets;
+    uint32  offsetMeshes;
+    int32   unknownK;
+    int32   unknownL;
+    uint32  offsetUnknownJ;
+    uint32  offsetBoneInfos;
+    uint32  offsetBoneFlags;
+    int32   exMatInfo[4];
+} header;
+
+FSeek( header.offsetVertexes );
+
+string normalRead( char val ) {
+    string s;
+    SPrintf(s, "%f", val / 127.0);
+    return s;
+}
+
+typedef struct {
+    hfloat u;
+    hfloat v;
+} mapping_t<read=mapping_tRead>;
+
+string mapping_tRead( mapping_t &value ) {
+    string s;
+    SPrintf(s, "u: %f, v: %f", value.u, value.v);
+    return s;
+}
+
+typedef struct {
+    byte   dummy;
+    char   nz<read=normalRead>;
+    char   ny<read=normalRead>;
+    char   nx<read=normalRead>;
+} normals_t<read=normals_tRead>;;
+
+
+string normals_tRead( normals_t &value ) {
+    string s;
+    double fx = value.nx / 127.0;
+    double fy = value.ny / 127.0;
+    double fz = value.nz / 127.0;
+    float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    return s;
+}
+
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector<read=vectorRead>;
+
+string vectorRead( vector &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+typedef struct  {
+    ubyte val1;
+    ubyte val2;
+    ubyte val3;
+    ubyte val4;
+} ubyteList<read=ubyteListRead>;
+
+string ubyteListRead( ubyteList &value ) {
+    string s;
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val1, value.val2, value.val3, value.val4);
+    return s;
+}
+
+struct {
+    vector      position;
+    mapping_t   mapping;
+    normals_t   normals;
+    int16       unknownA;
+    int16       unknownB;
+    ubyteList   boneIndex;
+    ubyteList   boneWeight;
+} vertexes[header.numVertexes];
+
+FSeek( header.offsetVertexesExData );
+if (game == 0) {
+    struct {
+        byte unknownA[4];
+        mapping_t mapping;
+    } vertexesExData[header.numVertexes];
+} else {
+    struct {
+        byte unknownA[4];
+    } vertexesExData[header.numVertexes];
+}
+
+FSeek( header.offsetBoneHierarchy);
+int16 boneParents[header.numBones];
+
+FSeek( header.offsetBoneRelativePosition);
+vector boneRelativePositions[header.numBones];
+
+FSeek( header.offsetBonePosition);
+vector bonePositions[header.numBones];
+
+FSeek( header.offsetBoneIndexTranslateTable );
+struct {
+    int16 firstLevel[16];
+    local int i;
+    local int j = 0;
+    for (i = 0; i < 16; i++) {
+        if ( firstLevel[i] != -1 ) { 
+            j += 1;
+         }
+    } 
+    int16 secondLevel[j*16];
+    local int k = 0;
+    for (i = 0; i < j*16; i++) {
+        if ( secondLevel[i] != -1 ) {
+            k += 1;
+        }
+    }
+    int16 thirdLevel[k*16];
+} BoneIndexTranslateTable;
+
+
+if ( header.offsetBoneInfos ) {
+    FSeek( header.offsetBoneInfos );
+    int16 boneInfos[header.numBones];
+}
+
+if ( header.offsetBoneFlags ) {
+    FSeek( header.offsetBoneFlags );
+    byte boneFlags[header.numBones];
+}
+
+FSeek( header.offsetMaterialsOffsets );
+uint32 materialOffsets[header.numMaterials];
+
+if ( header.exMatInfo[0] ) {
+    FSeek( header.exMatInfo[0] );
+    struct {
+        char shaderName[16];
+    } shaderNames[header.numMaterials];
+}
+
+if ( header.exMatInfo[1] ) {
+    FSeek( header.exMatInfo[1] );
+    int32 numTexIDs;
+    struct { 
+        uint32  TexID;
+        int32   type;
+    } texIDs[numTexIDs];
+}
+
+
+FSeek( header.offsetMeshesOffsets );
+uint32 meshesOffsets[header.numMeshes];
+
+
+local int i;
+struct {
+for (i = 0; i < header.numMeshes; i++) {
+    FSeek( header.offsetMeshes + meshesOffsets[i] );
+    struct {
+        struct {
+            int16   id;
+            int16   numBatch;
+            int32   unknownA;
+            uint32  offsetBatchOffsets;
+            int32   unknownB;
+            int32   unknownC[4];
+            char    name[32];
+            float   mat[12];
+        } meshHeader;
+        FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
+        uint32 batchOffsets[meshHeader.numBatch];
+        struct {
+        local int j;
+        for (j = 0; j < meshHeader.numBatch; j++) {
+            FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
+            struct {
+                struct {
+                    int16   unknownA;
+                    int16   id;
+                    int16   unknownB;
+                    int16   unknownC;
+                    byte    materialID;
+                    byte    unknownD;
+                    int16   unknownE;
+                    int32   vertexStart;
+                    int32   vertexEnd;
+                    int32   primitiveType;
+                    uint32  offsetIndices;
+                    int32   numIndices;
+                    uint32  vertexOffset;
+                    int32   unknownF[7];
+                } batchHeader;
+                int32 numBoneRefs;
+                if(numBoneRefs > 0) {
+                    byte boneRefs[numBoneRefs];
+                }
+                FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
+                uint16 indices[batchHeader.numIndices];
+            } batch;
+        }
+        } batches;
+    } mesh;
+} 
+} meshes;

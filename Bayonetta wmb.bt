@@ -1,0 +1,4 @@
+local int game = 0;
+
+LittleEndian();
+#include "bayonetta wmb base.bt"
