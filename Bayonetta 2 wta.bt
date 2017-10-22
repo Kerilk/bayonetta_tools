@@ -9,7 +9,7 @@ struct {
     uint32  offsetTextureFlags; //0x20000000 alpha, 0x10000000 1bit alpha
     uint32  offsetTextureIdx;
     uint32  offsetTextureInfo;
-    uint32  offsetUnknown;
+    uint32  offsetMipmapOffsets;
 } header;
 
 FSeek( header.offsetTextureOffsets );
@@ -28,12 +28,31 @@ local int i;
 for ( i = 0; i < header.numTex; i++) {
     FSeek( header.offsetTextureInfo + i*0xc0 );
     struct {
-        byte data[0x9c];
-    } textureInfo;
+        DWORD dimension;
+        DWORD width;
+        DWORD height;
+        DWORD depth;
+        DWORD numMipmaps;
+        DWORD format;
+        DWORD AAMode;
+        DWORD usage;
+        DWORD dataLength;
+        DWORD dataPointer;
+        DWORD mipmapsDataLength;
+        DWORD mimapsPointer;
+        DWORD tileMode;
+        DWORD swizzleValue;
+        DWORD alignment;
+        DWORD pitch;
+        DWORD mimapOffsets[13];
+        DWORD firstMipmap;
+        DWORD numMipmaps2;
+        DWORD firstSlice;
+        DWORD numSlices;
+        BYTE component[4];
+        DWORD textureRegisters[5];
+    } GX2Header;
 }
 
-FSeek( header.offsetUnknown );
-struct {
-    int16 datum0;
-    int16 datum1;
-} unknownData[header.numTex];
+FSeek( header.offsetMipmapOffsets );
+uint32 mipmapOffsets[header.numTex];

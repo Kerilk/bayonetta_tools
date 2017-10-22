@@ -1,10 +1,13 @@
+#define BAYONETTA  0
+#define BAYONETTA2 1
+
 struct {
 	char    id[4]; //WMB
     int32   unknownA;
-    int16   unknownB;
-    int16   unknownC;
+    int32   unknownB;
     int32   numVertexes;
-    int16   unknownD;
+    char    vertexExDataSize;
+    char    vertexExData;
     int16   unknownE;
     int32   unknownF;
     uint32  offsetVertexes;
@@ -49,24 +52,6 @@ string mapping_tRead( mapping_t &value ) {
 }
 
 typedef struct {
-    byte   dummy;
-    char   nz<read=normalRead>;
-    char   ny<read=normalRead>;
-    char   nx<read=normalRead>;
-} normals_t<read=normals_tRead>;;
-
-
-string normals_tRead( normals_t &value ) {
-    string s;
-    double fx = value.nx / 127.0;
-    double fy = value.ny / 127.0;
-    double fz = value.nz / 127.0;
-    float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
-    return s;
-}
-
-typedef struct {
         float  x;
         float  y;
         float  z;
@@ -95,14 +80,14 @@ struct {
     vector      position;
     mapping_t   mapping;
     normals_t   normals;
-    int16       unknownA;
-    int16       unknownB;
+    byte        unknown[4];
     ubyteList   boneIndex;
     ubyteList   boneWeight;
 } vertexes[header.numVertexes];
 
+if ( header.offsetVertexesExData ) {
 FSeek( header.offsetVertexesExData );
-if (game == 0) {
+if ( header.vertexExDataSize == 2 ) {
     struct {
         byte unknownA[4];
         mapping_t mapping;
@@ -111,6 +96,7 @@ if (game == 0) {
     struct {
         byte unknownA[4];
     } vertexesExData[header.numVertexes];
+}
 }
 
 FSeek( header.offsetBoneHierarchy);

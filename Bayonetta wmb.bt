@@ -1,4 +1,22 @@
-local int game = 0;
+#define game 0;
+
+typedef struct {
+    byte   dummy;
+    char   nz<read=normalRead>;
+    char   ny<read=normalRead>;
+    char   nx<read=normalRead>;
+} normals_t<read=normals_tRead>;
+
+
+string normals_tRead( normals_t &value ) {
+    string s;
+    double fx = value.nx / 127.0;
+    double fy = value.ny / 127.0;
+    double fz = value.nz / 127.0;
+    float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    return s;
+}
 
 LittleEndian();
 #include "bayonetta wmb base.bt"
