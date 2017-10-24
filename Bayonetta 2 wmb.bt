@@ -34,4 +34,7 @@ string normals_tRead( normals_t &value ) {
 }
 
 BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BMW", id, 4) == 0, "Wrong file type");
+FSeek(0);
 #include "bayonetta wmb base.bt"

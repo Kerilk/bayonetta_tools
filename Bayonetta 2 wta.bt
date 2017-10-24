@@ -1,5 +1,7 @@
 BigEndian();
-
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BTW", id, 4) == 0, "Wrong file type");
+FSeek(0);
 struct {
     char    id[4]; //WTB\0
     int32   unknown;
