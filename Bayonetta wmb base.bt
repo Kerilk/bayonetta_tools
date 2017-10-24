@@ -162,54 +162,56 @@ if ( header.exMatInfo[1] ) {
 FSeek( header.offsetMeshesOffsets );
 uint32 meshesOffsets[header.numMeshes];
 
+local int j;
+typedef struct {
+    FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
+    struct {
+         int16   unknownA;
+         int16   id;
+         int16   unknownB;
+         int16   exMaterialID;
+         byte    materialID;
+         byte    unknownD;
+         int16   unknownE;
+         int32   vertexStart;
+         int32   vertexEnd;
+         int32   primitiveType;
+         uint32  offsetIndices;
+         int32   numIndices;
+         uint32  vertexOffset;
+         int32   unknownF[7];
+    } batchHeader;
+    int32 numBoneRefs;
+    if(numBoneRefs > 0) {
+        byte boneRefs[numBoneRefs];
+    }
+    FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
+    uint16 indices[batchHeader.numIndices];
+    j++;
+} batch;
 
-local int i;
-struct {
-for (i = 0; i < header.numMeshes; i++) {
+local int i=0;
+typedef    struct {
     FSeek( header.offsetMeshes + meshesOffsets[i] );
     struct {
-        struct {
-            int16   id;
-            int16   numBatch;
-            int32   unknownA;
-            uint32  offsetBatchOffsets;
-            int32   unknownB;
-            int32   unknownC[4];
-            char    name[32];
-            float   mat[12];
-        } meshHeader;
-        FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
-        uint32 batchOffsets[meshHeader.numBatch];
-        struct {
-        local int j;
-        for (j = 0; j < meshHeader.numBatch; j++) {
-            FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
-            struct {
-                struct {
-                    int16   unknownA;
-                    int16   id;
-                    int16   unknownB;
-                    int16   unknownC;
-                    byte    materialID;
-                    byte    unknownD;
-                    int16   unknownE;
-                    int32   vertexStart;
-                    int32   vertexEnd;
-                    int32   primitiveType;
-                    uint32  offsetIndices;
-                    int32   numIndices;
-                    uint32  vertexOffset;
-                    int32   unknownF[7];
-                } batchHeader;
-                int32 numBoneRefs;
-                if(numBoneRefs > 0) {
-                    byte boneRefs[numBoneRefs];
-                }
-                FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
-                uint16 indices[batchHeader.numIndices];
-            } batch;
-        }
-        } batches;
-    } mesh;
-} 
-} meshes;
+        int16   id;
+        int16   numBatch;
+        int32   unknownA;
+        uint32  offsetBatchOffsets;
+        int32   unknownB;
+        int32   unknownC[4];
+        char    name[32];
+        float   mat[12];
+    } meshHeader;
+    FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
+    uint32 batchOffsets[meshHeader.numBatch];
+    j = 0;
+    batch batches[meshHeader.numBatch] <optimize=false>;
+    i++;
+} mesh <read=meshRead>;
+
+string meshRead( mesh &value ) {
+    return value.meshHeader.name;
+}
+
+mesh meshes[header.numMeshes] <optimize=false>;
