@@ -6,25 +6,25 @@ struct {
     char    id[4]; //WTB\0
     int32   unknown;
     int32   numTex;
-    uint32  offsetTextureOffsets;
-    uint32  offsetTextureSizes;
-    uint32  offsetTextureFlags; //0x20000000 alpha, 0x10000000 1bit alpha
-    uint32  offsetTextureIdx;
-    uint32  offsetTextureInfo;
-    uint32  offsetMipmapOffsets;
+    uint32  offsetTextureOffsets <format=hex>;
+    uint32  offsetTextureSizes <format=hex>;
+    uint32  offsetTextureFlags <format=hex>;
+    uint32  offsetTextureIdx <format=hex>;
+    uint32  offsetTextureInfo <format=hex>;
+    uint32  offsetMipmapOffsets <format=hex>;
 } header;
 
 FSeek( header.offsetTextureOffsets );
-uint32  textureOffsets[header.numTex];
+uint32  textureOffsets[header.numTex] <format=hex>;
 
 FSeek( header.offsetTextureSizes );
-int32  textureSizes[header.numTex];
+int32  textureSizes[header.numTex] <format=hex>;
 
 FSeek( header.offsetTextureFlags );
-uint32  textureFlags[header.numTex];
+uint32  textureFlags[header.numTex] <format=hex>;
 
 FSeek( header.offsetTextureIdx );
-uint32  textureIdx[header.numTex];
+uint32  textureIdx[header.numTex] <format=hex>;
 
 local int i;
 for ( i = 0; i < header.numTex; i++) {
@@ -57,4 +57,4 @@ for ( i = 0; i < header.numTex; i++) {
 }
 
 FSeek( header.offsetMipmapOffsets );
-uint32 mipmapOffsets[header.numTex];
+uint32 mipmapOffsets[header.numTex] <format=hex>;
