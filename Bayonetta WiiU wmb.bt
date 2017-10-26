@@ -1,0 +1,39 @@
+#define game 0;
+
+typedef struct {
+  uint32 value <format=binary>;
+} normals_t<read=normals_tRead>;
+
+string normals_tRead( normals_t &value ) {
+    string s;
+    int nx = value.value & ((1<<10)-1);
+    int ny = (value.value>>10) & ((1<<10)-1);
+    int nz = (value.value>>20) & ((1<<10)-1);
+    int sign = nx & (1<<9);
+    if (sign) {
+      nx ^= sign;
+      nx = -(sign-nx);
+    }
+    sign = ny & (1<<9);
+    if (sign) {
+      ny ^= sign;
+      ny = -(sign-ny);
+    }
+    sign = nz & (1<<9);
+    if (sign) {
+      nz ^= sign;
+      nz = -(sign-nz);
+    }
+    float fx = (float)nx/(float)((1<<9)-1);
+    float fy = (float)ny/(float)((1<<9)-1);
+    float fz = (float)nz/(float)((1<<9)-1);
+    float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    return s;
+}
+
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BMW", id, 4) == 0, "Wrong file type");
+FSeek(0);
+#include "bayonetta wmb base.bt"
