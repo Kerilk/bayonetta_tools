@@ -1,0 +1,61 @@
+struct {
+    char    id[4];
+    int32   u_a;
+    int32   u_b;
+    int32   numRecord;
+
+} header;
+
+struct {
+    int32   u_d;
+    int16   u_e;
+    int16   u_f;
+    char    u_g;
+    char    entry_type;
+    char    u_h;
+    char    u_i;
+    int32   u_j;
+    uint32   offset <format=hex>;
+} record[header.numRecord];
+
+local int i;
+for( i = 0; i < header.numRecord; i++) {
+    FSeek(record[i].offset);
+    
+    switch (record[i].entry_type) {
+    case 0:
+        break;
+    case 1:
+        struct {
+            uint32  flag <format=hex>;
+            int16   u_a;
+            char    u_b;
+            char    u_c;
+        } entry<bgcolor=cRed>;
+        break;
+    case 3:
+        struct {
+            uint32  flag <format=hex>;
+            int16   u_a;
+            char    u_b;
+            char    u_c;
+            struct {
+                uint32  flag <format=hex>;
+                float   val;
+            } coeffs[2];
+        } entry<bgcolor=cBlue>;
+        break;
+    case 2:
+        struct {
+            uint32  flag <format=hex>;
+            int16   u_a;
+            char    u_b;
+            char    u_c;
+            struct {
+                uint32  flag <format=hex>;
+                float   val;
+            } coeff;
+        } entry<bgcolor=cGreen>;
+        break;
+    }
+}

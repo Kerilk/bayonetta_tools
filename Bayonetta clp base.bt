@@ -1,0 +1,17 @@
+
+struct {
+    int32 recordNumber;
+    float uA[3]
+    int16 uB;
+    int16 uC;
+    float uD[4];
+    int32 uE;
+    float uF[4];
+    int32 uG;
+    float uH[5];
+} header;
+
+struct {
+    int16 index[6];
+    float val[4];
+} unknownRecord[header.recordNumber];
