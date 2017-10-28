@@ -1,0 +1,5 @@
+tex_output/*
+wtb_output/*
+TexConv2.exe
+texUtils.dll
+gfd.dll
