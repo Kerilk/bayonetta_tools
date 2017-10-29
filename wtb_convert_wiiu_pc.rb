@@ -9,9 +9,12 @@ fl = WTBFileLayout::load(input_file)
 Dir.mkdir("tex_output") unless Dir.exist?("tex_output")
 prefix = "tex_output/"+File.basename(input_file, ".wtb")
 tex_names = fl.dump_textures(prefix)
+
+path = File.expand_path(File.dirname(__FILE__))
+
 new_texs = tex_names.collect { |name|
   new_name = name.gsub("gtx","dds")
-  `./TexConv2.exe -i "#{name}" -o "#{new_name}"`
+  `#{path}/TexConv2.exe -i "#{name}" -o "#{new_name}"`
   BayoTex::new(new_name)
 }
 fl2 = WTBFileLayout::from_files(new_texs)
