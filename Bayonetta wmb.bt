@@ -14,7 +14,10 @@ string normals_tRead( normals_t &value ) {
     double fy = value.ny / 127.0;
     double fz = value.nz / 127.0;
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    if (nrm != 0.0)
+        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    else
+        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
     return s;
 }
 

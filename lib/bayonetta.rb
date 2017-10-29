@@ -193,6 +193,7 @@ module Bayonetta
 
       def normalize(fx, fy, fz)
         nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
+        return [0.0, 0.0, 0.0] if nrm == 0.0
         [fx/nrm, fy/nrm, fz/nrm]
       end
 

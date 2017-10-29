@@ -24,11 +24,15 @@ string normals_tRead( normals_t &value ) {
       nz ^= sign;
       nz = -(sign-nz);
     }
+
     float fx = (float)nx/(float)((1<<9)-1);
     float fy = (float)ny/(float)((1<<9)-1);
     float fz = (float)nz/(float)((1<<9)-1);
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    if (nrm != 0.0)
+        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    else
+        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
     return s;
 }
 
