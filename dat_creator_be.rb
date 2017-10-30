@@ -9,7 +9,7 @@ Dir.chdir(ARGV[0])
 files.select! { |f| File.file?(f) }
 Dir.mkdir("dat_output") unless Dir.exist?("dat_output")
 
-d = Bayonetta::DATFile::new
+d = Bayonetta::DATFile::new(nil, true)
 
 files.each { |fname|
   d.push(fname, File::new(fname, "rb") )

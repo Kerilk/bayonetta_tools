@@ -1,3 +1,5 @@
+require_relative 'bayonetta/dat.rb'
+
 module Bayonetta
 
   def align(val, alignment)
