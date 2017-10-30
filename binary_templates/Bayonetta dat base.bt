@@ -1,0 +1,33 @@
+struct {
+    char    id[4];
+    uint32  fileNumber;
+    uint32  fileOffsetsOffset;
+    uint32  fileExtensionsOffset;
+    uint32  fileNamesOffset;
+    uint32  fileSizesOffset;
+} header;
+
+FSeek(header.fileOffsetsOffset);
+uint32 fileOffsets[header.fileNumber];
+
+FSeek(header.fileExtensionsOffset);
+struct {
+    char ext[4];
+} fileExtensions[header.fileNumber];
+
+FSeek(header.fileNamesOffset);
+uint32  nameLength;
+struct {
+    char name[nameLength];
+} fileNames[header.fileNumber] <optimize=true>;
+
+FSeek(header.fileSizesOffset);
+uint32 fileSizes[header.fileNumber];
+
+local int i;
+for (i = 0; i < header.fileNumber; i++) {
+    FSeek(fileOffsets[i]);
+    struct {
+        byte data[fileSizes[i]];
+    } file;
+}
