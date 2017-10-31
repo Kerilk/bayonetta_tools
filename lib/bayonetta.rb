@@ -1,13 +1,11 @@
-require_relative 'bayonetta/dat.rb'
-require_relative 'bayonetta/eff.rb'
+require_relative 'bayonetta/endianness'
+require_relative 'bayonetta/alignment'
+require_relative 'bayonetta/dat'
+require_relative 'bayonetta/eff'
+require_relative 'bayonetta/wtb'
 
 module Bayonetta
-
-  def align(val, alignment)
-    remainder = val % alignment
-    val += alignment - remainder if remainder > 0
-    val
-  end
+  include Alignment
 
   class BayoTex
     attr_reader :name

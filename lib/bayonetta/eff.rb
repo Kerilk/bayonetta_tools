@@ -3,18 +3,11 @@ require 'stringio'
 module Bayonetta
 
   class EFFFile
+    include Endianness
+    include Alignment
 
     class Directory
-
-      def get_uint(big = @big)
-        uint = "L"
-        if big
-          uint <<= ">"
-        else
-          uint <<= "<"
-        end
-        uint
-      end
+      include Endianness
 
       private :get_uint
 
@@ -77,26 +70,6 @@ module Bayonetta
       end
 
     end
-
-    def align(val, alignment)
-      remainder = val % alignment
-      val += alignment - remainder if remainder > 0
-      val
-    end
-
-    private :align
-
-    def get_uint(big = @big)
-      uint = "L"
-      if big
-        uint <<= ">"
-      else
-        uint <<= "<"
-      end
-      uint
-    end
-
-    private :get_uint
 
     def initialize(f = nil, big = false)
       @big = big

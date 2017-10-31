@@ -1,6 +1,9 @@
 require 'stringio'
 module Bayonetta
   class DATFile
+    include Endianness
+    include Alignment
+
     ALIGNMENTS = {
       'wmb' => 0x1000,
       'wtb' => 0x1000,
@@ -9,26 +12,6 @@ module Bayonetta
       'sdx' => 0x1000
     }
     ALIGNMENTS.default = 0x10
-
-    def align(val, alignment)
-      remainder = val % alignment
-      val += alignment - remainder if remainder > 0
-      val
-    end
-
-    private :align
-
-    def get_uint(big = @big)
-      uint = "L"
-      if big
-        uint <<= ">"
-      else
-        uint <<= "<"
-      end
-      uint
-    end
-
-    private :get_uint
 
     def initialize(f = nil, big = false)
       @big = big
