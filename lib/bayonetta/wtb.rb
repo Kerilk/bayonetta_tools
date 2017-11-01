@@ -6,6 +6,7 @@ module Bayonetta
   class WTBFile
     include Endianness
 
+    attr_accessor :unknown
     ALIGNMENTS = {
       '.dds' => 0x1000,
       '.gtx' => 0x2000,
