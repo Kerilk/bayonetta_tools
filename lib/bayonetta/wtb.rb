@@ -1,4 +1,5 @@
 require 'stringio'
+require 'zlib'
 
 module Bayonetta
 
@@ -6,8 +7,8 @@ module Bayonetta
     include Endianness
 
     ALIGNMENTS = {
-      'dds' => 0x1000,
-      'gtx' => 0x2000,
+      '.dds' => 0x1000,
+      '.gtx' => 0x2000,
     }
     ALIGNMENTS.default = 0x20
 
@@ -113,7 +114,7 @@ module Bayonetta
         @wtp = wtp
         @id = "WTB\0".b
         @id.reverse! if @big
-        @unknown = 0x0
+        @unknown = 0x1
         @num_tex = 0
         @offset_texture_offsets = 0x0
         @offset_texture_sizes = 0x0
@@ -165,14 +166,14 @@ module Bayonetta
       unless @wtp
         @texture_offsets = @num_tex.times.collect { |i|
           tmp = align(last_offset, ALIGNMENTS[@texture_types[i]])
-          last_offset = align(tmp + @texture_size[i], ALIGNMENTS[@texture_types[i]])
+          last_offset = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
           tmp
         }
         @total_size = last_offset
       else
         last_offset = @offset_texture_infos = align(last_offset + 4*@num_tex, 0x20)
         last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
-        last_offset =  align(last_offset + 4*@num_tex, 0x20)
+        last_offset = align(last_offset + 4*@num_tex, 0x20)
         @total_size = last_offset
 
         offset_wtp = 0x0
@@ -194,16 +195,31 @@ module Bayonetta
       end
     end
 
-    def push(name, file, flag = 0x0, idx = nil)
+    def push(file, flag = 0x0, idx = nil)
+      id = file.read(4)
+      file.rewind
+      case id
+      when "Gfx2".b
+        @texture_types.push( ".gtx" )
+      when "DDS ".b
+        @texture_types.push( ".dds" )
+      else
+        raise "Unsupported texture type! #{id}"
+      end
       invalidate_layout
-      @texture_type.push( File.extname(name) )
-      @texture_size.push( file.size )
+      uint = get_uint
+      flag = 0x60000020 if @wtp && flag == 0x0
+      @texture_sizes.push( file.size )
       @textures.push( file )
       @texture_flags.push( flag )
       @texture_idx.push if idx
       if @wtp
+        unless idx
+          @texture_idx.push Zlib.crc32(file.read,0)
+          file.rewind
+        end
         file.seek(0x20*2)
-        gx2 = f.read(0x9c)
+        gx2 = file.read(0x9c)
         num_mipmap = gx2[0x10...0x14].unpack(uint).first
         data_length = gx2[0x20...0x24].unpack(uint).first
         mipmap_length = gx2[0x28...0x2c].unpack(uint).first
@@ -242,6 +258,8 @@ module Bayonetta
         f.write([@offset_texture_flags].pack(uint))
         f.write([@offset_texture_idx].pack(uint))
         f.write([@offset_texture_infos].pack(uint))
+        f.write([@offset_mipmap_offsets].pack(uint)) if @wtp
+
 
         f.seek(@offset_texture_offsets)
         f.write(@texture_offsets.pack("#{uint}*"))
