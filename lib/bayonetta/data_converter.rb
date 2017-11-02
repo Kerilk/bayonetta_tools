@@ -9,51 +9,162 @@ module Bayonetta
       :l => 4,
       :L => 4
     }
-    def set_convert_type(input, output, input_big, output_big)
+    attr_reader :__parent
+    attr_reader :__index
+    attr_reader :__iterator
+    attr_reader :__position
+    def set_convert_type(input, output, input_big, output_big, parent, index)
       @input_big = input_big
       @output_big = output_big
       @input = input
       @output = output
+      @__parent = parent
+      @__index = index
+      @__position = input.tell
     end
 
     def self.inherited(subclass)
       subclass.instance_variable_set(:@fields, [])
     end
 
-    def self.register_field(field, type, count = 1)
-      @fields.push([field, type, count])
+    def self.register_field(field, type, count: nil, offset: nil, sequence: false, condition: nil)
+      @fields.push([field, type, count, offset, sequence, condition])
       attr_accessor field
     end
 
-    def convert_field(field, type, count)
-      it = "#{type}"
-      it << "#{@input_big ? ">" : "<"}" if DATA_SIZES[type] > 1
-      #ot = "#{type}#{@output_big ? ">" : "<"}"
-      vs = count.times.collect {
-        s = @input.read(DATA_SIZES[type])
-        v = s.unpack(it).first
-        s.reverse! if @input_big != @output_big
-        @output.write(s)
-        v
+    def decode_symbol(sym)
+      exp = sym.gsub("..","__parent").gsub("\\",".")
+      p exp
+      res = eval(exp)
+      p res
+      res
+ #     path = sym.split("/")
+ #     path.reduce(nil) { |s, e|
+ #       e = "__parent" if e == ".."
+ #       s ? s.send(e) : send(e)
+ #     }
+    end
+
+    def decode_seek_offset(offset)
+      if offset
+        offset = decode_symbol(offset)
+        return false if offset == 0x0
+        @input.seek(offset)
+        @output.seek(offset)
+        return offset
+      end
+    end
+
+    def decode_condition(condition)
+      return true unless condition
+      return decode_symbol(condition)
+    end
+
+    def decode_count(count)
+      if count
+        if count.kind_of?(String)
+          c = decode_symbol(count)
+        else
+          c = count
+        end
+      else
+        c = 1
+      end
+      c
+    end
+
+    def convert_data_field(field, type, count, offset, sequence, condition)
+      unless sequence
+        off = decode_seek_offset(offset)
+        return nil if off == false
+        cond = decode_condition(condition)
+        return nil unless cond
+      end
+      c = decode_count(count)
+      vs = c.times.collect { |it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            nil
+          else
+            type::convert(@input, @output, @input_big, @output_big, self, it)
+          end
+        else
+          type::convert(@input, @output, @input_big, @output_big, self, it)
+        end
       }
-      vs = vs.first if count == 1
+      @__iterator = nil
+      vs = vs.first unless count
+      vs
+    end
+
+    def convert_sacalar_field(field, type, count, offset, sequence, condition)
+      unless sequence
+        off = decode_seek_offset(offset)
+        return nil if off == false
+        cond = decode_condition(condition)
+        return nil unless cond
+      end
+
+      c = decode_count(count)
+      t = "#{type}"
+      t << "#{@input_big ? ">" : "<"}" if DATA_SIZES[type] > 1
+      vs = c.times.collect { |it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            nil
+          else
+            s = @input.read(DATA_SIZES[type])
+            v = s.unpack(t).first
+            s.reverse! if @input_big != @output_big
+            @output.write(s)
+            v
+          end
+        else
+          s = @input.read(DATA_SIZES[type])
+          v = s.unpack(t).first
+          s.reverse! if @input_big != @output_big
+          @output.write(s)
+          v
+        end
+      }
+      @__iterator = nil
+      vs = vs.first unless count
+      vs
+    end
+
+    def convert_field(*args)
+      field = args[0]
+      type = args[1]
+      if type.kind_of?(Class) && type < DataConverter
+        vs = convert_data_field(*args)
+      elsif type.kind_of?(Symbol)
+        vs = convert_sacalar_field(*args)
+      else
+        raise "Unsupported type: #{type.inspect}!"
+      end
       send("#{field}=", vs)
     end
 
     def convert_fields
-      self.class.instance_variable_get(:@fields).each { |field, type, count|
-        convert_field(field, type, count)
+      self.class.instance_variable_get(:@fields).each { |args|
+        convert_field(*args)
       }
     end
 
-    def convert(input, output, input_big, output_big)
-      set_convert_type(input, output, input_big, output_big)
+    def convert(input, output, input_big, output_big, parent = nil, index = nil)
+      set_convert_type(input, output, input_big, output_big, parent, index)
       convert_fields
     end
 
-    def self.convert(input, output, input_big, output_big)
+    def self.convert(input, output, input_big, output_big, parent = nil, index = nil)
       h = self::new
-      h.convert(input, output, input_big, output_big)
+      h.convert(input, output, input_big, output_big, parent, index)
       h
     end
 

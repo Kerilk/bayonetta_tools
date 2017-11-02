@@ -1,6 +1,6 @@
 module Bayonetta
 
-  class WMBFile
+  class WMBFile < DataConverter
 
     class VertexExData1 < DataConverter
       register_field :unknown, :L
@@ -10,6 +10,19 @@ module Bayonetta
       register_field :unknown, :L
       register_field :u, :S
       register_field :v, :S
+    end
+
+    class VertexExData < DataConverter
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        vertex_ex_data_size = parent.header.vertex_ex_data_size
+        if vertex_ex_data_size == 1
+          return VertexExData1::convert(input, output, input_big, output_big, parent, index)
+        else
+          return VertexExData2::convert(input, output, input_big, output_big, parent, index)
+        end
+      end
+
     end
 
     class Vertex < DataConverter
@@ -131,23 +144,16 @@ module Bayonetta
       end
 
       def convert_fields
-        self.class.instance_variable_get(:@fields).each { |field, type, count|
+        self.class.instance_variable_get(:@fields).each { |args|
+          field = args[0]
           if field == :normals
             convert_normals
           else
-            convert_field(field, type, count)
+            convert_field(*args)
           end
         }
       end
 
-    end
-
-    class BoneIndex < DataConverter
-      register_field :index, :s
-    end
-
-    class BoneFlag < DataConverter
-      register_field :flag, :c
     end
 
     class BonePosition < DataConverter
@@ -157,54 +163,36 @@ module Bayonetta
     end
 
     class BoneIndexTranslateTable < DataConverter
-      register_field :offsets, :s, 16
+      register_field :offsets, :s, count: 16
 
-      def convert(input, output, input_big, output_big, level)
-        set_convert_type(input, output, input_big, output_big)
+      def convert(input, output, input_big, output_big, parent, index, level = 1)
+        set_convert_type(input, output, input_big, output_big, parent, index)
         convert_fields
-        if level == 1
-          @second_levels = []
+        if level < 3
+          @next_level = []
           @offsets.each { |o|
             if o != -1
               t = self.class::new
-              t.convert(input, output, input_big, output_big, level+1)
-              @second_levels.push t
+              t.convert(input, output, input_big, output_big, self, nil, level+1)
+              @next_level.push t
             end
           }
-          @third_levels = []
-          @second_levels.each { |l|
-            l.offsets.each { |o|
-              if o != -1
-                t = self.class::new
-                t.convert(input, output, input_big, output_big, level+2)
-                @third_levels.push t
-              end
-            }
-          }
+        else
+          @next_level = nil
         end
-      end
-
-      def self.convert(input, output, input_big, output_big)
-        h = self::new
-        h.convert(input, output, input_big, output_big, 1)
-        h
       end
 
     end
 
     class UnknownStruct < DataConverter
-      register_field :u_a1, :C, 4
+      register_field :u_a1, :C, count: 4
       register_field :u_b1, :L
-      register_field :u_c1, :s, 4
-      register_field :u_a2, :C, 4
+      register_field :u_c1, :s, count: 4
+      register_field :u_a2, :C, count: 4
       register_field :u_b2, :L
-      register_field :u_c2, :s, 4
-      register_field :u_a3, :C, 4
+      register_field :u_c2, :s, count: 4
+      register_field :u_a3, :C, count: 4
       register_field :u_b3, :L
-    end
-
-    class MaterialOffset < DataConverter
-      register_field :offset, :L
     end
 
     class MaterialData < DataConverter
@@ -214,24 +202,8 @@ module Bayonetta
     class Material < DataConverter
       register_field :type, :s
       register_field :flag, :S
-
-      def convert(input, output, input_big, output_big, elem_num)
-        set_convert_type(input, output, input_big, output_big)
-        convert_fields
-        @material_data = elem_num.times.collect {
-          MaterialData::convert(input, output, input_big, output_big)
-        }
-      end
-
-      def self.convert(input, output, input_big, output_big, elem_num)
-        h = self::new
-        h.convert(input, output, input_big, output_big, elem_num)
-        h
-      end
-    end
-
-    class BoneRef < DataConverter
-      register_field :ref, :C
+      register_field :material_data, :L,
+        count: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
     end
 
     class BatchHeader < DataConverter
@@ -249,33 +221,14 @@ module Bayonetta
       register_field :offset_indices, :L
       register_field :num_indices, :l
       register_field :vertex_offset, :L
-      register_field :u_f, :l, 7
+      register_field :u_f, :l, count: 7
       register_field :num_bone_ref, :l
     end
 
-    class VertexIndex < DataConverter
-      register_field :index, :S
-    end
-
     class Batch < DataConverter
-      def convert(input, output, input_big, output_big)
-        pos = input.tell
-        @header = BatchHeader::convert(input, output, input_big, output_big)
-        @bone_refs = @header.num_bone_ref.times.collect {
-          BoneRef::convert(input, output, input_big, output_big)
-        }
-        if @header.offset_indices > 0
-          input.seek(pos + @header.offset_indices)
-          output.seek(pos + @header.offset_indices)
-          @indices = @header.num_indices.times.collect {
-            VertexIndex::convert(input, output, input_big, output_big)
-          }
-        end
-      end
-    end
-
-    class MeshesOffset < DataConverter
-      register_field :offset, :L
+      register_field :header, BatchHeader
+      register_field :bone_refs, :C, count: 'header\num_bone_ref'
+      register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
     end
 
     class MeshHeader < DataConverter
@@ -285,37 +238,21 @@ module Bayonetta
       register_field :u_a2, :s
       register_field :offset_batch_offsets, :L
       register_field :u_b, :L
-      register_field :u_c, :l, 4
-      register_field :name, :c, 32
-      register_field :mat, :L, 12
-    end
-
-    class BatchOffset < DataConverter
-      register_field :offset, :L
+      register_field :u_c, :l, count: 4
+      register_field :name, :c, count: 32
+      register_field :mat, :L, count: 12
     end
 
     class Mesh < DataConverter
-      def convert(input, output, input_big, output_big)
-        pos = input.tell
-        @header = MeshHeader::convert(input, output, input_big, output_big)
-        if @header.offset_batch_offsets > 0
-          input.seek(pos + @header.offset_batch_offsets)
-          output.seek(pos + @header.offset_batch_offsets)
-          @batch_offsets = @header.num_batch.times.collect {
-            BatchOffset::convert(input, output, input_big, output_big)
-          }
-        end
-
-        @batches = @header.num_batch.times.collect { |i|
-          input.seek(pos + @header.offset_batch_offsets + @batch_offsets[i].offset)
-          output.seek(pos + @header.offset_batch_offsets + @batch_offsets[i].offset)
-          Batch::convert(input, output, input_big, output_big)
-        }
-      end
+      register_field :header, MeshHeader
+      register_field :batch_offsets, :L, count: 'header\num_batch',
+                     offset: '__position + header\offset_batch_offsets'
+      register_field :batches, Batch, count: 'header\num_batch', sequence: true,
+                     offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
     end
 
     class WMBFileHeader < DataConverter
-      attr_accessor :id
+      register_field :id, :L
       register_field :u_a, :l
       register_field :u_b, :l
       register_field :num_vertexes, :l
@@ -325,7 +262,7 @@ module Bayonetta
       register_field :u_f, :l
       register_field :offset_vertexes, :L
       register_field :offset_vertexes_ex_data, :L
-      register_field :u_g, :l, 4
+      register_field :u_g, :l, count: 4
       register_field :num_bones, :l
       register_field :offset_bone_hierarchy, :L
       register_field :offset_bone_relative_position, :L
@@ -342,21 +279,28 @@ module Bayonetta
       register_field :offset_u_j, :L
       register_field :offset_bone_infos, :L
       register_field :offset_bone_flags, :L
-      register_field :ex_mat_info, :l, 4
-
-      def convert(input, output, input_big, output_big)
-        set_convert_type(input, output, input_big, output_big)
-        @id = @input.read(4).unpack("a4").first
-        @id.reverse! if input_big
-        if output_big
-          @output.write([@id.reverse].pack("a4"))
-        else
-          @output.write([@id].pack("a4"))
-        end
-        convert_fields
-      end
-
+      register_field :ex_mat_info, :l, count: 4
     end
+
+    register_field :header, WMBFileHeader
+    register_field :vertexes, Vertex, count: 'header\num_vertexes', offset: 'header\offset_vertexes'
+    register_field :vertexes_ex_data, VertexExData, count: 'header\num_vertexes',
+                   offset: 'header\offset_vertexes_ex_data'
+    register_field :bone_hierarchy, :s, count: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
+    register_field :bone_relative_positions, BonePosition, count: 'header\num_bones',
+                   offset: 'header\offset_bone_relative_position'
+    register_field :bone_positions, BonePosition, count: 'header\num_bones', offset: 'header\offset_bone_position'
+    register_field :bone_index_translate_table, BoneIndexTranslateTable,
+                   offset: 'header\offset_bone_index_translate_table'
+    register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
+    register_field :bone_infos, :s, count: 'header\num_bones', offset: 'header\offset_bone_infos'
+    register_field :bone_flags, :c, count: 'header\num_bones', offset: 'header\offset_bone_flags'
+    register_field :materials_offsets, :L, count: 'header\num_materials', offset: 'header\offset_materials_offsets'
+    register_field :materials, Material, count: 'header\num_materials', sequence: true,
+                   offset: 'header\offset_materials + materials_offsets[__iterator]'
+    register_field :meshes_offsets, :L, count: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
+    register_field :meshes, Mesh, count: 'header\num_meshes', sequence: true,
+                   offset: 'header\offset_meshes + meshes_offsets[__iterator]'
 
     def self.convert(input_name, output_name, output_big = false)
       input = File.open(input_name, "rb")
@@ -373,118 +317,9 @@ module Bayonetta
       output.write("\xFB"*input.size)
       input.seek(0);
       output.seek(0);
-      @header = WMBFileHeader::convert(input, output, input_big, output_big)
 
-      input.seek(@header.offset_vertexes)
-      output.seek(@header.offset_vertexes)
-      @vertexes = @header.num_vertexes.times.collect {
-        Vertex::convert(input, output, input_big, output_big)
-      }
-
-      if @header.offset_vertexes_ex_data > 0
-        input.seek(@header.offset_vertexes_ex_data)
-        output.seek(@header.offset_vertexes_ex_data)
-        if @header.vertex_ex_data_size == 1
-          @vertexes_ex_data = @header.num_vertexes.times.collect {
-            VertexExData1::convert(input, output, input_big, output_big)
-          }
-        elsif @header.vertex_ex_data_size == 2
-          @vertexes_ex_data = @header.num_vertexes.times.collect {
-            VertexExData2::convert(input, output, input_big, output_big)
-          }
-        end
-      end
-
-      if @header.offset_bone_hierarchy > 0
-        input.seek(@header.offset_bone_hierarchy)
-        output.seek(@header.offset_bone_hierarchy)
-        @bone_hierarchy = @header.num_bones.times.collect {
-          BoneIndex::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_bone_relative_position > 0
-        input.seek(@header.offset_bone_relative_position)
-        output.seek(@header.offset_bone_relative_position)
-        @bone_relative_positions = @header.num_bones.times.collect {
-          BonePosition::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_bone_position > 0
-        input.seek(@header.offset_bone_position)
-        output.seek(@header.offset_bone_position)
-        @bone_relative_positions = @header.num_bones.times.collect {
-          BonePosition::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_bone_index_translate_table > 0
-        input.seek(@header.offset_bone_index_translate_table)
-        output.seek(@header.offset_bone_index_translate_table)
-        @bone_index_translate_table = BoneIndexTranslateTable::convert(input, output, input_big, output_big)
-      end
-
-      if @header.offset_u_j > 0
-        input.seek(@header.offset_u_j)
-        output.seek(@header.offset_u_j)
-        @u_j = UnknownStruct::convert(input, output, input_big, output_big)
-      end
-
-      if @header.offset_bone_infos > 0
-        input.seek(@header.offset_bone_infos)
-        output.seek(@header.offset_bone_infos)
-        @bone_infos = @header.num_bones.times.collect {
-          BoneIndex::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_bone_flags > 0
-        input.seek(@header.offset_bone_flags)
-        output.seek(@header.offset_bone_flags)
-        @bone_flags = @header.num_bones.times.collect {
-          BoneFlag::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_materials_offsets > 0
-        input.seek(@header.offset_materials_offsets)
-        output.seek(@header.offset_materials_offsets)
-        @materials_offsets = @header.num_materials.times.collect {
-          MaterialOffset::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_materials > 0
-        @materials = (@header.num_materials-1).times.collect { |i|
-          input.seek(@header.offset_materials+@materials_offsets[i].offset)
-          output.seek(@header.offset_materials+@materials_offsets[i].offset)
-          size = @materials_offsets[i+1].offset - @materials_offsets[i].offset - 4
-          size = size / 4
-          Material::convert(input, output, input_big, output_big, size)
-        }
-        input.seek(@header.offset_materials+@materials_offsets[-1].offset)
-        output.seek(@header.offset_materials+@materials_offsets[-1].offset)
-        size =  @header.offset_meshes_offsets -  ( @header.offset_materials + @materials_offsets[-1].offset ) - 4
-        size = size / 4
-        @materials.push Material::convert(input, output, input_big, output_big, size)
-      end
-
-      if @header.offset_meshes_offsets > 0
-        input.seek(@header.offset_meshes_offsets)
-        output.seek(@header.offset_meshes_offsets)
-        @meshes_offsets = @header.num_meshes.times.collect {
-          MeshesOffset::convert(input, output, input_big, output_big)
-        }
-      end
-
-      if @header.offset_meshes > 0
-        @meshes = @header.num_meshes.times.collect { |i|
-          input.seek(@header.offset_meshes + @meshes_offsets[i].offset)
-          output.seek(@header.offset_meshes + @meshes_offsets[i].offset)
-          Mesh::convert(input, output, input_big, output_big)
-        }
-      end
+      wmb = self::new
+      wmb.convert(input, output, input_big, output_big)
 
       input.close
       output.close
