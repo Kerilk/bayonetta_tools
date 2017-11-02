@@ -304,6 +304,32 @@ module Bayonetta
 
     def self.convert(input_name, output_name, output_big = false)
       input = File.open(input_name, "rb")
+      input_big = validate_endianness(input)
+
+      output = File.open(output_name, "wb")
+      output.write("\xFB"*input.size)
+      output.seek(0);
+
+      wmb = self::new
+      wmb.convert(input, output, input_big, output_big)
+
+      input.close
+      output.close
+      nil
+    end
+
+    def self.load(input_name)
+      input = File.open(input_name, "rb")
+      input_big = validate_endianness(input)
+
+      wmb = self::new
+      wmb.load(input, input_big)
+      input.close
+
+      wmb
+    end
+
+    def self.validate_endianness(input)
       id = input.read(4).unpack("a4").first
       case id
       when "WMB\0".b
@@ -313,16 +339,8 @@ module Bayonetta
       else
         raise "Invalid file type #{id}!"
       end
-      output = File.open(output_name, "wb")
-      output.write("\xFB"*input.size)
-      input.seek(0);
-      output.seek(0);
-
-      wmb = self::new
-      wmb.convert(input, output, input_big, output_big)
-
-      input.close
-      output.close
+      input.rewind;
+      input_big
     end
 
   end
