@@ -148,8 +148,6 @@ if ( header.offsetBoneFlags ) {
     byte boneFlags[header.numBones];
 }
 
-FSeek( header.offsetMaterialsOffsets );
-uint32 materialOffsets[header.numMaterials];
 
 if ( header.exMatInfo[0] ) {
     FSeek( header.exMatInfo[0] );
@@ -167,6 +165,35 @@ if ( header.exMatInfo[1] ) {
     } texIDs[numTexIDs];
 }
 
+FSeek( header.offsetMaterialsOffsets );
+uint32 materialOffsets[header.numMaterials];
+
+local int i;
+local int dataSize;
+for ( i = 0; i < header.numMaterials - 1; i++ ) {
+    FSeek( header.offsetMaterials + materialOffsets[i] );
+    struct {
+        int16 matID <format=hex>;
+        int16 matFlags <format=hex>;
+        union {
+            uint32  texture <format=hex>;
+            float   val;
+        } texture[5];
+        dataSize = materialOffsets[i+1] - materialOffsets[i] - 24;
+        float   data[dataSize/4];
+    } material;
+}
+FSeek( header.offsetMaterials + materialOffsets[header.numMaterials - 1] );
+struct {
+    int16 matID <format=hex>;
+    int16 matFlags <format=hex>;
+    union {
+        uint32  texture <format=hex>;
+        float   val;
+    } texture[5];
+    dataSize = header.offsetMeshesOffsets - (header.offsetMaterials + materialOffsets[header.numMaterials - 1]) - 24;
+    float   data[dataSize/4];
+} material;
 
 FSeek( header.offsetMeshesOffsets );
 uint32 meshesOffsets[header.numMeshes];
@@ -200,7 +227,7 @@ typedef struct {
     j++;
 } batch;
 
-local int i=0;
+i=0;
 typedef    struct {
     FSeek( header.offsetMeshes + meshesOffsets[i] );
     struct {
