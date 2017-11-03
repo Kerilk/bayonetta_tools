@@ -1,6 +1,7 @@
 module Bayonetta
 
   class WMBFile < DataConverter
+    include Alignment
 
     class VertexExData1 < DataConverter
       register_field :unknown, :L
@@ -136,38 +137,31 @@ module Bayonetta
         [v].pack("L>")
       end
 
-      def convert_normals
-        s = @input.read(4)
-        if @input_big
-          @normals = decode_big_normals(s)
-        else
-          @normals = decode_small_normals(s)
-        end
-
-        if @output_big
-          s2 = encode_big_normals(@normals)
-        else
-          s2 = encode_small_normals(@normals)
-        end
-        @output.write(s2)
-      end
-
       def load_normals
         s = @input.read(4)
         if @input_big
+          @normals_big_orig = s
+          @normals_small_orig = nil
           @normals = decode_big_normals(s)
         else
+          @normals_small_orig = s
+          @normals_big_orig = nil
           @normals = decode_small_normals(s)
         end
       end
 
       def dump_normals
         if @output_big
-          s2 = encode_big_normals(@normals)
+          s2 = (@normals_big_orig ? @normals_big_orig : encode_big_normals(@normals))
         else
-          s2 = encode_small_normals(@normals)
+          s2 = (@normals_small_orig ? @normals_small_orig : encode_small_normals(@normals))
         end
         @output.write(s2)
+      end
+
+      def convert_normals
+        load_normals
+        dump_normals
       end
 
       def convert_fields
@@ -322,6 +316,20 @@ module Bayonetta
                      offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
     end
 
+    class ShaderName < DataConverter
+      register_field :name, :c, count: 16
+    end
+
+    class TexInfo < DataConverter
+      register_field :id, :L
+      register_field :info, :l
+    end
+
+    class TexInfos < DataConverter
+      register_field :num_tex_infos, :l
+      register_field :tex_infos, TexInfo, count: 'num_tex_infos'
+    end
+
     class WMBFileHeader < DataConverter
       register_field :id, :L
       register_field :u_a, :l
@@ -350,7 +358,10 @@ module Bayonetta
       register_field :offset_u_j, :L
       register_field :offset_bone_infos, :L
       register_field :offset_bone_flags, :L
-      register_field :ex_mat_info, :l, count: 4
+      register_field :offset_shader_names, :L
+      register_field :offset_tex_infos, :L
+      register_field :u_m, :L
+      register_field :u_n, :L
     end
 
     register_field :header, WMBFileHeader
@@ -366,6 +377,8 @@ module Bayonetta
     register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
     register_field :bone_infos, :s, count: 'header\num_bones', offset: 'header\offset_bone_infos'
     register_field :bone_flags, :c, count: 'header\num_bones', offset: 'header\offset_bone_flags'
+    register_field :shader_names, ShaderName, count: 'header\num_materials', offset: 'header\offset_shader_names'
+    register_field :tex_infos, TexInfos, offset: 'header\offset_tex_infos'
     register_field :materials_offsets, :L, count: 'header\num_materials', offset: 'header\offset_materials_offsets'
     register_field :materials, Material, count: 'header\num_materials', sequence: true,
                    offset: 'header\offset_materials + materials_offsets[__iterator]'
@@ -422,6 +435,13 @@ module Bayonetta
       set_dump_type(output, output_big, nil, nil)
       dump_fields
       unset_dump_type
+
+      sz = output.size
+      sz = align(sz, 0x20)
+      if sz > output.size
+        output.seek(sz-1)
+        output.write("\x00")
+      end
 
       output.close
       self
