@@ -23,18 +23,27 @@ module Bayonetta
         end
       end
 
+      def self.load(input, input_big, parent, index)
+        vertex_ex_data_size = parent.header.vertex_ex_data_size
+        if vertex_ex_data_size == 1
+          return VertexExData1::load(input, input_big, parent, index)
+        else
+          return VertexExData2::load(input, input_big, parent, index)
+        end
+      end
+
+      def self.dump(output, output_big, parent, index)
+        vertex_ex_data_size = parent.header.vertex_ex_data_size
+        if vertex_ex_data_size == 1
+          return VertexExData1::convert(output, output_big, parent, index)
+        else
+          return VertexExData2::convert(output, output_big, parent, index)
+        end
+      end
+
     end
 
-    class Vertex < DataConverter
-      register_field :x, :L
-      register_field :y, :L
-      register_field :z, :L
-      register_field :u, :S
-      register_field :v, :S
-      register_field :normals, :L
-      register_field :unknown, :L
-      register_field :bone_index, :L
-      register_field :bone_weight, :L
+    class Normals < DataConverter
 
       def normalize(fx, fy, fz)
         nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
@@ -143,16 +152,48 @@ module Bayonetta
         @output.write(s2)
       end
 
-      def convert_fields
-        self.class.instance_variable_get(:@fields).each { |args|
-          field = args[0]
-          if field == :normals
-            convert_normals
-          else
-            convert_field(*args)
-          end
-        }
+      def load_normals
+        s = @input.read(4)
+        if @input_big
+          @normals = decode_big_normals(s)
+        else
+          @normals = decode_small_normals(s)
+        end
       end
+
+      def dump_normals
+        if @output_big
+          s2 = encode_big_normals(@normals)
+        else
+          s2 = encode_small_normals(@normals)
+        end
+        @output.write(s2)
+      end
+
+      def convert_fields
+        convert_normals
+      end
+
+      def load_fields
+        load_normals
+      end
+
+      def dump_fields
+        dump_normals
+      end
+
+    end
+
+    class Vertex < DataConverter
+      register_field :x, :L
+      register_field :y, :L
+      register_field :z, :L
+      register_field :u, :S
+      register_field :v, :S
+      register_field :normals, Normals
+      register_field :unknown, :L
+      register_field :bone_index, :L
+      register_field :bone_weight, :L
 
     end
 
@@ -180,6 +221,36 @@ module Bayonetta
         else
           @next_level = nil
         end
+        unset_convert_type
+      end
+
+      def load(input, input_big, parent, index, level = 1)
+        set_load_type(input, input_big, parent, index)
+        load_fields
+        if level < 3
+          @next_level = []
+          @offsets.each { |o|
+            if o != -1
+              t = self.class::new
+              t.load(input, input_big, self, nil, level+1)
+              @next_level.push t
+            end
+          }
+        else
+          @next_level = nil
+        end
+        unset_load_type
+      end
+
+      def dump(output, output_big, parent, index, level = 1)
+        set_dump_type(output, output_big, parent, index)
+        dump_fields
+        if level < 3
+          @next_level.each { |e|
+            e.dump(output, output_big, self, nil, level+1)
+          }
+        end
+        unset_dump_type
       end
 
     end
@@ -308,14 +379,14 @@ module Bayonetta
 
       output = File.open(output_name, "wb")
       output.write("\xFB"*input.size)
-      output.seek(0);
+      output.rewind
 
       wmb = self::new
       wmb.convert(input, output, input_big, output_big)
 
       input.close
       output.close
-      nil
+      wmb
     end
 
     def self.load(input_name)
@@ -339,8 +410,21 @@ module Bayonetta
       else
         raise "Invalid file type #{id}!"
       end
-      input.rewind;
+      input.rewind
       input_big
+    end
+
+    def dump(output_name, output_big = false)
+      output = File.open(output_name, "wb")
+#      output.write("\xFB"*input.size)
+      output.rewind
+
+      set_dump_type(output, output_big, nil, nil)
+      dump_fields
+      unset_dump_type
+
+      output.close
+      self
     end
 
   end

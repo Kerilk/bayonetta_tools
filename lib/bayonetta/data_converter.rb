@@ -36,6 +36,40 @@ module Bayonetta
       @__position = input.tell
     end
 
+    def set_dump_type(output, output_big, parent, index)
+      @output_big = output_big
+      @output = output
+      @__parent = parent
+      @__index = index
+      @__position = output.tell
+    end
+
+    def unset_convert_type
+      @input_big = nil
+      @output_big = nil
+      @input = nil
+      @output = nil
+      @__parent = nil
+      @__index = nil
+      @__position = nil
+    end
+
+    def unset_load_type
+      @input_big = nil
+      @input = nil
+      @__parent = nil
+      @__index = nil
+      @__position = nil
+    end
+
+    def unset_dump_type
+      @output_big = nil
+      @output = nil
+      @__parent = nil
+      @__index = nil
+      @__position = nil
+    end
+
     def self.inherited(subclass)
       subclass.instance_variable_set(:@fields, [])
     end
@@ -140,6 +174,32 @@ module Bayonetta
       vs
     end
 
+    def dump_data_field(vs, field, type, count, offset, sequence, condition)
+      unless sequence
+        off = decode_seek_offset(offset)
+        return nil if off == false
+        cond = decode_condition(condition)
+        return nil unless cond
+      end
+      c = decode_count(count)
+      vs = [vs] unless count
+      vs.each_with_index { |v, it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            nil
+          else
+            v.dump(@output, @output_big, self, it)
+          end
+        else
+          v.dump(@output, @output_big, self, it)
+        end
+      }
+      @__iterator = nil
+    end
+
     def convert_sacalar_field(field, type, count, offset, sequence, condition)
       unless sequence
         off = decode_seek_offset(offset)
@@ -210,6 +270,35 @@ module Bayonetta
       vs
     end
 
+    def dump_sacalar_field(vs, field, type, count, offset, sequence, condition)
+      unless sequence
+        off = decode_seek_offset(offset)
+        return nil if off == false
+        cond = decode_condition(condition)
+        return nil unless cond
+      end
+
+      c = decode_count(count)
+      t = "#{type}"
+      t << "#{@output_big ? ">" : "<"}" if DATA_SIZES[type] > 1
+      vs = [vs] unless count
+      vs.each_with_index { |v, it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            nil
+          else
+            @output.write([v].pack(t))
+          end
+        else
+          @output.write([v].pack(t))
+        end
+      }
+      @__iterator = nil
+    end
+
     def convert_field(*args)
       field = args[0]
       type = args[1]
@@ -236,28 +325,61 @@ module Bayonetta
       send("#{field}=", vs)
     end
 
+    def dump_field(*args)
+      field = args[0]
+      type = args[1]
+      vs = send("#{field}")
+      if type.kind_of?(Class) && type < DataConverter
+        s = dump_data_field(vs, *args)
+      elsif type.kind_of?(Symbol)
+        s = dump_sacalar_field(vs, *args)
+      else
+        raise "Unsupported type: #{type.inspect}!"
+      end
+    end
+
     def convert_fields
       self.class.instance_variable_get(:@fields).each { |args|
         convert_field(*args)
       }
+      self
     end
 
     def load_fields
       self.class.instance_variable_get(:@fields).each { |args|
         load_field(*args)
       }
+      self
+    end
+
+    def dump_fields
+      self.class.instance_variable_get(:@fields).each { |args|
+        dump_field(*args)
+      }
+      self
     end
 
     def convert(input, output, input_big, output_big, parent = nil, index = nil)
       set_convert_type(input, output, input_big, output_big, parent, index)
       convert_fields
+      unset_convert_type
+      self
     end
 
     def load(input, input_big, parent = nil, index = nil)
       set_load_type(input, input_big, parent, index)
       load_fields
+      unset_load_type
+      self
     end
 
+    def dump(output, output_big, parent = nil, index = nil)
+      set_dump_type(output, output_big, parent, index)
+      dump_fields
+      unset_dump_type
+      self
+    end
+      
     def self.convert(input, output, input_big, output_big, parent = nil, index = nil)
       h = self::new
       h.convert(input, output, input_big, output_big, parent, index)
