@@ -207,16 +207,16 @@ module Bayonetta
         return (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
       end
 
-      def size(position, parent, index, level = 1)
+      def size(position = 0, parent = nil, index = nil)
         sz = super()
         if @second_levels
           @second_levels.each { |e|
-            sz += e.size(position, parent, index, level)
+            sz += e.size(position, parent, index)
           }
         end
         if @third_levels
           @third_levels.each { |e|
-            sz += e.size(position, parent, index, level)
+            sz += e.size(position, parent, index)
           }
         end
         sz
