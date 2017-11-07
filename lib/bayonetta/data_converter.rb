@@ -1,6 +1,7 @@
 module Bayonetta
 
   class DataConverter
+    include Alignment
 
     def inspect
       to_s
@@ -28,6 +29,12 @@ module Bayonetta
       @__position = input.tell
     end
 
+    def set_size_type(position, parent, index)
+      @__parent = parent
+      @__index = index
+      @__position = position
+    end
+
     def set_load_type(input, input_big, parent, index)
       @input_big = input_big
       @input = input
@@ -49,6 +56,12 @@ module Bayonetta
       @output_big = nil
       @input = nil
       @output = nil
+      @__parent = nil
+      @__index = nil
+      @__position = nil
+    end
+
+    def unset_size_type
       @__parent = nil
       @__index = nil
       @__position = nil
@@ -81,9 +94,7 @@ module Bayonetta
 
     def decode_symbol(sym)
       exp = sym.gsub("..","__parent").gsub("\\",".")
-      p exp
       res = eval(exp)
-      p res
       res
  #     path = sym.split("/")
  #     path.reduce(nil) { |s, e|
@@ -299,6 +310,95 @@ module Bayonetta
       @__iterator = nil
     end
 
+    def range_scalar_field(previous_offset, field, type, count, offset, sequence, condition)
+      off = nil
+      unless sequence
+        off = decode_seek_offset(offset)
+        return [nil, nil] if off == false
+        cond = decode_condition(condition)
+        return [nil, nil] unless cond
+      end
+      if off
+        start_offset = off
+        end_offset = off
+      else previous_offset
+        start_offset = previous_offset
+        end_offset = previous_offset
+      end
+
+      c = decode_count(count)
+      s_offset = start_offset
+      e_offset = end_offset
+      c.times { |it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            next
+          else
+            if off
+              s_offset = off
+            else
+              s_offset = e_offset
+            end
+            e_offset = s_offset + DATA_SIZES[type]
+            start_offset = s_offset if s_offset < start_offset
+            end_offset = e_offset if e_offset > end_offset
+          end
+        else
+          end_offset += DATA_SIZES[type]
+        end
+      }
+      @__iterator = nil
+      return [start_offset, end_offset]
+    end
+
+    def range_data_field(previous_offset, vs, field, type, count, offset, sequence, condition)
+      off = nil
+      unless sequence
+        off = decode_seek_offset(offset)
+        return [nil, nil] if off == false
+        cond = decode_condition(condition)
+        return [nil, nil] unless cond
+      end
+      if off
+        start_offset = off
+        end_offset = off
+      else previous_offset
+        start_offset = previous_offset
+        end_offset = previous_offset
+      end
+
+      c = decode_count(count)
+      s_offset = start_offset
+      e_offset = end_offset
+      vs = [vs] unless count
+      vs.each_with_index { |v, it|
+        @__iterator = it
+        if sequence
+          off = decode_seek_offset(offset)
+          cond = decode_condition(condition)
+          if off == false || !cond
+            next
+          else
+            if off
+              s_offset = off
+            else
+              s_offset = e_offset
+            end
+            e_offset = s_offset + v.size(s_offset, self, it)
+            start_offset = s_offset if s_offset < start_offset
+            end_offset = e_offset if e_offset > end_offset
+          end
+        else
+          end_offset += v.size(end_offset, self, it)
+        end
+      }
+      @__iterator = nil
+      return [start_offset, end_offset]
+    end
+
     def convert_field(*args)
       field = args[0]
       type = args[1]
@@ -336,6 +436,34 @@ module Bayonetta
       else
         raise "Unsupported type: #{type.inspect}!"
       end
+    end
+
+    def range_field(previous_offset, *args)
+      field = args[0]
+      type = args[1]
+      vs = send("#{field}")
+      if type.kind_of?(Class) && type < DataConverter
+        range_data_field(previous_offset, vs, *args)
+      elsif type.kind_of?(Symbol)
+        range_scalar_field(previous_offset, *args)
+      else
+        raise "Unsupported type: #{type.inspect}!"
+      end
+    end
+
+    def size(previous_offset = 0, parent = nil, index = nil)
+      set_size_type(previous_offset, parent, index)
+      first_offset = Float::INFINITY
+      last_offset = -1
+      size = 0
+      self.class.instance_variable_get(:@fields).each { |args|
+        start_offset, end_offset = range_field(previous_offset, *args)
+        first_offset = start_offset if start_offset && start_offset < first_offset
+        last_offset = end_offset if end_offset && end_offset > last_offset
+        previous_offset = end_offset if end_offset
+      }
+      unset_size_type
+      return last_offset - first_offset
     end
 
     def convert_fields

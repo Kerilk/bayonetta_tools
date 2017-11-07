@@ -46,6 +46,10 @@ module Bayonetta
 
     class Normals < DataConverter
 
+      def size(position, parent, index)
+        4
+      end
+
       def normalize(fx, fy, fz)
         nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
         return [0.0, 0.0, 0.0] if nrm == 0.0
@@ -199,21 +203,50 @@ module Bayonetta
 
     class BoneIndexTranslateTable < DataConverter
       register_field :offsets, :s, count: 16
+      def table
+        return (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
+      end
+
+      def size(position, parent, index, level = 1)
+        sz = super()
+        if @second_levels
+          @second_levels.each { |e|
+            sz += e.size(position, parent, index, level)
+          }
+        end
+        if @third_levels
+          @third_levels.each { |e|
+            sz += e.size(position, parent, index, level)
+          }
+        end
+        sz
+      end
 
       def convert(input, output, input_big, output_big, parent, index, level = 1)
         set_convert_type(input, output, input_big, output_big, parent, index)
         convert_fields
-        if level < 3
-          @next_level = []
+        if level == 1
+          @second_levels = []
           @offsets.each { |o|
             if o != -1
               t = self.class::new
               t.convert(input, output, input_big, output_big, self, nil, level+1)
-              @next_level.push t
+              @second_levels.push t
             end
           }
+          @third_levels = []
+          @second_levels.each { |l|
+            l.offsets.each { |o|
+              if o != -1
+                t = self.class::new
+                t.convert(input, output, input_big, output_big, self, nil, level+2)
+                @third_levels.push t
+              end
+            }
+          }
         else
-          @next_level = nil
+          @second_levels = nil
+          @third_levels = nil
         end
         unset_convert_type
       end
@@ -221,17 +254,28 @@ module Bayonetta
       def load(input, input_big, parent, index, level = 1)
         set_load_type(input, input_big, parent, index)
         load_fields
-        if level < 3
-          @next_level = []
+        if level == 1
+          @second_levels = []
           @offsets.each { |o|
             if o != -1
               t = self.class::new
               t.load(input, input_big, self, nil, level+1)
-              @next_level.push t
+              @second_levels.push t
             end
           }
+          @third_levels = []
+          @second_levels.each { |l|
+            l.offsets.each { |o|
+              if o != -1
+                t = self.class::new
+                t.load(input, input_big, self, nil, level+2)
+                @third_levels.push t
+              end
+            }
+          }
         else
-          @next_level = nil
+          @second_levels = nil
+          @third_levels = nil
         end
         unset_load_type
       end
@@ -239,9 +283,14 @@ module Bayonetta
       def dump(output, output_big, parent, index, level = 1)
         set_dump_type(output, output_big, parent, index)
         dump_fields
-        if level < 3
-          @next_level.each { |e|
+        if @second_levels
+          @second_levels.each { |e|
             e.dump(output, output_big, self, nil, level+1)
+          }
+        end
+        if @third_levels
+          @third_levels.each { |e|
+            e.dump(output, output_big, self, nil, level+2)
           }
         end
         unset_dump_type
@@ -387,33 +436,46 @@ module Bayonetta
                    offset: 'header\offset_meshes + meshes_offsets[__iterator]'
 
     def self.convert(input_name, output_name, output_big = false)
-      input = File.open(input_name, "rb")
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
       input_big = validate_endianness(input)
 
-      output = File.open(output_name, "wb")
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
       output.write("\xFB"*input.size)
       output.rewind
 
       wmb = self::new
       wmb.convert(input, output, input_big, output_big)
 
-      input.close
-      output.close
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       wmb
     end
 
     def self.load(input_name)
-      input = File.open(input_name, "rb")
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
       input_big = validate_endianness(input)
 
       wmb = self::new
       wmb.load(input, input_big)
-      input.close
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       wmb
     end
 
     def self.validate_endianness(input)
+      input.rewind
       id = input.read(4).unpack("a4").first
       case id
       when "WMB\0".b
@@ -428,8 +490,11 @@ module Bayonetta
     end
 
     def dump(output_name, output_big = false)
-      output = File.open(output_name, "wb")
-#      output.write("\xFB"*input.size)
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
       output.rewind
 
       set_dump_type(output, output_big, nil, nil)
@@ -443,7 +508,7 @@ module Bayonetta
         output.write("\x00")
       end
 
-      output.close
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
 

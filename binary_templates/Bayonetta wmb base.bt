@@ -220,7 +220,7 @@ typedef struct {
     } batchHeader;
     int32 numBoneRefs;
     if(numBoneRefs > 0) {
-        byte boneRefs[numBoneRefs];
+        uchar boneRefs[numBoneRefs];
     }
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
     uint16 indices[batchHeader.numIndices];

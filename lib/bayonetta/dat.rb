@@ -16,6 +16,12 @@ module Bayonetta
     def initialize(f = nil, big = false)
       @big = big
       if f
+        file_name_input = false
+        unless f.respond_to?(:read) && f.respond_to?(:seek)
+          file_name_input = true
+          f = File::new(f, "rb")
+        end
+
         f.rewind
         uint = get_uint
         @id = f.read(4)
@@ -46,6 +52,7 @@ module Bayonetta
           f.seek(@file_offsets[i])
           of = StringIO::new( f.read(@file_sizes[i]), "rb")
         }
+        f.close if file_name_input
       else
         @id = "DAT\x00".b
         @file_number = 0
