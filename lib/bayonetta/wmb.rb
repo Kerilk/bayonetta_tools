@@ -203,6 +203,8 @@ module Bayonetta
 
     class BoneIndexTranslateTable < DataConverter
       register_field :offsets, :s, count: 16
+      attr_accessor :second_levels
+      attr_accessor :third_levels
       def table
         return (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
       end
