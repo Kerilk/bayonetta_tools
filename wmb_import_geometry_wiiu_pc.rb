@@ -1,5 +1,6 @@
 require 'set'
 require_relative 'lib/bayonetta.rb'
+require 'yaml'
 include Bayonetta
 
 class Bone
@@ -128,7 +129,6 @@ bones2 = get_bone_structure(wmb2)
 #F..ing subtree isomorphism problem
 #mapping = get_bone_mapping(bones2, bones1)
 
-require 'yaml'
 common_mapping = YAML::load_file("Bayonetta2_Bayonetta_common_bones_mapping.yaml")
 #common_bones = YAML::load_file("Bayonetta2_common_bones.yaml")
 #mapping = YAML::load_file("Bayo2_pl0010_Bayo_pl0010_bone_mapping.yaml")
@@ -142,30 +142,68 @@ mapping = mapping.to_a.sort { |e1, e2| e1.first <=> e2.first }.to_h
 missing_bones = mapping.select { |k,v| v.nil? }.collect { |k,v| bones2[k] }
 
 p mapping
-missing_mapping = get_bone_mapping(missing_bones, bones1)
-p missing_mapping
-mapping.update(missing_mapping)
-p mapping
+#missing_mapping = get_bone_mapping(missing_bones, bones1)
+#p missing_mapping
+#mapping.update(missing_mapping)
+#p mapping
 
 #// should have worked, maybe the incomplete translate table is problematic... works in noesis.
 #
-#mapping[-1] = -1
-#missing_bones = mapping.select { |k,v| v.nil? }
-#new_bone_index = wmb1.header.num_bones
-#missing_bones.each { |bi,_|
-#  mapping[bi] = new_bone_index
-#  wmb1.bone_hierarchy.push( mapping[wmb2.bone_hierarchy[bi]] )
-#  wmb1.bone_relative_positions.push( wmb2.bone_relative_positions[bi] )
-#  wmb1.bone_positions.push( wmb2.bone_positions[bi] )
-#  #maybe update translate table, need a safe range of indexes 1000+ maybe
-#  wmb1.bone_infos.push( -1 ) if wmb1.header.offset_bone_infos > 0x0
-#  wmb1.bone_flags.push( 5 ) if wmb1.header.offset_bone_flags > 0x0
-#  new_bone_index += 1
-#}
-#wmb1.header.num_bones = new_bone_index
+mapping[-1] = -1
+missing_bones = mapping.select { |k,v| v.nil? }
+new_bone_index = wmb1.header.num_bones
+new_bone_indexes = []
+missing_bones.each { |bi,_|
+  mapping[bi] = new_bone_index
+  new_bone_indexes.push(new_bone_index)
+  wmb1.bone_hierarchy.push( mapping[wmb2.bone_hierarchy[bi]] )
+  wmb1.bone_relative_positions.push( wmb2.bone_relative_positions[bi] )
+  wmb1.bone_positions.push( wmb2.bone_positions[bi] )
+  #maybe update translate table, need a safe range of indexes 1000+ maybe
+  wmb1.bone_infos.push( -1 ) if wmb1.header.offset_bone_infos > 0x0
+  wmb1.bone_flags.push( 5 ) if wmb1.header.offset_bone_flags > 0x0
+  new_bone_index += 1
+}
+wmb1.header.num_bones = new_bone_index
+missing_bones_count = missing_bones.length
+raise "Too many bones to add!" if missing_bones_count > 0x100
+missing_bones_slots = align(missing_bones_count, 0x10)/0x10
+(align(missing_bones_count, 0x10) - missing_bones_count).times {
+  new_bone_indexes.push(0xfff)
+}
+new_bone_indexes.each_slice(0x10) { |s|
+  tt = WMBFile::BoneIndexTranslateTable::new
+  tt.offsets = s
+  wmb1.bone_index_translate_table.third_levels.push tt
+}
+if wmb1.bone_index_translate_table.second_levels.last.offsets[-missing_bones_slots..-1].uniq == [-1]
+  last_offset = wmb1.bone_index_translate_table.second_levels.last.offsets.reverse.find { |o| o != -1 }
+else
+  last_offset = wmb1.bone_index_translate_table.offsets.reverse.find { |o| o != -1 }
+  last_index = wmb1.bone_index_translate_table.offsets.index(last_offset) + 1
+  raise "No room available in translate table!" if last_index >= 0x10
+  last_offset += 0x10
+  wmb1.bone_index_translate_table.offsets[last_index] = last_offset
+  wmb1.bone_index_translate_table.second_levels.each { |l|
+    l.offsets.collect! { |o|
+      if o != -1
+        last_offset += 0x10
+      else
+        o
+      end
+    }
+  }
+  tt = WMBFile::BoneIndexTranslateTable::new
+  tt.offsets = [-1]*0x10
+  wmb1.bone_index_translate_table.second_levels.push(tt)
+end
+(-missing_bones_slots..-1).each { |i|
+  last_offset += 0x10
+  wmb1.bone_index_translate_table.second_levels.last.offsets[i] = last_offset
+}
 
 
-#p mapping
+p mapping
 #mapping.each_with_index { |i, j|
 #  p = bones2[j]
 #  q = bones1[i]
