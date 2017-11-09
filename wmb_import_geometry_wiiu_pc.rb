@@ -268,7 +268,7 @@ if wmb1.header.offset_tex_infos > 0x0
 end
 
 old_offset = wmb1.header.offset_materials_offsets
-wmb1.header.offset_materials_offsets += align(last_offset, 0x20)
+wmb1.header.offset_materials_offsets = align(last_offset, 0x20)
 delta = wmb1.header.offset_materials_offsets - old_offset
 
 wmb1.header.offset_materials += delta
