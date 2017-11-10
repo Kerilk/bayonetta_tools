@@ -311,10 +311,6 @@ module Bayonetta
       register_field :u_b3, :L
     end
 
-    class MaterialData < DataConverter
-      register_field :datum, :L
-    end
-
     class Material < DataConverter
       register_field :type, :s
       register_field :flag, :S
