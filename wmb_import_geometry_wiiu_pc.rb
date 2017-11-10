@@ -235,6 +235,7 @@ def merge_meshes(wmb1, wmb2)
   }
   wmb2.meshes.each { |m|
     m.batches.each { |b|
+      b.header.batch_id = 0x0
       b.header.vertex_start += new_vertex_offset
       b.header.vertex_end += new_vertex_offset
       b.header.vertex_offset += new_vertex_offset
@@ -244,6 +245,33 @@ def merge_meshes(wmb1, wmb2)
   wmb1.header.num_meshes += wmb2.header.num_meshes
   wmb1.meshes +=  wmb2.meshes
   wmb1.meshes_offsets += new_meshes_offset
+end
+
+def merge_materials(wmb1, wmb2)
+  new_mat_offset = wmb1.header.num_materials
+  mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.size
+  new_materials_offsets = []
+  new_materials = []
+  wmb2.materials.each_with_index { |e, i|
+    #biggest known material
+    new_materials_offsets.push(mat_offset + i*0x124)
+    m = WMBFile::Material::new
+    m.type = 0x0
+    m.flag = 0x0
+    m.material_data = [0x0]*(0x120/4)
+    new_materials.push(m)
+  }
+  wmb2.meshes.each { |m|
+    m.batches.each { |b|
+      b.header.material_id = 0x0#b.header.ex_mat_id + new_mat_offset
+      b.header.ex_mat_id = 0x0
+    }
+  }
+
+
+  wmb1.header.num_materials += wmb2.header.num_materials
+  wmb1.materials += new_materials
+  wmb1.materials_offsets += new_materials_offsets
 end
 
 def recompute_layout(wmb1, wmb2)
@@ -280,14 +308,14 @@ def recompute_layout(wmb1, wmb2)
     last_offset += 4 + wmb1.tex_infos.num_tex_infos * 8
   end
 
-  old_offset = wmb1.header.offset_materials_offsets
-  wmb1.header.offset_materials_offsets = align(last_offset, 0x20)
-  delta = wmb1.header.offset_materials_offsets - old_offset
+  last_offset = wmb1.header.offset_materials_offsets = align(last_offset, 0x20)
+  last_offset += 4*wmb1.header.num_materials
+  last_offset = wmb1.header.offset_materials = align(last_offset, 0x20)
+  last_offset += wmb1.materials.collect(&:size).reduce(&:+)
+  last_offset = wmb1.header.offset_meshes_offsets = align(last_offset, 0x20)
+  last_offset += 4*wmb1.header.num_meshes
+  last_offset = wmb1.header.offset_meshes = align(last_offset, 0x20)
 
-  wmb1.header.offset_materials += delta
-  wmb1.header.offset_meshes_offsets += delta
-
-  wmb1.header.offset_meshes = align(wmb1.header.offset_meshes_offsets + 4*wmb1.header.num_meshes, 0x20)
 end
 
 input_file1 = ARGV[0]
@@ -304,6 +332,8 @@ wmb2 = WMBFile::load(input_file2)
 merge_vertexes(wmb1, wmb2)
 
 merge_bones(wmb1, wmb2)
+
+merge_materials(wmb1, wmb2)
 
 merge_meshes(wmb1, wmb2)
 

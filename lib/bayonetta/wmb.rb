@@ -316,6 +316,10 @@ module Bayonetta
       register_field :flag, :S
       register_field :material_data, :L,
         count: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
+
+      def size(position = 0, parent = nil, index = nil)
+        return 2 + 2 + @material_data.length * 4
+      end
     end
 
     class BatchHeader < DataConverter
