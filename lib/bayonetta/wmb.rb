@@ -319,8 +319,8 @@ module Bayonetta
     end
 
     class BatchHeader < DataConverter
-      register_field :u_a, :s
-      register_field :id, :s
+      register_field :batch_id, :s #Bayo 2
+      register_field :mesh_id, :s
       register_field :u_b, :s
       register_field :ex_mat_id, :s
       register_field :material_id, :C

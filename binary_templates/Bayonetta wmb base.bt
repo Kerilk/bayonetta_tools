@@ -202,7 +202,7 @@ local int j;
 typedef struct {
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
     struct {
-        int16   unknownA;
+        int16   batchIdx <comment="Bayonetta 2">;
         int16   id;
         int16   unknownB;
         int16   exMaterialID;
