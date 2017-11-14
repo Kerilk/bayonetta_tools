@@ -1,7 +1,7 @@
 
 struct {
     int32 recordNumber;
-    float uA[3]
+    float uA[3];
     int16 uB;
     int16 uC;
     float uD[4];

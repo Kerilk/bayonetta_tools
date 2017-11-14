@@ -200,11 +200,10 @@ uint32 meshesOffsets[header.numMeshes];
 
 local int j;
 typedef struct {
-    FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
     struct {
         int16   batchIdx <comment="Bayonetta 2">;
         int16   id;
-        int16   unknownB;
+        uint16   unknownB;
         int16   exMaterialID;
         byte    materialID;
         byte    unknownD;
@@ -224,12 +223,9 @@ typedef struct {
     }
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
     uint16 indices[batchHeader.numIndices];
-    j++;
 } batch;
 
-i=0;
 typedef    struct {
-    FSeek( header.offsetMeshes + meshesOffsets[i] );
     struct {
         int16   id;
         int16   numBatch;
@@ -243,13 +239,17 @@ typedef    struct {
     } meshHeader;
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
     uint32 batchOffsets[meshHeader.numBatch];
-    j = 0;
-    batch batches[meshHeader.numBatch] <optimize=false>;
-    i++;
+    for( j = 0; j < meshHeader.numBatch; j++) {
+        FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] );
+        batch batches;
+    }
 } mesh <read=meshRead>;
 
 string meshRead( mesh &value ) {
     return value.meshHeader.name;
 }
 
-mesh meshes[header.numMeshes] <optimize=false>;
+for( i=0; i<header.numMeshes; i++) {
+    FSeek( header.offsetMeshes + meshesOffsets[i] );
+    mesh meshes;
+}
