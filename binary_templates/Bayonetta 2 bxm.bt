@@ -21,9 +21,11 @@ FSeek( 0x10 );
 void readTree(void) {
     struct {
         local int pos;
+        local int i;
         int16   childNumber;
         int16   firstChildIndex;
-        int32   dataIndex;
+        int16   attributeNumber;
+        int16   dataIndex;
         if (offsets[dataIndex].nameOffset != -1) {
             pos = FTell();
             FSeek( datasOffset + offsets[dataIndex].nameOffset );
@@ -33,11 +35,26 @@ void readTree(void) {
         if (offsets[dataIndex].dataOffset != -1) {
             pos = FTell();
             FSeek( datasOffset + offsets[dataIndex].dataOffset );
-            string data;
+            string element;
             FSeek(pos);
         }
+        for(i = 0; i < attributeNumber; i++) {
+            struct {
+                if (offsets[dataIndex + 1 + i].nameOffset != -1) {
+                    pos = FTell();
+                    FSeek( datasOffset + offsets[dataIndex + 1 + i].nameOffset );
+                    string name;
+                    FSeek(pos);
+                }
+                if (offsets[dataIndex + 1 + i].dataOffset != -1) {
+                    pos = FTell();
+                    FSeek( datasOffset + offsets[dataIndex + 1 + i].dataOffset );
+                    string element;
+                    FSeek(pos);
+                }
+            } attributes;
+        }
         if ( childNumber > 0 ) {
-            local int i;
             pos = FTell();
             for( i = 0; i < childNumber; i++) {
                 FSeek(0x10 + firstChildIndex*8 + i*8);
