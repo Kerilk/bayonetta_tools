@@ -1,0 +1,43 @@
+struct {
+struct {
+    int32   seqCount;
+    uint32  seqOffset <format=hex>;
+} sequenceType[5];
+} header;
+
+FSeek(header.sequenceType[0].seqOffset);
+struct {
+    float ua;
+    float ub;
+    float uc;
+    int32 flags <format=hex>;
+} seqType0[header.sequenceType[0].seqCount];
+
+FSeek(header.sequenceType[1].seqOffset);
+struct {
+    float ua;
+    float ub;
+    int16 uc;
+    char  ud;
+    char  ue;
+    int16 uf;
+    int16 ug;
+    float uh[9];
+} seqType1[header.sequenceType[1].seqCount];
+
+
+FSeek(header.sequenceType[2].seqOffset);
+struct {
+    float ua;
+    int32 ub;
+    int32 uc;
+    int32 flags <format=hex>;
+} seqType2[header.sequenceType[2].seqCount];
+
+FSeek(header.sequenceType[4].seqOffset);
+struct {
+    float ua;
+    float ub;
+    int32 flags1 <format=hex>;
+    int32 flags2 <format=hex>;
+} seqType4[header.sequenceType[4].seqCount];
