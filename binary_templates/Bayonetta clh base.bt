@@ -1,9 +1,18 @@
+int32 clothAtNumber;
 
 struct {
-    int32 recordNumber;
-} header;
-
-struct {
-    int16 uA[2];
-    float uB[8];
-} unknownRecord[header.recordNumber];
+    int16 p1;
+    int16 p2;
+    float weight;
+    float radius;
+    struct {
+        float x;
+        float y;
+        float z;
+    } offset1;
+    struct {
+        float x;
+        float y;
+        float z;
+    } offset1;
+} clothAt[clothAtNumber];
