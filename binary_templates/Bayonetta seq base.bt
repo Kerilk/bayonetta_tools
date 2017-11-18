@@ -7,37 +7,56 @@ struct {
 
 FSeek(header.sequenceType[0].seqOffset);
 struct {
-    float ua;
-    float ub;
-    float uc;
-    int32 flags <format=hex>;
-} seqType0[header.sequenceType[0].seqCount];
+    float StartTime;
+    float EndTime;
+    float Speed;
+    int32 SeqFlag <format=hex>;
+} SpeedTrack[header.sequenceType[0].seqCount];
 
 FSeek(header.sequenceType[1].seqOffset);
 struct {
-    float ua;
-    float ub;
-    int16 uc;
-    char  ud;
-    char  ue;
-    int16 uf;
-    int16 ug;
-    float uh[9];
-} seqType1[header.sequenceType[1].seqCount];
+    float StartTime;
+    float EndTime;
+    int16 AttackNumber;
+    char  Shape;
+    char  Dir;
+    int16 Power;
+    int16 LayerNo;
+    struct {
+        float x;
+        float y;
+        float z;
+    } Offset;
+    struct {
+        float x;
+        float y;
+        float z;
+    } Rot;
+    struct {
+        float x;
+        float y;
+        float z;
+    } Size;
+} AttackTrack[header.sequenceType[1].seqCount];
 
 
 FSeek(header.sequenceType[2].seqOffset);
 struct {
-    float ua;
-    int32 ub;
-    int32 uc;
-    int32 flags <format=hex>;
-} seqType2[header.sequenceType[2].seqCount];
+    float StartTime;
+    int32 Event;
+    int32 PartsNo;
+    int32 Flag <format=hex>;
+} SeTrack[header.sequenceType[2].seqCount];
+
+//Should be EffectTrack, never found one
+FSeek(header.sequenceType[3].seqOffset);
+struct {
+} EffectTrack[header.sequenceType[3].seqCount];
 
 FSeek(header.sequenceType[4].seqOffset);
 struct {
-    float ua;
-    float ub;
-    int32 flags1 <format=hex>;
-    int32 flags2 <format=hex>;
-} seqType4[header.sequenceType[4].seqCount];
+    float StartTime;
+    float EndTime;
+    int32 Flag0 <format=hex>;
+    int32 Flag1 <format=hex>;
+} FlagsTrack[header.sequenceType[4].seqCount];
