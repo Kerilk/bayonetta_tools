@@ -1,0 +1,50 @@
+BigEndian();
+
+struct {
+  char      id[4];
+  uint32    unknown;
+  int16     nodeNumber;
+  int16     dataNumber;
+  uint32    dataSize;
+} header;
+
+
+FSeek(0x10 + 8*header.nodeNumber);
+struct {
+    int16 nameOffset;
+    int16 dataOffset;
+} offsets[header.dataNumber]<hidden=true>;
+
+local uint32 datasOffset = 0x10 + 8*header.nodeNumber + header.dataNumber * 4;
+
+FSeek( 0x10 );
+void readTree(void) {
+    struct {
+        local int pos;
+        int16   childNumber;
+        int16   firstChildIndex;
+        int32   dataIndex;
+        if (offsets[dataIndex].nameOffset != -1) {
+            pos = FTell();
+            FSeek( datasOffset + offsets[dataIndex].nameOffset );
+            string name;
+            FSeek(pos);
+        }
+        if (offsets[dataIndex].dataOffset != -1) {
+            pos = FTell();
+            FSeek( datasOffset + offsets[dataIndex].dataOffset );
+            string data;
+            FSeek(pos);
+        }
+        if ( childNumber > 0 ) {
+            local int i;
+            pos = FTell();
+            for( i = 0; i < childNumber; i++) {
+                FSeek(0x10 + firstChildIndex*8 + i*8);
+                readTree();
+            }
+        }
+    } trees;
+}
+readTree();
+
