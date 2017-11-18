@@ -4,22 +4,22 @@ struct {
 } header;
 
 struct {
-    int32   windType;
-    int32   partsNo;
+    int32   WindType;
+    int32   PartsNo;
     struct {
         float   x;
         float   y;
         float   z;
-    } offset;
+    } Offset;
     struct {
         float   x;
         float   y;
         float   z;
-    } offset2;
-    float radius;
-    float power;
-    float timer;
-    float swingRate;
-    float swingSpeed;
-    float delayMax;
+    } Offset2;
+    float Radius;
+    float Power;
+    float Timer;
+    float SwingRate;
+    float SwingSpd;
+    float DelayMax;
 } clothWind[header.clothWindNumber];
