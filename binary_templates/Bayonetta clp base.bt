@@ -1,17 +1,45 @@
 
 struct {
-    int32 recordNumber;
-    float uA[3];
-    int16 uB;
-    int16 uC;
-    float uD[4];
-    int32 uE;
-    float uF[4];
-    int32 uG;
-    float uH[5];
-} header;
+    int32 m_Num;
+    float m_LimitSpringRate;
+    float m_SpdRate;
+    float m_Stretchy;
+    int16 m_BundleNum;
+    int16 m_BundleNum2;
+    float m_Thick;
+    struct {
+        float x;
+        float y;
+        float z;
+    } m_GravityVec;
+    int32 m_GravityPartsNo;
+    float m_FirstBundleRate;
+    struct {
+        float x;
+        float y;
+        float z;
+    } m_WindVec;
+    int32 m_WindPartsNo;
+    struct {
+        float x;
+        float y;
+        float z;
+    } m_WindOffset;
+    float m_WindSin;
+    float m_HitAdjustRate;
+} clothHeader;
 
 struct {
-    int16 index[6];
-    float val[4];
-} unknownRecord[header.recordNumber];
+    int16 no;
+    int16 noUp;
+    int16 noDown;
+    int16 noSide;
+    int16 noPoly;
+    int16 noFix;
+    float rotLimit;
+    struct {
+        float x;
+        float y;
+        float z;
+    } offset;
+} cloth[clothHeader.m_Num];
