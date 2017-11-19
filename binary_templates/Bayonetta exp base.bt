@@ -1,13 +1,14 @@
 struct {
     char    id[4];
     int32   u_a;
-    int32   u_b;
+    int32   offsetRecord;
     int32   numRecord;
 
 } header;
 
+FSeek(header.offsetRecord);
+
 struct {
-    int32   u_d;
     int16   u_e;
     int16   u_f;
     char    u_g;
@@ -15,7 +16,8 @@ struct {
     char    u_h;
     char    u_i;
     int32   u_j;
-    uint32   offset <format=hex>;
+    uint32  offset <format=hex>;
+    int32   u_d;
 } record[header.numRecord];
 
 local int i;
