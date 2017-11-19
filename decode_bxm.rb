@@ -67,7 +67,7 @@ end
 
 File::open(input_file, "rb") { |f|
   id = f.read(4)
-  raise "Invalid file type #{id}!" unless id == "XML\x00"
+  raise "Invalid file type #{id}!" unless id == "XML\x00" || id == "BXM\x00"
   u = f.read(4).unpack("L>").first
   node_number = f.read(2).unpack("S>").first
   data_number = f.read(2).unpack("S>").first
