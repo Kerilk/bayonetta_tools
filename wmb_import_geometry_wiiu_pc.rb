@@ -247,7 +247,7 @@ def merge_meshes(wmb1, wmb2)
   wmb1.meshes_offsets += new_meshes_offset
 end
 
-def merge_materials(wmb1, wmb2)
+def merge_materials(wmb1, wmb2, tex_map)
   new_mat_offset = wmb1.header.num_materials
   mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.size
   new_materials_offsets = []
@@ -259,11 +259,13 @@ def merge_materials(wmb1, wmb2)
     m.type = 0x0
     m.flag = 0x0
     m.material_data = [0x0]*(0x120/4)
+    m.material_data[0] = (tex_map[e.material_data[0]] ? tex_map[e.material_data[0]] : 0x80000000)
+    m.material_data[1] = (tex_map[e.material_data[3]] ? tex_map[e.material_data[3]] : 0x80000000)
     new_materials.push(m)
   }
   wmb2.meshes.each { |m|
     m.batches.each { |b|
-      b.header.material_id = 0x0#b.header.ex_mat_id + new_mat_offset
+      b.header.material_id = b.header.ex_mat_id + new_mat_offset
       b.header.ex_mat_id = 0x0
     }
   }
@@ -318,6 +320,90 @@ def recompute_layout(wmb1, wmb2)
 
 end
 
+def get_texture_map(tex1, tex2)
+  offset = tex1.each.count
+  tex_map = {}
+  tex2.each.each_with_index { |t,i|
+    info, _ = t
+    _, _, idx = info
+    tex_map[idx] = i+offset
+  }
+  tex_map
+end
+
+class BayoMat
+  attr_reader :code
+  attr_reader :size
+  attr_reader :tex_num
+  attr_reader :lightmap_index
+  attr_reader :normalmap_index
+  attr_reader :second_diffuse_index
+  attr_reader :reflection_index
+  def initialize(code, size, tex_num, lightmap_index, normalmap_index, second_diffuse_index, reflection_index)
+    @code = code
+    @size = size
+    @tex_num = tex_num
+    @lightmap_index = lightmap_index
+    @normalmap_index = normalmap_index
+    @second_diffuse_index = second_diffuse_index
+    @reflexion_index = reflection_index
+  end
+end
+
+def bayo_mat_properties
+  {
+    0x31 => BayoMat::new(0x31, 0xC0, 3,  1, -1, -1, -1),
+    0x32 => BayoMat::new(0x32, 0xE4, 4,  1, -1, -1,  3),
+    0x33 => BayoMat::new(0x33, 0xD4, 4,  2, -1,  1, -1),
+    0x34 => BayoMat::new(0x34, 0xF8, 5,  2, -1,  1,  4),
+    0x38 => BayoMat::new(0x38, 0xD4, 4, -1,  2, -1, -1),
+    0x3A => BayoMat::new(0x3A, 0xD4, 4,  1,  2, -1, -1),
+    0x3C => BayoMat::new(0x3C, 0xD4, 4, -1, -1, -1, -1),
+    0x40 => BayoMat::new(0x40, 0xC4, 4, -1, -1, -1, -1),
+    0x42 => BayoMat::new(0x42, 0xAC, 2, -1, -1, -1, -1),
+    0x44 => BayoMat::new(0x44, 0xE4, 4,  1, -1, -1, -1),
+    0x47 => BayoMat::new(0x47, 0x68, 1, -1, -1, -1, -1),
+    0x48 => BayoMat::new(0x48, 0xC0, 3,  1, -1,  2, -1),
+    0x4A => BayoMat::new(0x4A, 0xD4, 4,  2, -1,  1, -1),
+    0x4B => BayoMat::new(0x4B, 0xD4, 4, -1,  2, -1, -1),
+    0x4C => BayoMat::new(0x4C, 0xAC, 2, -1, -1, -1, -1),
+    0x53 => BayoMat::new(0x53, 0x68, 1, -1, -1, -1, -1),
+    0x54 => BayoMat::new(0x54, 0xD4, 4,  1, -1, -1, -1),
+    0x59 => BayoMat::new(0x59, 0xD4, 4,  1, -1, -1, -1),
+    0x60 => BayoMat::new(0x60, 0x68, 1, -1, -1, -1, -1),
+    0x68 => BayoMat::new(0x68, 0xAC, 2, -1, -1, -1, -1),
+    0x6B => BayoMat::new(0x6B, 0xD0, 3, -1,  1, -1, -1),
+    0x6D => BayoMat::new(0x6D, 0xD0, 3, -1,  1, -1, -1),
+    0x6E => BayoMat::new(0x6E, 0xD4, 4, -1,  1, -1, -1),
+    0x71 => BayoMat::new(0x71, 0xE4, 4,  1, -1, -1, -1),
+    0x72 => BayoMat::new(0x72, 0xD4, 4, -1,  1, -1, -1),
+    0x75 => BayoMat::new(0x75, 0xAC, 2, -1, -1, -1, -1),
+    0x7C => BayoMat::new(0x7C, 0xEA, 4,  1, -1, -1,  3),
+    0x7F => BayoMat::new(0x7F, 0x124,4, -1,  1, -1, -1),
+    0x81 => BayoMat::new(0x81, 0x120,3, -1, -1, -1, -1),
+    0x83 => BayoMat::new(0x83, 0xAC, 2, -1, -1, -1, -1),
+    0x87 => BayoMat::new(0x87, 0xD4, 4, -1,  1, -1, -1),
+    0x89 => BayoMat::new(0x89, 0xC0, 3,  1, -1, -1,  2),
+    0x8F => BayoMat::new(0x8F, 0xD4, 4,  1, -1,  2,  3),
+    0x97 => BayoMat::new(0x97, 0x114,4, -1, -1, -1, -1),
+    0xA1 => BayoMat::new(0xA1, 0xB0, 3,  1, -1, -1, -1),
+    0xA3 => BayoMat::new(0xA3, 0xE4, 4, -1,  1, -1, -1),
+    0xB2 => BayoMat::new(0xB2, 0xD4, 4, -1,  1, -1, -1),
+    0xB3 => BayoMat::new(0xB3, 0x124,4, -1,  1, -1, -1)
+  }
+end
+
+def get_shader_map
+  {
+    "ois00_xbceX" => 0xB3,
+    "ois01_xbweX" => 0x7f,
+    "ois20_xbceX" => 0xB2,
+    "skn03_xbXXX" => 0x87,
+    "alp03_sbXXX" => 0x42,
+    "har01_sbXtX" => 0x84
+  }
+end
+
 input_file1 = ARGV[0]
 input_file2 = ARGV[1]
 
@@ -329,11 +415,17 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb1 = WMBFile::load(input_file1)
 wmb2 = WMBFile::load(input_file2)
 
+
+tex1 = WTBFile::new(File::new(input_file1.gsub(/wmb\z/,"wtb"), "rb"))
+tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wta"), "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
+
+p tex_map = get_texture_map(tex1, tex2)
+
 merge_vertexes(wmb1, wmb2)
 
 merge_bones(wmb1, wmb2)
 
-merge_materials(wmb1, wmb2)
+merge_materials(wmb1, wmb2, tex_map)
 
 merge_meshes(wmb1, wmb2)
 
