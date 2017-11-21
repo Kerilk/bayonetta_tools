@@ -345,6 +345,13 @@ module Bayonetta
       register_field :header, BatchHeader
       register_field :bone_refs, :C, count: 'header\num_bone_ref'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
+
+      def size(position = 0, parent = nil, index = nil)
+        sz = @header.offset_indices
+        sz += @header.num_indices * 2
+        sz
+      end
+
     end
 
     class MeshHeader < DataConverter
@@ -365,6 +372,27 @@ module Bayonetta
                      offset: '__position + header\offset_batch_offsets'
       register_field :batches, Batch, count: 'header\num_batch', sequence: true,
                      offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
+
+      def size(position = 0, parent = nil, index = nil)
+        sz = @header.offset_batch_offsets
+        sz += @header.num_batch * 4
+        sz = align(sz, 0x20)
+        @header.num_batch.times { |i|
+           sz += @batches[i].size
+           sz = align(sz, 0x20)
+        }
+        sz
+      end
+
+      def recompute_layout
+        off = @header.num_batch * 4
+        @header.num_batch.times { |j|
+          off = align(off, 0x20)
+          @batch_offsets[j] = off
+          off += @batches[j].size
+        }
+      end
+
     end
 
     class ShaderName < DataConverter
@@ -512,6 +540,72 @@ module Bayonetta
 
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
+    end
+
+    def recompute_layout
+      last_offset = @header.offset_vertexes
+
+      last_offset += @header.num_vertexes * 32
+      last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20)
+
+      last_offset += @header.num_vertexes * @header.vertex_ex_data_size * 4
+      last_offset = @header.offset_bone_hierarchy = align(last_offset, 0x20)
+
+      last_offset += @header.num_bones * 2
+      last_offset = @header.offset_bone_relative_position = align(last_offset, 0x20)
+
+      last_offset += @header.num_bones * 12
+      last_offset = @header.offset_bone_position = align(last_offset, 0x20)
+
+      last_offset += @header.num_bones * 12
+      last_offset = @header.offset_bone_index_translate_table = align(last_offset, 0x20)
+
+      last_offset += @bone_index_translate_table.size
+      if @header.offset_u_j > 0x0
+        last_offset = @header.offset_u_j = align(last_offset, 0x20)
+        last_offset += @u_j.size
+      end
+      if @header.offset_bone_infos > 0x0
+        last_offset = @header.offset_bone_infos = align(last_offset, 0x20)
+        last_offset += @header.num_bones * 2
+      end
+      if @header.offset_bone_flags > 0x0
+        last_offset = @header.offset_bone_flags = align(last_offset, 0x20)
+        last_offset += @header.num_bones
+      end
+      if @header.offset_shader_names > 0x0
+        last_offset = @header.offset_shader_names = align(last_offset, 0x20)
+        last_offset += @header.num_materials * 16
+      end
+      if @header.offset_tex_infos > 0x0
+        last_offset = @header.offset_tex_infos = align(last_offset, 0x20)
+        last_offset += 4 + @tex_infos.num_tex_infos * 8
+      end
+
+      last_offset = @header.offset_materials_offsets = align(last_offset, 0x20)
+      off = 0
+      @header.num_materials.times { |i|
+        @materials_offsets[i] = off
+        off += @materials[i].size
+        off =  align(off, 0x4)
+      }
+      
+      last_offset += 4*@header.num_materials
+      last_offset = @header.offset_materials = align(last_offset, 0x20)
+
+      last_offset +=  @materials.collect(&:size).reduce(&:+)
+      last_offset = @header.offset_meshes_offsets = align(last_offset, 0x20)
+
+      off = 0
+      @header.num_meshes.times { |i|
+        @meshes[i].recompute_layout
+        @meshes_offsets[i] = off
+        off += @meshes[i].size
+        off = align(off, 0x20)
+      }
+
+      last_offset += 4*@header.num_meshes
+      last_offset = @header.offset_meshes = align(last_offset, 0x20)
     end
 
   end
