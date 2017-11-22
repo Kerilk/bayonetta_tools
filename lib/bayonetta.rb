@@ -1,5 +1,6 @@
 require_relative 'bayonetta/endianness'
 require_relative 'bayonetta/alignment'
+require_relative 'bayonetta/bone'
 require_relative 'bayonetta/data_converter'
 require_relative 'bayonetta/dat'
 require_relative 'bayonetta/eff'

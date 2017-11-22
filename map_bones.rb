@@ -68,6 +68,7 @@ class Bone
 
   def distance(other)
     d = (@x - other.x)**2 + (@y - other.y)**2 + (@z - other.z)**2
+    d = Math::sqrt(d)
     dd = (depth - other.depth).abs
     [d, dd]
   end

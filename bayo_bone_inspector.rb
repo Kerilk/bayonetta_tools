@@ -3,19 +3,6 @@ require 'yaml'
 require_relative 'lib/bayonetta.rb'
 include Bayonetta
 
-def decode_bone_index_translate_table(wmb)
-  table = wmb.bone_index_translate_table.table
-  (0x0..0xfff).each.collect { |i|
-    index = table[(i & 0xf00)>>8]
-    next if index == -1
-    index = table[index + ((i & 0xf0)>>4)]
-    next if index == -1
-    index = table[index + (i & 0xf)]
-    next if index == 0xfff
-    [i, index]
-  }.compact
-end
-
 bone_set = Set::new
 bone_set.merge((0..0xfff).to_a)
 
@@ -29,7 +16,7 @@ ARGV.each { |input_file|
   else
     wmb = WMBFile::load(input_file)
   end
-  tt = decode_bone_index_translate_table(wmb)
+  tt = wmb.bone_index_translate_table.table
   bone_set &= tt.collect{ |mot_index, bone_index| mot_index }
 }
 

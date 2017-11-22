@@ -3,59 +3,6 @@ require_relative 'lib/bayonetta.rb'
 require 'yaml'
 include Bayonetta
 
-class Bone
-  attr_accessor :parent
-  attr_accessor :children
-  attr_accessor :index
-  attr_accessor :x, :y, :z
-  def initialize( x, y, z)
-    @x = x
-    @y = y
-    @z = z
-    @children = []
-  end
-
-  def depth
-    if parent then
-      return parent.depth + 1
-    else
-      return 0
-    end
-  end
-
-  def to_s
-    "<#{@index}#{@parent ? " (#{@parent.index})" : ""}: #{@x}, #{@y}, #{@z}, d: #{depth}>"
-  end
-
-  def inspect
-    to_s
-  end
-
-  def distance(other)
-    d = (@x - other.x)**2 + (@y - other.y)**2 + (@z - other.z)**2
-    dd = (depth - other.depth).abs
-    [d, dd]
-  end
-
-end
-
-
-def get_bone_structure(wmb)
-
-  bones = wmb.bone_positions.collect { |p, i|
-    Bone::new(*([p.x, p.y, p.z].pack("L3").unpack("f3")))
-  }
-  bones.each_with_index { |b, i|
-    if wmb.bone_hierarchy[i] == -1
-      b.parent = nil
-    else
-      b.parent = bones[wmb.bone_hierarchy[i]]
-      bones[wmb.bone_hierarchy[i]].children.push(b)
-    end
-    b.index = i
-  }
-end
-
 def get_bone_mapping(source, target)
   mapping = source.each.collect { |p|
     distance = [Float::INFINITY, Float::INFINITY]
@@ -95,26 +42,13 @@ def get_bone_indexes(vertexes)
   s
 end
 
-def decode_bone_index_translate_table(wmb)
-  table = wmb.bone_index_translate_table.table
-  (0x0..0xfff).each.collect { |i|
-    index = table[(i & 0xf00)>>8]
-    next if index == -1
-    index = table[index + ((i & 0xf0)>>4)]
-    next if index == -1
-    index = table[index + (i & 0xf)]
-    next if index == 0xfff
-    [i, index]
-  }.compact
-end
-
 def merge_bones(wmb1, wmb2)
 
-  tt1 = decode_bone_index_translate_table(wmb1).to_h
-  tt2 = decode_bone_index_translate_table(wmb2).to_h.invert
+  tt1 = wmb1.bone_index_translate_table.table
+  tt2 = wmb2.bone_index_translate_table.table.invert
 
-  bones1 = get_bone_structure(wmb1)
-  bones2 = get_bone_structure(wmb2)
+  bones1 = wmb1.get_bone_structure
+  bones2 = wmb2.get_bone_structure
 
 #works but for the arms
 #F..ing subtree isomorphism problem
@@ -154,42 +88,28 @@ def merge_bones(wmb1, wmb2)
   wmb1.header.num_bones = new_bone_index
 
   missing_bones_count = missing_bones.length
+
   raise "Too many bones to add!" if missing_bones_count > 0x100
-  missing_bones_slots = align(missing_bones_count, 0x10)/0x10
+
+  #missing_bones_slots = align(missing_bones_count, 0x10)/0x10
   (align(missing_bones_count, 0x10) - missing_bones_count).times {
     new_bone_indexes.push(0xfff)
   }
-  new_bone_indexes.each_slice(0x10) { |s|
-    tt = WMBFile::BoneIndexTranslateTable::new
-    tt.offsets = s
-    wmb1.bone_index_translate_table.third_levels.push tt
-  }
-  if wmb1.bone_index_translate_table.second_levels.last.offsets[-missing_bones_slots..-1].uniq == [-1]
-    last_offset = wmb1.bone_index_translate_table.second_levels.last.offsets.reverse.find { |o| o != -1 }
-  else
-    last_offset = wmb1.bone_index_translate_table.offsets.reverse.find { |o| o != -1 }
-    last_index = wmb1.bone_index_translate_table.offsets.index(last_offset) + 1
-    raise "No room available in translate table!" if last_index >= 0x10
-    last_offset += 0x10
-    wmb1.bone_index_translate_table.offsets[last_index] = last_offset
-    wmb1.bone_index_translate_table.second_levels.each { |l|
-      l.offsets.collect! { |o|
-        if o != -1
-          last_offset += 0x10
-        else
-          o
-        end
-      }
-    }
-    tt = WMBFile::BoneIndexTranslateTable::new
-    tt.offsets = [-1]*0x10
-    wmb1.bone_index_translate_table.second_levels.push(tt)
-  end
-  (-missing_bones_slots..-1).each { |i|
-    last_offset += 0x10
-    wmb1.bone_index_translate_table.second_levels.last.offsets[i] = last_offset
-  }
 
+  used_indexes = tt1.keys
+  start_index = nil
+  #find a free range to add new bone data
+  (0x250..(0x1000-new_bone_indexes.size)).step(0x10) { |s_index|
+    if (used_indexes & (s_index..(s_index+new_bone_indexes.size)).to_a) == []
+      start_index = s_index
+      break
+    end
+  }
+  raise "No room available in translate table!" unless start_index
+  new_tt = wmb1.bone_index_translate_table.table.dup
+  new_bone_indexes.each_with_index { |ind, i|
+    new_tt[i+start_index] = ind
+  }
 
 #mapping.each_with_index { |i, j|
 #  p = bones2[j]

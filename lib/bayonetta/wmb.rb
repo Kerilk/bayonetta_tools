@@ -1,3 +1,4 @@
+require 'set'
 module Bayonetta
 
   class WMBFile < DataConverter
@@ -205,9 +206,7 @@ module Bayonetta
       register_field :offsets, :s, count: 16
       attr_accessor :second_levels
       attr_accessor :third_levels
-      def table
-        return (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
-      end
+      attr_accessor :table
 
       def size(position = 0, parent = nil, index = nil)
         sz = super()
@@ -246,6 +245,7 @@ module Bayonetta
               end
             }
           }
+          decode
         else
           @second_levels = nil
           @third_levels = nil
@@ -275,6 +275,7 @@ module Bayonetta
               end
             }
           }
+          decode
         else
           @second_levels = nil
           @third_levels = nil
@@ -282,8 +283,60 @@ module Bayonetta
         unset_load_type
       end
 
+      def decode
+        t = (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
+        @table = (0x0..0xfff).each.collect { |i|
+          index = t[(i & 0xf00)>>8]
+          next if index == -1
+          index = t[index + ((i & 0xf0)>>4)]
+          next if index == -1
+          index = t[index + (i & 0xf)]
+          next if index == 0xfff
+          [i, index]
+        }.compact.to_h
+      end
+      private :decode
+
+      def encode
+        keys = @table.keys.sort
+        first_table = 16.times.collect { |i|
+          lower = i*0x100
+          upper = (i+1)*0x100
+          keys.select { |k|  k >= lower && k < upper }
+        }
+        off = 0x0
+        @offsets = first_table.collect { |e| e == [] ? -1 : (off += 0x10) }
+
+        second_table = first_table.select { |e| e != [] }.collect { |e|
+          16.times.collect { |i|
+            lower = i*0x10
+            upper = (i+1)*0x10
+            e.select { |k|  (k&0xff) >= lower && (k&0xff) < upper }
+          }
+        }
+        @second_levels = second_table.collect { |st|
+          tab = BoneIndexTranslateTable::new
+          tab.offsets = st.collect { |e| e == [] ? -1 : (off += 0x10) }
+          tab
+        }
+        @third_levels = []
+        second_table.each { |e|
+          e.select { |ee| ee != [] }.each { |ee|
+            tab = BoneIndexTranslateTable::new
+            tab.offsets = [0xfff]*16
+            ee.each { |k|
+              tab.offsets[k&0xf] = @table[k]
+            }
+            @third_levels.push tab
+          }
+        }
+        self
+      end
+      private :encode
+
       def dump(output, output_big, parent, index, level = 1)
         set_dump_type(output, output_big, parent, index)
+        encode if level == 1
         dump_fields
         if @second_levels
           @second_levels.each { |e|
@@ -540,6 +593,28 @@ module Bayonetta
 
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
+    end
+
+    def get_bone_structure
+      bones = @bone_positions.collect { |p|
+        Bone::new(*([p.x, p.y, p.z].pack("L3").unpack("f3")))
+      }
+      bones.each_with_index { |b, i|
+        if @bone_hierarchy[i] == -1
+          b.parent = nil
+        else
+          b.parent = bones[@bone_hierarchy[i]]
+          bones[@bone_hierarchy[i]].children.push(b)
+        end
+        b.index = i
+      }
+    end
+
+
+    def cleanup_bones
+      used_bones = Set[]
+      @meshes.each { |m|
+      }
     end
 
     def recompute_layout
