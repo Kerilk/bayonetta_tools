@@ -200,6 +200,39 @@ module Bayonetta
       register_field :x, :L
       register_field :y, :L
       register_field :z, :L
+
+      def xf
+        [@x].pack("L").unpack("f").first
+      end
+
+      def yf
+        [@y].pack("L").unpack("f").first
+      end
+
+      def zf
+        [@z].pack("L").unpack("f").first
+      end
+
+      def xf=(val)
+        @x = [val].pack("f").unpack("L").first
+      end
+
+      def yf=(val)
+        @y = [val].pack("f").unpack("L").first
+      end
+
+      def zf=(val)
+        @z = [val].pack("f").unpack("L").first
+      end
+
+      def -(other)
+        b = BonePosition::new
+        b.xf = xf - other.xf
+        b.yf = yf - other.yf
+        b.zf = zf - other.zf
+        b
+      end
+
     end
 
     class BoneIndexTranslateTable < DataConverter
@@ -597,7 +630,7 @@ module Bayonetta
 
     def get_bone_structure
       bones = @bone_positions.collect { |p|
-        Bone::new(*([p.x, p.y, p.z].pack("L3").unpack("f3")))
+        Bone::new(p)
       }
       bones.each_with_index { |b, i|
         if @bone_hierarchy[i] == -1
@@ -607,7 +640,36 @@ module Bayonetta
           bones[@bone_hierarchy[i]].children.push(b)
         end
         b.index = i
+        b.relative_position = @bone_relative_positions[i]
+        b.info = @bone_infos[i] if @header.offset_bone_infos > 0x0
+        b.flag = @bone_flags[i] if @header.offset_bone_flags > 0x0
       }
+    end
+
+    def set_bone_structure(bones)
+      @bone_hierarchy = []
+      @bone_relative_positions = []
+      @bone_positions = []
+      @bone_infos = [] if @header.offset_bone_infos > 0x0
+      @bone_flags = [] if @header.offset_bone_flags > 0x0
+      bones.each { |b|
+        p_index = -1
+        p_index = b.parent.index if b.parent
+        @bone_hierarchy.push p_index
+        @bone_positions.push b.position
+        rel_position = b.relative_position
+        unless rel_position
+          if b.parent
+            rel_position = b.position - b.parent.position
+          else
+            rel_position = b.position
+          end
+        end
+        @bone_relative_positions.push rel_position
+        @bone_infos.push b.info if @header.offset_bone_infos > 0x0
+        @bone_flags.push b.flag if @header.offset_bone_flags > 0x0
+      }
+      self
     end
 
 

@@ -4,12 +4,18 @@ module Bayonetta
     attr_accessor :parent
     attr_accessor :children
     attr_accessor :index
-    attr_accessor :x, :y, :z
-    def initialize( x, y, z)
-      @x = x
-      @y = y
-      @z = z
+    attr_accessor :position
+    attr_accessor :relative_position
+    attr_accessor :info
+    attr_accessor :flag
+    def initialize( position)
+      @position = position
       @children = []
+      @parent = nil
+      @relative_position = nil
+      @info = nil
+      @flag = nil
+      @index = nil
     end
 
     def depth
@@ -29,9 +35,17 @@ module Bayonetta
     end
 
     def distance(other)
-      d = (@x - other.x)**2 + (@y - other.y)**2 + (@z - other.z)**2
+      d = (@position.xf - other.position.xf)**2 +
+          (@position.yf - other.position.yf)**2 +
+          (@position.zf - other.position.zf)**2
+      d = Math::sqrt(d)
       dd = (depth - other.depth).abs
       [d, dd]
+    end
+
+    def parents
+      return [] unless parent
+      return [parent] + parent.parents
     end
 
   end
