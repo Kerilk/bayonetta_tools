@@ -237,9 +237,15 @@ module Bayonetta
 
     class BoneIndexTranslateTable < DataConverter
       register_field :offsets, :s, count: 16
-      attr_accessor :second_levels
-      attr_accessor :third_levels
-      attr_accessor :table
+      #attr_accessor :second_levels
+      #attr_accessor :third_levels
+      attr_reader :table
+
+      def table=(t)
+        @table = t
+        encode
+        t
+      end
 
       def size(position = 0, parent = nil, index = nil)
         sz = super()
@@ -669,6 +675,7 @@ module Bayonetta
         @bone_infos.push b.info if @header.offset_bone_infos > 0x0
         @bone_flags.push b.flag if @header.offset_bone_flags > 0x0
       }
+      @header.num_bones = bones.size
       self
     end
 
@@ -676,7 +683,38 @@ module Bayonetta
     def cleanup_bones
       used_bones = Set[]
       @meshes.each { |m|
+        m.batches.each { |b|
+          used_bones.merge b.bone_refs
+        }
       }
+      bones = get_bone_structure
+      used_bones.to_a.each { |bi|
+        used_bones.merge bones[bi].parents.collect(&:index)
+      }
+      used_bones_array = used_bones.to_a.sort
+      bone_map = used_bones_array.each_with_index.collect.to_h
+      new_bones = used_bones_array.collect { |bi|
+        b = bones[bi].dup
+        b.index = bone_map[b.index]
+        b
+      }
+      new_bones.each { |b|
+        b.parent = new_bones[bone_map[b.parent.index]] if b.parent
+      }
+      set_bone_structure(new_bones)
+
+      table = @bone_index_translate_table.table
+      new_table = table.select { |k,v|
+        used_bones.include? v
+      }
+      new_table = new_table.collect { |k, v| [k, bone_map[v]] }.to_h
+      @bone_index_translate_table.table = new_table
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.bone_refs.collect! { |bi| bone_map[bi] }
+        }
+      }
+      self
     end
 
     def recompute_layout

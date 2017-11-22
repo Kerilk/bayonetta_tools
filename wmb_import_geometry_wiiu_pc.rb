@@ -64,8 +64,8 @@ def merge_bones(wmb1, wmb2)
     mapping[key] = tt1[common_mapping[val]]
   }
   mapping = mapping.to_a.sort { |e1, e2| e1.first <=> e2.first }.to_h
-  missing_bones = mapping.select { |k,v| v.nil? }.collect { |k,v| bones2[k] }
 
+#missing_bones = mapping.select { |k,v| v.nil? }.collect { |k,v| bones2[k] }
 #missing_mapping = get_bone_mapping(missing_bones, bones1)
 #p missing_mapping
 #mapping.update(missing_mapping)
@@ -73,19 +73,22 @@ def merge_bones(wmb1, wmb2)
 
   mapping[-1] = -1
   missing_bones = mapping.select { |k,v| v.nil? }
-  new_bone_index = wmb1.header.num_bones
+  new_bone_index = bones1.size
   new_bone_indexes = []
   missing_bones.each { |bi,_|
     mapping[bi] = new_bone_index
     new_bone_indexes.push(new_bone_index)
-    wmb1.bone_hierarchy.push( mapping[wmb2.bone_hierarchy[bi]] )
-    wmb1.bone_relative_positions.push( wmb2.bone_relative_positions[bi] )
-    wmb1.bone_positions.push( wmb2.bone_positions[bi] )
-    wmb1.bone_infos.push( -1 ) if wmb1.header.offset_bone_infos > 0x0
-    wmb1.bone_flags.push( 5 ) if wmb1.header.offset_bone_flags > 0x0
+
+    b = bones2[bi].dup
+    b.index = new_bone_index
+    b.parent = bones1[mapping[b.parent.index]] if b.parent
+    b.info = b.info ? b.info : -1
+    b.flag = b.flag ? b.flag : 5
+
+    bones1.push b
     new_bone_index += 1
   }
-  wmb1.header.num_bones = new_bone_index
+  wmb1.set_bone_structure(bones1)
 
   missing_bones_count = missing_bones.length
 
