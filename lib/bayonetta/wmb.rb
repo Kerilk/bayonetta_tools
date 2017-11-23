@@ -717,6 +717,29 @@ module Bayonetta
       self
     end
 
+    def cleanup_vertexes
+      used_vertex_indexes = []
+      @meshes.each { |m|
+        m.batches.each { |b|
+          used_vertex_indexes += (b.header.vertex_start...b.header.vertex_end).to_a
+        }
+      }
+      used_vertex_indexes = used_vertex_indexes.sort.uniq
+      @vertexes = used_vertex_indexes.collect { |i| @vertexes[i] }
+      @vertexes_ex_data = used_vertex_indexes.collect { |i| @vertexes_ex_data[i] }
+      @header.num_vertexes = @vertexes.size
+      vertex_map = used_vertex_indexes.each_with_index.to_h
+      @meshes.each { |m|
+        m.batches.each { |b|
+          offset = vertex_map[b.header.vertex_start] - b.header.vertex_start
+          b.header.vertex_start += offset
+          b.header.vertex_end += offset
+          b.header.vertex_offset += offset
+        }
+      }
+      self
+    end
+
     def recompute_layout
       last_offset = @header.offset_vertexes
 
