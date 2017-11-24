@@ -428,7 +428,7 @@ module Bayonetta
       register_field :primitive_type, :l
       register_field :offset_indices, :L
       register_field :num_indices, :l
-      register_field :vertex_offset, :L
+      register_field :vertex_offset, :l
       register_field :u_f, :l, count: 7
       register_field :num_bone_ref, :l
     end

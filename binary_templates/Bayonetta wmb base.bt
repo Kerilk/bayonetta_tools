@@ -214,7 +214,7 @@ typedef struct {
         int32   primitiveType;
         uint32  offsetIndices;
         int32   numIndices;
-        uint32  vertexOffset;
+        int32  vertexOffset;
         int32   unknownF[7];
     } batchHeader;
     int32 numBoneRefs;
