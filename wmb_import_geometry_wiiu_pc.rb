@@ -54,7 +54,7 @@ def merge_bones(wmb1, wmb2)
 #F..ing subtree isomorphism problem
 #mapping = get_bone_mapping(bones2, bones1)
 
-  common_mapping = YAML::load_file("Bayonetta2_Bayonetta_common_bones_mapping.yaml")
+  common_mapping = YAML::load_file("bayo2_bayo_combat_head_bone_map.yaml")
 #common_bones = YAML::load_file("Bayonetta2_common_bones.yaml")
 #mapping = YAML::load_file("Bayo2_pl0010_Bayo_pl0010_bone_mapping.yaml")
 
