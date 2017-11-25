@@ -113,6 +113,7 @@ def merge_bones(wmb1, wmb2)
   new_bone_indexes.each_with_index { |ind, i|
     new_tt[i+start_index] = ind
   }
+  wmb1.bone_index_translate_table.table = new_tt
 
 #mapping.each_with_index { |i, j|
 #  p = bones2[j]
