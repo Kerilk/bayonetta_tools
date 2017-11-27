@@ -13,6 +13,32 @@ module Bayonetta
     }
     ALIGNMENTS.default = 0x10
 
+    def self.is_big?(f)
+      f.rewind
+      f.size
+      block = lambda { |int|
+        id = f.read(4)
+        raise "Invalid id #{id.inspect}!" if id != "DAT\0".b
+        file_number = f.read(4).unpack(int).first
+        file_offsets_offset = f.read(4).unpack(int).first
+        file_extensions_offset = f.read(4).unpack(int).first
+        file_names_offset = f.read(4).unpack(int).first
+        file_sizes_offset = f.read(4).unpack(int).first
+
+        ( file_number > 0 ) &&
+        ( file_offsets_offset > 0 ) && ( file_offsets_offset < f.size ) &&
+        ( file_extensions_offset > 0 ) && ( file_extensions_offset < f.size ) &&
+        ( file_names_offset > 0 ) && ( file_names_offset < f.size - 4 ) &&
+        ( file_sizes_offset > 0 ) && ( file_sizes_offset < f.size )
+      }
+      big = block.call("l>")
+      f.rewind
+      small = block.call("l<")
+      f.rewind
+      raise "Invalid data!" unless big ^ small
+      return big
+    end
+
     def initialize(f = nil, big = false)
       @big = big
       if f
@@ -21,6 +47,7 @@ module Bayonetta
           file_name_input = true
           f = File::new(f, "rb")
         end
+        @big = DATFile.is_big?(f)
 
         f.rewind
         uint = get_uint
