@@ -5,15 +5,20 @@ directory = File.dirname(filename)
 name = File.basename(filename)
 ext_name = File.extname(name)
 
-raise "Invalid file (#{name})!" unless ext_name == ".wta"
+raise "Invalid file (#{name})!" unless ext_name == ".wta" ||  ext_name == ".wtb"
 
 f = File::open(filename, "rb")
 
 Dir.chdir(directory)
 tex_name = File.basename(name, ext_name)
-wtp_name = tex_name + ".wtp"
-f_wtp = File::open(wtp_name, "rb")
-dir_name = tex_name + "_wta"
+if ext_name == ".wta"
+  wtp_name = tex_name + ".wtp"
+  f_wtp = File::open(wtp_name, "rb")
+  dir_name = tex_name + "_wta"
+else
+  f_wtp = nil
+  dir_name = tex_name + "_wtb"
+end
 Dir.mkdir(dir_name) unless Dir.exist?(dir_name)
 Dir.chdir(dir_name)
 
