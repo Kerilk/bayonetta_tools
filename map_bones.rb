@@ -1,3 +1,4 @@
+#!ruby
 require 'ffi'
 require 'win32-mmap'
 require 'float-formats'

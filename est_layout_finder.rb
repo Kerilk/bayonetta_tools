@@ -1,3 +1,4 @@
+#!ruby
 require 'yaml'
 require_relative 'lib/bayonetta'
 

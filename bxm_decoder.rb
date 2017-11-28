@@ -1,3 +1,4 @@
+#!ruby
 require 'nokogiri'
 
 input_file = ARGV[0]

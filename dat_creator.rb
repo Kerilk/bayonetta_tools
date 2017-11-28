@@ -1,3 +1,4 @@
+#!ruby
 require_relative 'lib/bayonetta'
 
 input_dir = ARGV[0]

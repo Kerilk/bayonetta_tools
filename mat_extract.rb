@@ -1,3 +1,4 @@
+#!ruby
 puts ARGV[0]
 i = 0
 HEADER_SIZE = 4

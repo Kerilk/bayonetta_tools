@@ -1,3 +1,4 @@
+#!ruby
 require_relative 'lib/bayonetta'
 
 filename = ARGV[0]
