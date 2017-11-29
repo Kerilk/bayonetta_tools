@@ -740,6 +740,18 @@ module Bayonetta
       self
     end
 
+    def remove_batch_vertex_offsets
+      @meshes.each { |m|
+        m.batches.each { |b|
+          offset = b.header.vertex_offset
+          b.indices.collect! { |index|
+            index + offset
+          }
+          b.header.vertex_offset = 0
+        }
+      }
+    end
+
     def recompute_layout
       last_offset = @header.offset_vertexes
 
