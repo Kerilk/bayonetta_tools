@@ -25,4 +25,4 @@ LittleEndian();
 char id[4] <hidden=true>;
 Assert( Memcmp("WMB\0", id, 4) == 0, "Wrong file type");
 FSeek(0);
-#include "bayonetta wmb base.bt"
+#include "Bayonetta wmb base.bt"
