@@ -1,0 +1,47 @@
+BigEndian();
+
+struct {
+    char id[4];
+    uint32 recordCount;
+    uint32 recordOffsetsOffset <format=hex>;
+    uint32 typeOffset <format=hex>;
+    uint32 typeEndOffset <format=hex>;
+    uint32 u_a;
+    uint32 u_b;
+} header;
+
+FSeek(header.recordOffsetsOffset);
+uint32 offsets[header.recordCount];
+
+FSeek(header.typeOffset);
+struct {
+    uint32 u_a;
+    char id[4];
+    uint32 size;
+    uint32 offset;
+} types[23*header.recordCount];
+
+typedef struct {
+    int16   u_a;
+    int16   u_b;
+    uint32  u_c;
+    uint32  u_d;
+    int16   u_e[8];
+    uint32  uf[9];
+} part_s;
+
+local int i;
+local int j;
+for ( i=0; i<header.recordCount; i++ ) {
+    FSeek(offsets[i]);
+    struct {
+        for ( j=0; j<23; j++ ) {
+            if (types[23*i + j].size > 0) {
+                FSeek(offsets[i] + types[23*i + j].offset);
+                if ( Strncmp( types[23*i + j].id, "TRAP", 4 ) == 0 ) {
+                    part_s part;
+                }
+            }
+        }
+    } record;
+}
