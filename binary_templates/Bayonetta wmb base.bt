@@ -203,7 +203,7 @@ typedef struct {
     struct {
         int16   batchIdx <comment="Bayonetta 2">;
         int16   id;
-        uint16   unknownB;
+        uint16   unknownB <format=hex>;
         int16   exMaterialID;
         byte    materialID;
         byte    unknownD;
@@ -232,7 +232,7 @@ typedef    struct {
         int16   unknownA1;
         int16   unknownA2;
         uint32  offsetBatchOffsets;
-        int32   unknownB;
+        int32   unknownB <format=hex>;
         int32   unknownC[4];
         char    name[32];
         float   mat[12];
