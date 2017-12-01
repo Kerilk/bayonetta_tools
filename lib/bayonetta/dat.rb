@@ -25,7 +25,7 @@ module Bayonetta
         file_names_offset = f.read(4).unpack(int).first
         file_sizes_offset = f.read(4).unpack(int).first
 
-        ( file_number > 0 ) &&
+        ( file_number >= 0 ) &&
         ( file_offsets_offset > 0 ) && ( file_offsets_offset < f.size ) &&
         ( file_extensions_offset > 0 ) && ( file_extensions_offset < f.size ) &&
         ( file_names_offset > 0 ) && ( file_names_offset < f.size - 4 ) &&
