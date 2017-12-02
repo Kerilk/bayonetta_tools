@@ -1,4 +1,5 @@
 #!ruby
+require 'optparse'
 require 'set'
 require_relative 'lib/bayonetta.rb'
 require 'yaml'
@@ -55,7 +56,11 @@ def merge_bones(wmb1, wmb2)
 #F..ing subtree isomorphism problem
 #mapping = get_bone_mapping(bones2, bones1)
 
-  common_mapping = YAML::load_file("bayo2_bayo_sleeves_bone_mapping.yaml")
+  if $options[:bone_map]
+    common_mapping = YAML::load_file( $options[:bone_map] )
+  else
+    common_mapping = {}
+  end
 #common_bones = YAML::load_file("Bayonetta2_common_bones.yaml")
 #mapping = YAML::load_file("Bayo2_pl0010_Bayo_pl0010_bone_mapping.yaml")
 
@@ -331,6 +336,22 @@ end
 
 input_file1 = ARGV[0]
 input_file2 = ARGV[1]
+
+$options = {}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: wmb_import_geometry_wiiu_pc.rb target_file source_file [options]"
+
+  opts.on("-bFILE", "--bone-map=FILE", "Bone map") do |bone_map|
+    options[:bone_map] = bone_map
+  end
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+end.parse!
 
 raise "Invalid file #{input_file1}" unless File::file?(input_file1)
 raise "Invalid file #{input_file2}" unless File::file?(input_file2)
