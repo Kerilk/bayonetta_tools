@@ -343,7 +343,7 @@ OptionParser.new do |opts|
   opts.banner = "Usage: wmb_import_geometry_wiiu_pc.rb target_file source_file [options]"
 
   opts.on("-bFILE", "--bone-map=FILE", "Bone map") do |bone_map|
-    options[:bone_map] = bone_map
+    $options[:bone_map] = bone_map
   end
 
   opts.on("-h", "--help", "Prints this help") do
