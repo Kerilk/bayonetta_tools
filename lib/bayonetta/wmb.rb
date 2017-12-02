@@ -564,6 +564,7 @@ module Bayonetta
         input = File.open(input_name, "rb")
       end
       input_big = validate_endianness(input)
+      @__was_big = input_big
 
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
@@ -588,12 +589,17 @@ module Bayonetta
         input = File.open(input_name, "rb")
       end
       input_big = validate_endianness(input)
+      @__was_big = input_big
 
       wmb = self::new
       wmb.load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       wmb
+    end
+
+    def was_big?
+      @__was_big
     end
 
     def self.validate_endianness(input)
