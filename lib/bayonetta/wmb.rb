@@ -417,12 +417,12 @@ module Bayonetta
     class BatchHeader < DataConverter
       register_field :batch_id, :s #Bayo 2
       register_field :mesh_id, :s
-      register_field :u_b, :s
+      register_field :u_b, :S
       register_field :ex_mat_id, :s
       register_field :material_id, :C
       register_field :u_d, :c
-      register_field :u_e1, :c
-      register_field :u_e2, :c
+      register_field :u_e1, :C
+      register_field :u_e2, :C
       register_field :vertex_start, :L
       register_field :vertex_end, :L
       register_field :primitive_type, :l
