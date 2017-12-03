@@ -164,18 +164,18 @@ def merge_meshes(wmb1, wmb2)
     e + mesh_offset
   }
   wmb2.meshes.each_with_index { |m, i|
-    m.id = i + wmb1.header.num_meshes
+    m.header.id = i + wmb1.header.num_meshes
     m.batches.each { |b|
-      b.id = m.id
+      b.header.mesh_id = m.header.id
       b.header.batch_id = 0x0
-      if b.u_b == 0x81
-        b.u_b = 0x8001
+      if b.header.u_b == 0x81
+        b.header.u_b = 0x8001
       end
-      if b.u_e1 == 0x10
-        b.u_e1 = 0x0
-      elsif b.u_e1 == 0x30
-        b.u_e1 = 0x20
-        b.u_e2 = 0x0f
+      if b.header.u_e1 == 0x10
+        b.header.u_e1 = 0x0
+      elsif b.header.u_e1 == 0x30
+        b.header.u_e1 = 0x20
+        b.header.u_e2 = 0x0f
       end
       b.header.vertex_start += new_vertex_offset
       b.header.vertex_end += new_vertex_offset

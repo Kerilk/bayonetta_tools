@@ -748,9 +748,9 @@ module Bayonetta
 
     def renumber_batches
       @meshes.each_with_index { |m, i|
-        m.id = i
+        m.header.id = i
         m.batches.each { |b|
-          b.id = i
+          b.header.mesh_id = i
         }
       }
     end
