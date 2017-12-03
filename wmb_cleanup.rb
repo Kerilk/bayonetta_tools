@@ -39,5 +39,6 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb = WMBFile::load(input_file)
 wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]
+wmb.renumber_batches
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )

@@ -746,6 +746,15 @@ module Bayonetta
       self
     end
 
+    def renumber_batches
+      @meshes.each_with_index { |m, i|
+        m.id = i
+        m.batches.each { |b|
+          b.id = i
+        }
+      }
+    end
+
     def remove_batch_vertex_offsets
       @meshes.each { |m|
         m.batches.each { |b|
