@@ -767,6 +767,14 @@ module Bayonetta
       }
     end
 
+    def fix_ex_data
+      @vertexes.each_with_index { |v, i|
+        @vertexes_ex_data[i].unknown = 0xffc0c0c0
+        @vertexes_ex_data[i].u = v.u
+        @vertexes_ex_data[i].v = v.v
+      }
+    end
+
     def recompute_layout
       last_offset = @header.offset_vertexes
 

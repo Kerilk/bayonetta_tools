@@ -6,6 +6,8 @@ include Bayonetta
 $options = {
   :vertexes => true,
   :bones => false,
+  :offsets => false,
+  :fix => false,
   :swap => nil
 }
 
@@ -18,6 +20,14 @@ OptionParser.new do |opts|
 
   opts.on("-v", "--[no-]vertexes", "Cleanup vertexes") do |vertexes|
     $options[:vertexes] = vertexes
+  end
+
+  opts.on("-o", "--[no-]remove-batch-offsets", "Remove batch vertex offsets") do |o|
+    $options[:offsets] = o
+  end
+
+  opts.on("-f", "--[no-]fix-ex-data", "Put normal map u v in ex data") do |fix|
+    $options[:fix] = fix
   end
 
   opts.on("-e", "--swap-endianness", "Swap endianness") do |swap|
@@ -39,6 +49,8 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb = WMBFile::load(input_file)
 wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]
+wmb.remove_batch_vertex_offsets if $options[:offsets]
+wmb.fix_ex_data if $options[:fix]
 wmb.renumber_batches
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
