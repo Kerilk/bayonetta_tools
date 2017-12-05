@@ -685,18 +685,8 @@ module Bayonetta
       self
     end
 
-
-    def cleanup_bones
-      used_bones = Set[]
-      @meshes.each { |m|
-        m.batches.each { |b|
-          used_bones.merge b.bone_refs
-        }
-      }
+    def restrict_bones(used_bones)
       bones = get_bone_structure
-      used_bones.to_a.each { |bi|
-        used_bones.merge bones[bi].parents.collect(&:index)
-      }
       used_bones_array = used_bones.to_a.sort
       bone_map = used_bones_array.each_with_index.collect.to_h
       new_bones = used_bones_array.collect { |bi|
@@ -720,6 +710,28 @@ module Bayonetta
           b.bone_refs.collect! { |bi| bone_map[bi] }
         }
       }
+      self
+    end
+    private :restrict_bones
+
+    def delete_bones(list)
+      used_bones = (@header.num_bones.times.to_a - list)
+      restrict_bones(used_bones)
+      self
+    end
+
+    def cleanup_bones
+      used_bones = Set[]
+      @meshes.each { |m|
+        m.batches.each { |b|
+          used_bones.merge b.bone_refs
+        }
+      }
+      bones = get_bone_structure
+      used_bones.to_a.each { |bi|
+        used_bones.merge bones[bi].parents.collect(&:index)
+      }
+      restrict_bones(used_bones)
       self
     end
 

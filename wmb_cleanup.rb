@@ -1,11 +1,13 @@
 #!ruby
 require 'optparse'
+require 'yaml'
 require_relative 'lib/bayonetta.rb'
 include Bayonetta
 
 $options = {
   :vertexes => true,
   :bones => false,
+  :delete_bones => nil,
   :offsets => false,
   :fix => false,
   :swap => nil
@@ -34,6 +36,10 @@ OptionParser.new do |opts|
     $options[:swap] = swap
   end
 
+  opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
+    $options[:delete_bones] = eval(bone_list).to_a
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -51,6 +57,7 @@ wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
+wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.renumber_batches
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
