@@ -19,7 +19,13 @@ struct {
     float Radius;
     float Power;
     float Timer;
-    float SwingRate;
-    float SwingSpd;
-    float DelayMax;
-} clothWind[header.clothWindNumber];
+    if( WindType == 0 ) {
+        float SwingRate;
+        float SwingSpd;
+        float DelayMax;
+    } else {
+        float RotMax;
+        float RotSpd;
+        float RotType;
+    }
+} clothWind[header.clothWindNumber] <optimize=false>;
