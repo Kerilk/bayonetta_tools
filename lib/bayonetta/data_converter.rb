@@ -13,7 +13,28 @@ module Bayonetta
       :s => 2,
       :S => 2,
       :l => 4,
-      :L => 4
+      :L => 4,
+      :F => 4
+    }
+    DATA_ENDIAN = {
+      true => {
+        :c => "c",
+        :C => "C",
+        :s => "s>",
+        :S => "S>",
+        :l => "l>",
+        :L => "L>",
+        :F => "g"
+      },
+      false => {
+        :c => "c",
+        :C => "C",
+        :s => "s<",
+        :S => "S<",
+        :l => "l<",
+        :L => "L<",
+        :F => "e"
+      }
     }
     attr_reader :__parent
     attr_reader :__index
@@ -90,6 +111,34 @@ module Bayonetta
     def self.register_field(field, type, count: nil, offset: nil, sequence: false, condition: nil)
       @fields.push([field, type, count, offset, sequence, condition])
       attr_accessor field
+    end
+
+    def self.int8( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :c, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.uint8( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :C, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.int16( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :s, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.uint16( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :S, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.int32( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :l, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.uint32( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :L, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.float( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :F, count: count, offset: offset, sequence: sequence, condition: condition)
     end
 
     def decode_symbol(sym)
@@ -220,8 +269,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{type}"
-      t << "#{@input_big ? ">" : "<"}" if DATA_SIZES[type] > 1
+      t = "#{DATA_ENDIAN[@input_big][type]}"
       vs = c.times.collect { |it|
         @__iterator = it
         if sequence
@@ -258,8 +306,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{type}"
-      t << "#{@input_big ? ">" : "<"}" if DATA_SIZES[type] > 1
+      t = "#{DATA_ENDIAN[@input_big][type]}"
       vs = c.times.collect { |it|
         @__iterator = it
         if sequence
@@ -290,8 +337,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{type}"
-      t << "#{@output_big ? ">" : "<"}" if DATA_SIZES[type] > 1
+      t = "#{DATA_ENDIAN[@output_big][type]}"
       vs = [vs] unless count
       vs.each_with_index { |v, it|
         @__iterator = it

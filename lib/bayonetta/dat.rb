@@ -15,7 +15,6 @@ module Bayonetta
 
     def self.is_big?(f)
       f.rewind
-      f.size
       block = lambda { |int|
         id = f.read(4)
         raise "Invalid id #{id.inspect}!" if id != "DAT\0".b
