@@ -1,0 +1,128 @@
+module Bayonetta
+
+  class CLPFile < DataConverter
+
+    class FVector < DataConverter
+      float :x
+      float :y
+      float :z
+    end
+
+    class Header < DataConverter
+      int32 :num
+      float :limit_spring_rate
+      float :spd_rate
+      float :stretchy
+      int16 :bundle_num
+      int16 :bundle_num_2
+      float :thick
+      register_field :gravity_vec, FVector
+      int32 :gravity_parts_no
+      float :first_bundle_rate
+      register_field :wind_vec, FVector
+      int32 :wind_parts_no
+      register_field :wind_offset, FVector
+      float :wind_sin;
+      float :hit_adjust_rate
+    end
+
+    class Cloth < DataConverter
+      int16 :no
+      int16 :no_up
+      int16 :no_down
+      int16 :no_side
+      int16 :no_poly
+      int16 :no_fix
+      float :rot_limit
+      register_field :offset, FVector
+    end
+
+    register_field :header, Header
+    register_field :cloth, Cloth, count: 'header\num'
+
+    def was_big?
+      @__was_big
+    end
+
+    def self.is_big?(f)
+      f.rewind
+      f.size
+      block = lambda { |int|
+        num = f.read(4).unpack(int).first
+        ( num >= 0 ) && ( num < 256 )
+      }
+      big = block.call("l>")
+      f.rewind
+      small = block.call("l<")
+      f.rewind
+      raise "Invalid data!" unless big ^ small
+      return big
+    end
+
+    def self.convert(input_name, output_name, output_big = false)
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
+      input_big = is_big?(input)
+
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
+      output.rewind
+
+      clp = self::new
+      clp.instance_variable_set(:@__was_big, input_big)
+      clp.convert(input, output, input_big, output_big)
+
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+      clp
+    end
+
+    def self.load(input_name)
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
+      input_big = is_big?(input)
+
+      clp = self::new
+      clp.instance_variable_set(:@__was_big, input_big)
+      clp.load(input, input_big)
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+      clp
+    end
+
+    def self.load_bxm(input_name)
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
+    end
+
+
+    def dump(output_name, output_big = false)
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
+      output.rewind
+
+      set_dump_type(output, output_big, nil, nil)
+      dump_fields
+      unset_dump_type
+
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+      self
+    end
+
+  end
+
+end
