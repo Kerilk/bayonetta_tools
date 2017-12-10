@@ -1,4 +1,5 @@
 #!ruby
+require 'yaml'
 require_relative 'lib/bayonetta'
 
 filename = ARGV[0]
@@ -38,4 +39,9 @@ dat.each { |name, f|
     f.rewind
     f2.write(f.read)
   }
+}
+Dir.mkdir(".metadata") unless Dir.exist?(".metadata")
+Dir.chdir(".metadata")
+File::open("layout.yaml", "w") { |fl|
+  fl.print YAML::dump( dat.layout )
 }

@@ -13,6 +13,14 @@ module Bayonetta
     }
     ALIGNMENTS.default = 0x10
 
+    def layout
+      @layout
+    end
+
+    def layout=(l)
+      @layout = l
+    end
+
     def self.is_big?(f)
       f.rewind
       block = lambda { |int|
@@ -79,8 +87,10 @@ module Bayonetta
           of = StringIO::new( f.read(@file_sizes[i]), "rb")
         }
         f.close if file_name_input
+        @layout = @file_names.dup
       else
         @id = "DAT\x00".b
+        @layout = nil
         @file_number = 0
         @file_offsets_offset = 0
         @file_extensions_offset = 0
@@ -117,6 +127,7 @@ module Bayonetta
       @file_names_offset = 0
       @file_sizes_offset = 0
       @file_offsets = []
+      @layout = nil
       self
     end
 
@@ -133,11 +144,20 @@ module Bayonetta
     end
 
     def sort_files
-      all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
-      all_arr.sort! { |e1, e2|
-         ALIGNMENTS[e2[3]] <=>  ALIGNMENTS[e1[3]]
-      }
+      if @layout
+        file_map = @layout.each_with_index.collect.to_h
+        all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
+        all_arr.sort! { |e1, e2|
+          file_map[e1[1]] <=> file_map[e2[1]]
+        }
+      else
+        all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
+        all_arr.sort! { |e1, e2|
+          ALIGNMENTS[e2[3]] <=>  ALIGNMENTS[e1[3]]
+        }
+      end
       @files, @file_names, @file_sizes, @file_extensions = all_arr.transpose
+      @layout = @file_names.dup unless @layout
     end
 
     def compute_layout

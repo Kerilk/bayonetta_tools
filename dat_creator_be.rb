@@ -1,4 +1,5 @@
 #!ruby
+require 'yaml'
 require_relative 'lib/bayonetta'
 
 input_dir = ARGV[0]
@@ -15,6 +16,8 @@ d = Bayonetta::DATFile::new(nil, true)
 files.each { |fname|
   d.push(fname, File::new(fname, "rb") )
 }
+
+d.layout = YAML::load_file(".metadata/layout.yaml") if File.exist?(".metadata/layout.yaml")
 
 d.dump("dat_output/#{File.basename(ARGV[0])}.dat")
 
