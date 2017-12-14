@@ -444,6 +444,21 @@ module Bayonetta
         sz
       end
 
+      def triangles
+        inds = @indices.collect{ |i| i + @header.vertex_offset }
+        if @header.primitive_type == 4
+          inds.each_slice(3).to_a
+        else
+          inds.each_cons(3).each_with_index.collect do |(v0, v1, v2), i|
+            if i.even?
+              [v0, v1, v2]
+            else
+              [v1, v0, v2]
+            end
+          end.select { |t| t.uniq.length == 3 }
+        end
+      end
+
     end
 
     class MeshHeader < DataConverter
