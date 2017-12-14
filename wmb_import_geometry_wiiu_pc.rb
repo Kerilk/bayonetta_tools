@@ -374,7 +374,11 @@ wmb2 = WMBFile::load(input_file2)
 
 
 tex1 = WTBFile::new(File::new(input_file1.gsub(/wmb\z/,"wtb"), "rb"))
-tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wta"), "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
+begin
+  tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wta"), "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
+rescue
+  tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wtb"), "rb"))
+end
 
 p tex_map = get_texture_map(tex1, tex2)
 
