@@ -184,9 +184,9 @@ module Bayonetta
     end
 
     class Vertex < DataConverter
-      register_field :x, :L
-      register_field :y, :L
-      register_field :z, :L
+      register_field :x, :F
+      register_field :y, :F
+      register_field :z, :F
       register_field :u, :S
       register_field :v, :S
       register_field :normals, Normals
