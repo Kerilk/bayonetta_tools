@@ -197,40 +197,20 @@ module Bayonetta
     end
 
     class BonePosition < DataConverter
-      register_field :x, :L
-      register_field :y, :L
-      register_field :z, :L
-
-      def xf
-        [@x].pack("L").unpack("f").first
-      end
-
-      def yf
-        [@y].pack("L").unpack("f").first
-      end
-
-      def zf
-        [@z].pack("L").unpack("f").first
-      end
-
-      def xf=(val)
-        @x = [val].pack("f").unpack("L").first
-      end
-
-      def yf=(val)
-        @y = [val].pack("f").unpack("L").first
-      end
-
-      def zf=(val)
-        @z = [val].pack("f").unpack("L").first
-      end
+      register_field :x, :F
+      register_field :y, :F
+      register_field :z, :F
 
       def -(other)
         b = BonePosition::new
-        b.xf = xf - other.xf
-        b.yf = yf - other.yf
-        b.zf = zf - other.zf
+        b.x = @x - other.x
+        b.y = @f - other.y
+        b.z = @z - other.z
         b
+      end
+
+      def to_yaml_properties
+        [:@x, :@y, :@z]
       end
 
     end
@@ -457,6 +437,24 @@ module Bayonetta
             end
           end.select { |t| t.uniq.length == 3 }
         end
+      end
+
+      def set_triangles(trs)
+        @header.primitive_type = 4
+        @indices = trs.flatten
+        @header.num_indices = @indices.length
+        sorted_indices = @indices.sort.uniq
+        @header.vertex_start = sorted_indices.first
+        @header.vertex_end = sorted_indices.last + 1
+        @header.vertex_offset = 0
+        self
+      end
+
+      def filter_vertexes(vertexes)
+        vertex_map = vertexes.collect { |i| [i, true] }.to_h
+        trs = triangles
+        new_trs = trs.select { |tr| vertex_map.include?(tr[0]) && vertex_map.include?(tr[1]) && vertex_map.include?(tr[2]) }
+        set_triangles(new_trs)
       end
 
     end
@@ -747,6 +745,30 @@ module Bayonetta
         used_bones.merge bones[bi].parents.collect(&:index)
       }
       restrict_bones(used_bones)
+      self
+    end
+
+    def dump_bones(list = nil)
+      bone_struct = Struct::new(:index, :parent, :relative_position, :position, :global_index, :info, :flag)
+      table = @bone_index_translate_table.table.invert
+      list = (0...@header.num_bones) unless list
+      list.collect { |bi|
+        bone_struct::new(bi, @bone_hierarchy[bi], @bone_relative_positions[bi], @bone_positions[bi], table[bi],  @header.offset_bone_infos > 0x0 ? @bone_infos[bi] : -1, @header.offset_bone_flags > 0x0 ? @bone_flags[bi] : 5)
+      }
+    end
+
+    def import_bones( list )
+      table = @bone_index_translate_table.table
+      @header.num_bones += list.length
+      list.each { |b|
+        table[b[:global_index]] = b[:index]
+        @bone_hierarchy.push b[:parent]
+        @bone_relative_positions.push b[:relative_position]
+        @bone_positions.push b[:position]
+        @bone_infos.push b[:info] if @header.offset_bone_infos > 0x0
+        @bone_flags.push b[:flag] if @header.offset_bone_flags > 0x0
+      }
+      @bone_index_translate_table.table = table
       self
     end
 
