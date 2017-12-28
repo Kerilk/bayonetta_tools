@@ -7,7 +7,7 @@ directory = File.dirname(filename)
 name = File.basename(filename)
 ext_name = File.extname(name)
 
-raise "Invalid file (#{name})!" unless ext_name == ".dat" || ext_name == ".evn" || ext_name == ".eff"
+raise "Invalid file (#{name})!" unless ext_name == ".dat" || ext_name == ".evn" || ext_name == ".eff" || ext_name == ".dtt"
 
 
 f = File::open(filename, "rb")
