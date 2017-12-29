@@ -3,6 +3,7 @@ module Bayonetta
   class DATFile
     include Endianness
     include Alignment
+    attr_reader :big
 
     ALIGNMENTS = {
       'wmb' => 0x1000,
