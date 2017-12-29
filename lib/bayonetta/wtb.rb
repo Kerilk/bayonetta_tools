@@ -7,6 +7,8 @@ module Bayonetta
     include Endianness
 
     attr_accessor :unknown
+    attr_accessor :texture_flags
+    attr_accessor :texture_idx
     ALIGNMENTS = {
       '.dds' => 0x1000,
       '.gtx' => 0x2000,

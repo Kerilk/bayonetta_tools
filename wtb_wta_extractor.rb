@@ -1,4 +1,5 @@
 #!ruby
+require 'yaml'
 require_relative 'lib/bayonetta'
 
 filename = ARGV[0]
@@ -33,4 +34,11 @@ wtb.each.each_with_index { |info_f, i|
     f2.write(f.read)
   }
 }
-
+Dir.mkdir(".metadata") unless Dir.exist?(".metadata")
+Dir.chdir(".metadata")
+File::open("texture_flags.yaml", "w") { |fl|
+  fl.print YAML::dump( wtb.texture_flags )
+}
+File::open("texture_idx.yaml", "w") { |fl|
+  fl.print YAML::dump( wtb.texture_idx )
+}
