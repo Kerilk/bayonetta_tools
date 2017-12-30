@@ -3,6 +3,7 @@ require 'yaml'
 require_relative 'lib/bayonetta'
 
 filename = ARGV[0]
+wtp_name = ARGV[1]
 directory = File.dirname(filename)
 name = File.basename(filename)
 ext_name = File.extname(name)
@@ -14,7 +15,7 @@ f = File::open(filename, "rb")
 Dir.chdir(directory)
 tex_name = File.basename(name, ext_name)
 if ext_name == ".wta"
-  wtp_name = tex_name + ".wtp"
+  wtp_name = tex_name + ".wtp" unless wtp_name
   f_wtp = File::open(wtp_name, "rb")
   dir_name = tex_name + "_wta"
 else
@@ -41,4 +42,16 @@ File::open("texture_flags.yaml", "w") { |fl|
 }
 File::open("texture_idx.yaml", "w") { |fl|
   fl.print YAML::dump( wtb.texture_idx )
+}
+File::open("texture_infos.yaml", "w") { |fl|
+  fl.print YAML::dump( wtb.texture_infos )
+}
+File::open("big.yaml","w") { |fl|
+  fl.print YAML::dump( wtb.big )
+}
+File::open("unknown.yaml","w") { |fl|
+  fl.print YAML::dump( wtb.unknown )
+}
+File::open("extension.yaml", "w") { |fl|
+  fl.print YAML::dump( ext_name )
 }
