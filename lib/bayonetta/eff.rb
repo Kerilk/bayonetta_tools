@@ -8,13 +8,16 @@ module Bayonetta
 
     class Directory
       include Endianness
+      include Alignment
 
       private :get_uint
+      attr_accessor :file_number
+      attr_accessor :file_infos
+      attr_accessor :files
 
-      def initialize(id, f, big)
+      def initialize(f, big)
+        @big = big
         if f
-          @big = big
-          @id = id
           @name = f.read(4)
           case @name
           when "EST\0".b, "SAD\0".b, "SST\0".b
@@ -52,6 +55,10 @@ module Bayonetta
             raise "Unknown directory type: #{@name}!"
           end
         else
+          @name = nil
+          @file_number = 0
+          @file_infos = []
+          @files = []
         end
       end
 
@@ -65,8 +72,78 @@ module Bayonetta
         end
       end
 
+      def push(id, f)
+        f.rewind
+        sz = f.size
+        of = StringIO::new( f.read, "rb")
+        @file_number += 1
+        @files.push of
+        @file_infos.push [id, nil, sz]
+        self
+      end
+
       def name
-        return @name.delete("\x00")
+        @name.delete("\x00")
+      end
+
+      def name=(s)
+        s = s + "\x00"
+        @name = s
+      end
+
+      def compute_layout
+        case @name
+        when "EST\0".b, "SAD\0".b, "SST\0".b
+          raise "Unsupported file number #{@file_number}!" unless @file_number == 1
+          @file_infos[0][1] = 0x0
+          @file_infos[0][2]
+        when "TEX\0".b, "MOD\0".b
+          current_offset = 0x1000
+          @file_infos = @file_infos.collect { |id, _, size|
+            ret = [id, current_offset, size]
+            current_offset += size
+            current_offset = align(current_offset, 0x1000)
+            ret
+          }
+          current_offset
+        else
+          raise "Invalid directory #{@name}!"
+        end
+      end
+
+      def size
+        compute_layout
+      end
+
+      def to_stringio
+        total_size = compute_layout
+        str = StringIO::new("\x00"*total_size, "w+b")
+        str.rewind
+
+        case @name
+        when "EST\0".b, "SAD\0".b, "SST\0".b
+          f = @files[0]
+          f.rewind
+          str.write f.read
+          f.rewind
+        when "TEX\0".b, "MOD\0".b
+          uint = get_uint
+          str.write @name
+          str.write [@file_number].pack(uint)
+          @file_infos.each { |id, offset, _|
+            str.write [id, offset].pack("#{uint}*")
+          }
+          @file_number.times { |i|
+            str.seek(@file_infos[i][1])
+            f = @files[i]
+            f.rewind
+            str.write f.read
+            f.rewind
+          }
+        end
+        str.rewind
+        str.close_write
+        str
       end
 
     end
@@ -94,12 +171,55 @@ module Bayonetta
         @directories = @directory_infos.collect { |id, offset, size|
           f.seek(offset)
           of = StringIO::new( f.read(size), "rb")
-          Directory::new(id, of, big)
+          Directory::new(of, big)
         }
       else
-        
+        @id = "EF2\x00"
+        @directory_number = 0
+        @directory_infos = []
+        @directories = []
       end
 
+    end
+
+    def push(id, d)
+      @directories.push(d)
+      @directory_infos.push [id, nil]
+      @directory_number += 1
+      self
+    end
+
+    def compute_layout
+      current_offset = 0x1000
+      @directory_number.times { |i|
+        @directory_infos[i][1] = current_offset
+        current_offset += @directories[i].size
+        current_offset = align(current_offset, 0x1000)
+      }
+      current_offset
+    end
+
+    def to_stringio
+      total_size = compute_layout
+      str = StringIO::new("\x00"*total_size, "w+b")
+      str.rewind
+
+      uint = get_uint
+
+      str.write @id
+      str.write [@directory_number].pack(uint)
+      @directory_infos.each { |inf|
+        str.write inf.pack("#{uint}*")
+      }
+      @directory_number.times { |i|
+        str.seek(@directory_infos[i][1])
+        f = @directories[i].to_stringio
+        str.write f.read
+      }
+
+      str.rewind
+      str.close_write
+      str
     end
 
     def each_directory

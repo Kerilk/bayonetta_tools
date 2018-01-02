@@ -44,4 +44,35 @@ module Bayonetta
     f.close
   end
 
+  def self.create_eff(dirname, big=false)
+    pwd = Dir.pwd
+
+    file_name = File.basename(dirname).gsub("_eff", "")
+    dirs = Dir.entries(dirname)
+    Dir.chdir(dirname)
+    pwd_basedir = Dir.pwd
+
+    dirs.select! { |f| File.directory?(f) and f.match(/\d{2}_.../) }
+    dirs.sort!
+    eff = EFFFile::new(nil, big)
+    dirs.each { |dname|
+      d = EFFFile::Directory::new(nil, big)
+      d.name = dname[3..-1]
+      fnames = Dir.entries("#{dname}")
+      Dir.chdir(dname)
+      fnames.select! { |f| File.file?(f) }
+      fnames.sort!
+      fnames.each { |fname|
+        d.push( File::basename(fname, File::extname(fname)).to_i, File::new(fname, "rb"))
+      }
+      eff.push(dname[0..2].to_i, d)
+      Dir.chdir(pwd_basedir)
+    }
+    Dir.mkdir("eff_output") unless Dir.exist?("eff_output")
+    Dir.chdir("eff_output")
+    File::open(file_name+".eff", "wb") { |f|
+      f.write eff.to_stringio.read
+    }
+  end
+
 end
