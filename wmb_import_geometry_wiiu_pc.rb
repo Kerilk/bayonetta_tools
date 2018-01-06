@@ -193,23 +193,51 @@ def merge_materials(wmb1, wmb2, tex_map)
   mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.size
   new_materials_offsets = []
   new_materials = []
-  wmb2.materials.each_with_index { |e, i|
-    #biggest known material
-    new_materials_offsets.push(mat_offset + i*0x124)
-    m = WMBFile::Material::new
-    m.type = 0x0
-    m.flag = 0x0
-    m.material_data = [0x0]*(0x120/4)
-    m.material_data[0] = (tex_map[e.material_data[0]] ? tex_map[e.material_data[0]] : 0x80000000)
-    m.material_data[1] = (tex_map[e.material_data[3]] ? tex_map[e.material_data[3]] : 0x80000000)
-    new_materials.push(m)
-  }
-  wmb2.meshes.each { |m|
-    m.batches.each { |b|
-      b.header.material_id = b.header.ex_mat_id + new_mat_offset
-      b.header.ex_mat_id = 0x0
+  if wmb2.tex_infos then #Bayo 2
+    wmb2.materials.each_with_index { |e, i|
+      #biggest known material
+      new_materials_offsets.push(mat_offset + i*0x124)
+      m = WMBFile::Material::new
+      m.type = 0x0
+      m.flag = 0x0
+      m.material_data = [0x0]*(0x120/4)
+      m.material_data[0] = (tex_map[e.material_data[0]] ? tex_map[e.material_data[0]] : 0x80000000)
+      m.material_data[1] = (tex_map[e.material_data[3]] ? tex_map[e.material_data[3]] : 0x80000000)
+      new_materials.push(m)
     }
-  }
+    wmb2.meshes.each { |m|
+      m.batches.each { |b|
+        b.header.material_id = b.header.ex_mat_id + new_mat_offset
+        b.header.ex_mat_id = 0x0
+      }
+    }
+  else #Bayo 1
+    wmb2.materials.each_with_index { |e, i|
+      new_materials_offsets.push(mat_offset)
+      mat_offset += e.size
+      m = WMBFile::Material::new
+      m.type = e.type
+      m.flag = e.flag
+      m.material_data = e.material_data.dup
+      if bayo_mat_properties[m.type]
+        bayomat = bayo_mat_properties[m.type]
+        bayomat.tex_num.times { |j|
+          m.material_data[j] = ( tex_map[e.material_data[j]] ? tex_map[e.material_data[j]] : e.material_data[j] )
+        }
+      else
+        warn "Unknow material type 0x#{m.type.to_s(16)}!"
+        5.times { |j|
+          m.material_data[j] = ( tex_map[e.material_data[j]] ? tex_map[e.material_data[j]] : e.material_data[j] )
+        }
+      end
+      new_materials.push(m)
+    }
+    wmb2.meshes.each { |m|
+      m.batches.each { |b|
+        b.header.material_id = b.header.material_id + new_mat_offset
+      }
+    }
+  end
 
 
   wmb1.header.num_materials += wmb2.header.num_materials
@@ -267,6 +295,7 @@ def get_texture_map(tex1, tex2)
   tex2.each.each_with_index { |t,i|
     info, _ = t
     _, _, idx = info
+    idx = i unless idx
     tex_map[idx] = i+offset
   }
   tex_map
@@ -380,7 +409,7 @@ rescue
   tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wtb"), "rb"))
 end
 
-p tex_map = get_texture_map(tex1, tex2)
+tex_map = get_texture_map(tex1, tex2)
 
 merge_vertexes(wmb1, wmb2)
 
