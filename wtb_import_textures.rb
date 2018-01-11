@@ -46,11 +46,15 @@ texs.each { |name, info|
     else
       flags = 0x20000000
     end
-  else
+  elsif fl.big
     flags &= 0xfffffffd #remove 0x2 flag
   end
-  new_name = name.gsub("gtx","dds")
-  `#{path}/TexConv2.exe -i "#{name}" -o "#{new_name}"`
+  if File.extname(name) == ".gtx"
+    new_name = name.gsub("gtx","dds")
+    `#{path}/TexConv2.exe -i "#{name}" -o "#{new_name}"`
+  else
+    new_name = name
+  end
   fl2.push( File::new(new_name, "rb"), flags, nil )
 }
 

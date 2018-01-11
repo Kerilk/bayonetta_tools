@@ -7,13 +7,13 @@ directory = File.dirname(filename)
 name = File.basename(filename)
 ext_name = File.extname(name)
 
-raise "Invalid file (#{name})!" unless ext_name == ".dat" || ext_name == ".evn" || ext_name == ".eff"
+raise "Invalid file (#{name})!" unless ext_name == ".dat" || ext_name == ".evn" || ext_name == ".eff" || ext_name == ".dtt"
 
 
 f = File::open(filename, "rb")
 
 Dir.chdir(directory)
-dir_name = File.basename(name, ext_name)
+dir_name = File.basename(name, ext_name) + "#{ext_name.gsub(".","_")}"
 Dir.mkdir(dir_name) unless Dir.exist?(dir_name)
 Dir.chdir(dir_name)
 
@@ -44,4 +44,10 @@ Dir.mkdir(".metadata") unless Dir.exist?(".metadata")
 Dir.chdir(".metadata")
 File::open("layout.yaml", "w") { |fl|
   fl.print YAML::dump( dat.layout )
+}
+File::open("extension.yaml", "w") { |fl|
+  fl.print YAML::dump( ext_name )
+}
+File::open("big.yaml","w") { |fl|
+  fl.print YAML::dump( dat.big )
 }

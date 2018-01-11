@@ -7,6 +7,10 @@ module Bayonetta
     include Endianness
 
     attr_accessor :unknown
+    attr_accessor :texture_flags
+    attr_accessor :texture_idx
+    attr_accessor :texture_infos
+    attr_reader :big
     ALIGNMENTS = {
       '.dds' => 0x1000,
       '.gtx' => 0x2000,
@@ -38,7 +42,7 @@ module Bayonetta
         @offset_texture_flags = f.read(4).unpack(uint).first
         @offset_texture_idx = f.read(4).unpack(uint).first
         @offset_texture_infos = f.read(4).unpack(uint).first
-        if @wtp
+        if @wtp && @big
           @offset_mipmap_offsets = f.read(4).unpack(uint).first
           if @offset_mipmap_offsets != 0
             f.seek(@offset_mipmap_offsets)
@@ -65,6 +69,8 @@ module Bayonetta
         else
           @texture_idx = []
         end
+
+        @texture_infos = []
 
         if !@wtp && @offset_texture_offsets != 0 && @offset_texture_sizes != 0
           @textures = @texture_offsets.each_with_index.collect { |off, i|
@@ -104,6 +110,19 @@ module Bayonetta
             of
           }
           @wtp = true
+	elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 # Nier PC
+          @wtp.rewind
+          @textures = @texture_offsets.each_with_index.collect { |off, i|
+            of = StringIO::new("", "w+b")
+            @wtp.seek(off)
+            of.write( @wtp.read(@texture_sizes[i]) )
+            of.close_write
+            of
+          }
+          if @offset_texture_infos != 0
+            f.seek(@offset_texture_infos)
+            @texture_infos = f.read(5*4*@num_tex).unpack("#{uint}*")
+          end
         else
           raise "Invalid texture data!"
         end
@@ -122,7 +141,7 @@ module Bayonetta
         @offset_texture_flags = 0x0
         @offset_texture_idx = 0x0
         @offset_texture_infos = 0x0
-        if @wtp
+        if @wtp && @big
           @offset_mipmap_offsets = 0x0
           @mipmap_offsets = []
           @mipmap_length = []
@@ -146,7 +165,7 @@ module Bayonetta
       @offset_texture_flags = 0x0
       @offset_texture_idx = 0x0
       @offset_texture_infos = 0x0
-      if @wtp
+      if @wtp && @big
         @offset_mipmap_offsets = 0x0
         @mipmap_offsets = []
       end
@@ -154,7 +173,7 @@ module Bayonetta
     end
 
     def compute_layout
-      if @wtp
+      if @wtp && @big
         last_offset = @offset_texture_offsets = 0x40
       else
         last_offset = @offset_texture_offsets = 0x20
@@ -173,25 +192,37 @@ module Bayonetta
         @total_size = last_offset
       else
         last_offset = @offset_texture_infos = align(last_offset + 4*@num_tex, 0x20)
-        last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
-        last_offset = align(last_offset + 4*@num_tex, 0x20)
+        if @big
+          last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
+          last_offset = align(last_offset + 4*@num_tex, 0x20)
+        else #Nier
+          last_offset = align(last_offset + 5*4*@num_tex, 0x20)
+        end
         @total_size = last_offset
 
         offset_wtp = 0x0
-        @texture_offsets = @num_tex.times.collect { |i|
-          tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
-          offset_wtp = align(tmp + @data_length[i], ALIGNMENTS[@texture_types[i]])
-          tmp
-        }
-        @mipmap_offsets = @num_tex.times.collect { |i|
-          if @mipmap_length[i] != 0
+        if @big
+          @texture_offsets = @num_tex.times.collect { |i|
             tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
-            offset_wtp = align(tmp + @mipmap_length[i], ALIGNMENTS[@texture_types[i]])
+            offset_wtp = align(tmp + @data_length[i], ALIGNMENTS[@texture_types[i]])
             tmp
-          else
-            0
-          end
-        }
+          }
+          @mipmap_offsets = @num_tex.times.collect { |i|
+            if @mipmap_length[i] != 0
+              tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
+              offset_wtp = align(tmp + @mipmap_length[i], ALIGNMENTS[@texture_types[i]])
+              tmp
+            else
+              0
+            end
+          }
+        else #Nier
+          @texture_offsets = @num_tex.times.collect { |i|
+            tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
+            offset_wtp = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
+            tmp
+          }
+        end
         @total_size_wtp = offset_wtp
       end
     end
@@ -214,7 +245,7 @@ module Bayonetta
       @textures.push( file )
       @texture_flags.push( flag )
       @texture_idx.push if idx
-      if @wtp
+      if @wtp && @big
         unless idx
           @texture_idx.push Zlib.crc32(file.read,0)
           file.rewind
@@ -259,7 +290,7 @@ module Bayonetta
         f.write([@offset_texture_flags].pack(uint))
         f.write([@offset_texture_idx].pack(uint))
         f.write([@offset_texture_infos].pack(uint))
-        f.write([@offset_mipmap_offsets].pack(uint)) if @wtp
+        f.write([@offset_mipmap_offsets].pack(uint)) if @wtp && @big
 
 
         f.seek(@offset_texture_offsets)
@@ -288,30 +319,46 @@ module Bayonetta
             @textures[i].rewind
           }
         else
-          @textures.each_with_index { |f_t, i|
-            f.seek(@offset_texture_infos + i*0xc0)
-            f_t.seek(0x20*2)
-            f.write( f_t.read(0x9c) )
-          }
-          if @offset_mipmap_offsets != 0
-            f.seek(@offset_mipmap_offsets)
-            f.write(@mipmap_offsets.pack("#{uint}*"))
+          if @big
+            @textures.each_with_index { |f_t, i|
+              f.seek(@offset_texture_infos + i*0xc0)
+              f_t.seek(0x20*2)
+              f.write( f_t.read(0x9c) )
+            }
+            if @offset_mipmap_offsets != 0
+              f.seek(@offset_mipmap_offsets)
+              f.write(@mipmap_offsets.pack("#{uint}*"))
+            end
+          else #Nier
+            if @offset_texture_infos != 0
+              f.seek(@offset_texture_infos)
+              f.write(@texture_infos.pack("#{uint}*"))
+            end
           end
           File.open(name.gsub(".wta", ".wtp"), "wb") { |f_wtp|
             f_wtp.write("\x00"*@total_size_wtp)
             f_wtp.rewind
-            @texture_offsets.each_with_index { |off, i|
-              f_wtp.seek(off)
-              @textures[i].seek(0x20*3+0x9c)
-              f_wtp.write(@textures[i].read(@data_length[i]))
-            }
-            @mipmap_offsets.each_with_index { |off, i|
-              if off != 0
+            if @big
+              @texture_offsets.each_with_index { |off, i|
                 f_wtp.seek(off)
-                @textures[i].seek(0x20*4+0x9c)
-                f_wtp.write(@textures[i].read(@mipmap_length[i]))
-              end
-            }
+                @textures[i].seek(0x20*3+0x9c)
+                f_wtp.write(@textures[i].read(@data_length[i]))
+              }
+              @mipmap_offsets.each_with_index { |off, i|
+                if off != 0
+                  f_wtp.seek(off)
+                  @textures[i].seek(0x20*4+0x9c+@data_length[i])
+                  f_wtp.write(@textures[i].read(@mipmap_length[i]))
+                end
+              }
+            else #Nier
+              @texture_offsets.each_with_index { |off, i|
+                f_wtp.seek(off)
+                @textures[i].rewind
+                f_wtp.write( @textures[i].read )
+                @textures[i].rewind
+              }
+            end
           }
         end
 

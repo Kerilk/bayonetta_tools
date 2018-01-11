@@ -19,7 +19,7 @@ for( i = 0; i < header.dataNumber; i++ ) {
         } dataHeader;
         struct {
             int32 identifier;
-            uint32 offset;
+            uint32 offset <format=hex>;
         } recordList[dataHeader.recordNumber];
     } datas;
 }

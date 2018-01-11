@@ -11,7 +11,10 @@ Dir.chdir(ARGV[0])
 files.select! { |f| File.file?(f) }
 Dir.mkdir("dat_output") unless Dir.exist?("dat_output")
 
-d = Bayonetta::DATFile::new
+big = false
+big = YAML::load_file(".metadata/big.yaml") if File.exist?(".metadata/big.yaml")
+
+d = Bayonetta::DATFile::new(nil, big)
 
 files.each { |fname|
   d.push(fname, File::new(fname, "rb") )
@@ -19,5 +22,8 @@ files.each { |fname|
 
 d.layout = YAML::load_file(".metadata/layout.yaml") if File.exist?(".metadata/layout.yaml")
 
-d.dump("dat_output/#{File.basename(ARGV[0])}.dat")
+extension = ".dat"
+extension = YAML::load_file(".metadata/extension.yaml") if File.exist?(".metadata/extension.yaml")
+suffix = extension.gsub(".", "_")
 
+d.dump("dat_output/#{File.basename(ARGV[0]).gsub(suffix, "")}#{extension}")
