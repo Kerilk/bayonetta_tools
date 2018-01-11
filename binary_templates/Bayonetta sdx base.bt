@@ -1,0 +1,43 @@
+struct {
+    char    id[4];
+    int16   unknown;
+    string  name;
+    FSeek(0x18);
+    uint32  tableElemNumber;
+    uint32  offsetTable <format=hex>;
+    uint32  offsetRecord <format=hex>;
+    uint32  offsetNameTable <format=hex>;
+    uint32  offsetUnknown <format=hex>;
+} header;
+
+FSeek(header.offsetTable);
+int16 table[header.tableElemNumber];
+local int32 i;
+local uint32 recordNumber = 0;
+for( i=0; i<header.tableElemNumber; i++) {
+    if( table[i] != -1 )
+        recordNumber = table[i];
+}
+
+for(i=0; i<recordNumber; i++) {
+    struct {
+        uint32  recordSize;
+        float   unknown0[3];
+        short   offsetEventName <format=hex>;
+        short   eventNumber;
+        float   unknown1[3];
+        int32   unknown2;
+        float   unknown4;
+        int32   unknown5;
+        float   unknown6[6];
+        int32   unknown7;
+        float   unknown8[2];
+    } record;
+}
+
+for(i=0; i<recordNumber; i++) {
+    FSeek(record[i].offsetEventName+header.offsetNameTable);
+    struct {
+        string nameString;
+    } name;
+}

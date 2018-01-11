@@ -1,0 +1,6 @@
+LittleEndian();
+
+char id[4] <hidden=true>;
+Assert( Memcmp("SDX\0", id, 4) == 0, "Wrong file type");
+FSeek(0);
+#include "Bayonetta sdx base.bt"
