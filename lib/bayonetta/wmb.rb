@@ -727,6 +727,24 @@ module Bayonetta
     end
     private :restrict_bones
 
+    def delete_meshes(list)
+      kept_meshes = @meshes.size.times.to_a - list
+      @meshes = kept_meshes.collect { |i|
+        @meshes[i]
+      }
+      @header.num_meshes = @meshes.size
+      self
+    end
+
+    def swap_meshes(hash)
+      hash.each { |k, v|
+        tmp = @meshes[k]
+        @meshes[k] =  @meshes[v]
+        @meshes[v] = tmp
+      }
+      self
+    end
+
     def delete_bones(list)
       used_bones = (@header.num_bones.times.to_a - list)
       restrict_bones(used_bones)

@@ -10,7 +10,9 @@ $options = {
   :delete_bones => nil,
   :offsets => false,
   :fix => false,
-  :swap => nil
+  :swap => nil,
+  :swap_meshes => nil,
+  :delete_meshes => nil
 }
 
 OptionParser.new do |opts|
@@ -36,6 +38,14 @@ OptionParser.new do |opts|
     $options[:swap] = swap
   end
 
+  opts.on("-s", "--swap-meshes=MESHHASH", "Swap specified meshes") do |mesh_hash|
+    $options[:swap_meshes] = eval(mesh_hash).to_h
+  end
+
+  opts.on("-m", "--delete-meshes=MESHList", "Delete specified meshes") do |mesh_list|
+    $options[:delete_meshes] = eval(mesh_list).to_a
+  end
+
   opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
     $options[:delete_bones] = eval(bone_list).to_a
   end
@@ -53,6 +63,8 @@ input_file = ARGV[0]
 raise "Invalid file #{input_file}" unless File::file?(input_file)
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb = WMBFile::load(input_file)
+wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
+wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
 wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
