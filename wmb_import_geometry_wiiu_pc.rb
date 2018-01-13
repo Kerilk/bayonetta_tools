@@ -195,7 +195,7 @@ def merge_materials(wmb1, wmb2, tex_map)
   new_materials = []
   if wmb2.tex_infos then #Bayo 2
     wmb2.materials.each_with_index { |e, i|
-      #biggest known material( in fact biggset is 0x164)
+      #biggest known material( in fact biggset is 0x174)
       new_materials_offsets.push(mat_offset + i*0x124)
       m = WMBFile::Material::new
       m.type = 0x0
