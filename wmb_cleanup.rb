@@ -8,6 +8,7 @@ $options = {
   :vertexes => true,
   :bones => false,
   :textures => false,
+  :cleanup_material_sizes => false,
   :delete_bones => nil,
   :offsets => false,
   :fix => false,
@@ -55,6 +56,10 @@ OptionParser.new do |opts|
     $options[:textures] = textures
   end
 
+  opts.on("--cleanup-material-sizes", "Cleanup material sizes") do |cleanup_mat_sizes|
+     $options[:cleanup_mat_sizes] = cleanup_mat_sizes
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -78,6 +83,9 @@ wmb.fix_ex_data if $options[:fix]
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 if $options[:textures]
   wmb.cleanup_materials
+end
+if $options[:cleanup_mat_sizes]
+  wmb.cleanup_material_sizes
 end
 wmb.renumber_batches
 wmb.recompute_layout

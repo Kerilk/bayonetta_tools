@@ -782,6 +782,22 @@ module Bayonetta
       self
     end
 
+    def cleanup_material_sizes
+      raise "Unsupported for Bayonetta 2!" if @shader_names
+      material_db = YAML::load_file('material_database.yaml')
+      @materials.each { |m|
+         type = m.type
+         if material_db.key?(type)
+           size = material_db[type][:size]
+         else
+           warn "Unknown material type #{m.type}!"
+           next
+         end
+         data_number = (size - 4)/4
+         m.material_data = m.material_data.first(data_number)
+      }
+    end
+
     def cleanup_bones
       used_bones = Set[]
       @meshes.each { |m|
