@@ -8,7 +8,8 @@ $options = {
   :vertexes => true,
   :bones => false,
   :textures => false,
-  :cleanup_material_sizes => false,
+  :cleanup_mat_sizes => false,
+  :maximize_mat_sizes => false,
   :delete_bones => nil,
   :offsets => false,
   :fix => false,
@@ -60,6 +61,10 @@ OptionParser.new do |opts|
      $options[:cleanup_mat_sizes] = cleanup_mat_sizes
   end
 
+  opts.on("--maximize-material-sizes", "Maximize material sizes") do |cleanup_mat_sizes|
+     $options[:maximize_mat_sizes] = cleanup_mat_sizes
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -84,9 +89,8 @@ wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 if $options[:textures]
   wmb.cleanup_materials
 end
-if $options[:cleanup_mat_sizes]
-  wmb.cleanup_material_sizes
-end
+wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
+wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.renumber_batches
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )

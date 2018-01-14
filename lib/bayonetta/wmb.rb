@@ -796,6 +796,20 @@ module Bayonetta
          data_number = (size - 4)/4
          m.material_data = m.material_data.first(data_number)
       }
+      self
+    end
+
+    def maximize_material_sizes
+      raise "Unsupported for Bayonetta 2!" if @shader_names
+      material_db = YAML::load_file('material_database.yaml')
+      max_size_mat = material_db.max_by { |k, v|
+        v[:size]
+      }
+      max_data_number = (max_size_mat[1][:size] - 4)/4
+      @materials.each { |m|
+        m.material_data = m.material_data + [0]*(max_data_number - m.material_data.size)
+      }
+      self
     end
 
     def cleanup_bones
