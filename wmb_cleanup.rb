@@ -8,6 +8,7 @@ $options = {
   :vertexes => true,
   :bones => false,
   :textures => false,
+  :cleanup_mat => false,
   :cleanup_mat_sizes => false,
   :maximize_mat_sizes => false,
   :delete_bones => nil,
@@ -53,8 +54,12 @@ OptionParser.new do |opts|
     $options[:delete_bones] = eval(bone_list).to_a
   end
 
-  opts.on("-t", "--[no-]textures", "Cleanup materials and textures") do |textures|
+  opts.on("-t", "--[no-]textures", "Cleanup textures") do |textures|
     $options[:textures] = textures
+  end
+
+  opts.on("-c", "--cleanup-materials", "Cleanup materials") do |cleanup_mat|
+     $options[:cleanup_mat] = cleanup_mat
   end
 
   opts.on("--cleanup-material-sizes", "Cleanup material sizes") do |cleanup_mat_sizes|
@@ -86,9 +91,7 @@ wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
-if $options[:textures]
-  wmb.cleanup_materials
-end
+wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.renumber_batches
