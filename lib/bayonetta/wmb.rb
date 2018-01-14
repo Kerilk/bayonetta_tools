@@ -718,9 +718,13 @@ module Bayonetta
       }
       new_table = new_table.collect { |k, v| [k, bone_map[v]] }.to_h
       @bone_index_translate_table.table = new_table
-      @meshes.each { |m|
-        m.batches.each { |b|
-          b.bone_refs.collect! { |bi| bone_map[bi] }
+      @meshes.each_with_index { |m, i|
+        m.batches.each_with_index { |b, j|
+          b.bone_refs.collect! { |bi|
+            new_bi = bone_map[bi]
+            raise "Bone #{bi} was deleted bu is still used by mesh #{i} batch #{j}!" unless new_bi
+            new_bi
+          }
         }
       }
       self
