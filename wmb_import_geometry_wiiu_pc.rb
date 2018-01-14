@@ -374,9 +374,6 @@ def get_shader_map
   }
 end
 
-input_file1 = ARGV[0]
-input_file2 = ARGV[1]
-
 $options = {}
 
 OptionParser.new do |opts|
@@ -392,6 +389,9 @@ OptionParser.new do |opts|
   end
 
 end.parse!
+
+input_file1 = ARGV[0]
+input_file2 = ARGV[1]
 
 raise "Invalid file #{input_file1}" unless File::file?(input_file1)
 raise "Invalid file #{input_file2}" unless File::file?(input_file2)
