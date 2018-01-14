@@ -751,6 +751,37 @@ module Bayonetta
       self
     end
 
+    def cleanup_materials
+      used_materials = Set[]
+      @meshes.each { |m|
+        m.batches.each { |b|
+          if @tex_infos #Bayo 2
+            used_materials.add(b.header.ex_mat_id)
+          else #Bayo 1
+            used_materials.add(b.header.material_id)
+          end
+        }
+      }
+      materials = @header.num_materials.times.to_a
+      kept_materials = materials & used_materials.to_a
+      correspondance_table = kept_materials.each_with_index.to_h
+      @materials.select!.with_index { |_, i| used_materials.include?(i) }
+      @header.num_materials = used_materials.size
+      if @shader_names
+        @shader_names.select!.with_index { |_, i| used_materials.include?(i) }
+      end
+      @meshes.each { |m|
+        m.batches.each { |b|
+          if @tex_infos
+            b.header.ex_mat_id = correspondance_table[b.header.ex_mat_id]
+          else
+            b.header.material_id = correspondance_table[b.header.material_id]
+          end
+        }
+      }
+      self
+    end
+
     def cleanup_bones
       used_bones = Set[]
       @meshes.each { |m|
