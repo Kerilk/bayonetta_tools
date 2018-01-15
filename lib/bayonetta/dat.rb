@@ -148,6 +148,10 @@ module Bayonetta
       if @layout
         file_map = @layout.each_with_index.collect.to_h
         all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
+        all_arr.select! { |e|
+          @layout.include?(e[1])
+        }
+        @file_number = all_arr.size
         all_arr.sort! { |e1, e2|
           file_map[e1[1]] <=> file_map[e2[1]]
         }
