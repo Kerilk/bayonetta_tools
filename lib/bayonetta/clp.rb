@@ -92,13 +92,13 @@ module Bayonetta
         cl
       end
 
-      def remap(map)
+      def remap(map, poly = true, fix = true)
         @no = map[@no]
         @no_up = map[@no_up]
         @no_down = map[@no_down]
         @no_side = map[@no_side]
-        @no_poly = 4095#map[@no_poly]
-        @no_fix = 4095#map[@no_fix]
+        @no_poly = ( poly ? map[@no_poly] : 4095 )
+        @no_fix = ( fix ? map[@no_fix] : 4095 )
       end
     end
 
@@ -109,9 +109,9 @@ module Bayonetta
       @__was_big
     end
 
-    def remap(map)
+    def remap(map, poly = true, fix = true)
       @cloth.each { |c|
-        c.remap(map)
+        c.remap(map, poly, fix)
       }
     end
 
