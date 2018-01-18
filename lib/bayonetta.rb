@@ -9,6 +9,7 @@ require_relative 'bayonetta/wmb'
 require_relative 'bayonetta/exp'
 require_relative 'bayonetta/bxm'
 require_relative 'bayonetta/clp'
+require_relative 'bayonetta/clh'
 
 module Bayonetta
   include Alignment
