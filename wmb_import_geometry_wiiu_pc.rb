@@ -47,7 +47,8 @@ end
 def merge_bones(wmb1, wmb2)
 
   tt1 = wmb1.bone_index_translate_table.table
-  tt2 = wmb2.bone_index_translate_table.table.invert
+  tt2_orig = wmb2.bone_index_translate_table.table
+  tt2 = tt2_orig.invert
 
   bones1 = wmb1.get_bone_structure
   bones2 = wmb2.get_bone_structure
@@ -78,10 +79,10 @@ def merge_bones(wmb1, wmb2)
 #p mapping
 
   mapping[-1] = -1
-  missing_bones = mapping.select { |k,v| v.nil? }
+  missing_bones = mapping.select { |k,v| v.nil? }.collect { |k,v| k }
   new_bone_index = bones1.size
   new_bone_indexes = []
-  missing_bones.each { |bi,_|
+  missing_bones.each { |bi|
     mapping[bi] = new_bone_index
     new_bone_indexes.push(new_bone_index)
 
@@ -118,6 +119,7 @@ def merge_bones(wmb1, wmb2)
   new_tt = wmb1.bone_index_translate_table.table.dup
   new_bone_indexes.each_with_index { |ind, i|
     new_tt[i+start_index] = ind
+    common_mapping[tt2[missing_bones[i]]] = i + start_index if i < missing_bones.length && missing_bones[i]
   }
   wmb1.bone_index_translate_table.table = new_tt
 
@@ -129,6 +131,7 @@ def merge_bones(wmb1, wmb2)
 
   apply_mapping(mapping, wmb2.meshes)
 
+  common_mapping
 end
 
 def merge_vertexes(wmb1, wmb2)
@@ -413,12 +416,16 @@ tex_map = get_texture_map(tex1, tex2)
 
 merge_vertexes(wmb1, wmb2)
 
-merge_bones(wmb1, wmb2)
+common_mapping = merge_bones(wmb1, wmb2)
 
 merge_materials(wmb1, wmb2, tex_map)
 
 merge_meshes(wmb1, wmb2)
 
 recompute_layout(wmb1, wmb2)
+
+File::open("wmb_output/#{File::basename(input_file2,".wmb")}_#{File::basename(input_file1,".wmb")}_bone_map.yaml", "w") { |f|
+  f.write YAML::dump(common_mapping)
+}
 
 wmb1.dump("wmb_output/"+File.basename(input_file1))
