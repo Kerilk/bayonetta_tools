@@ -742,6 +742,8 @@ module Bayonetta
 
     def swap_meshes(hash)
       hash.each { |k, v|
+        raise "Mesh #{k} was not found in the model!" unless @meshes[k]
+        raise "Mesh #{v} was not found in the model!" unless @meshes[v]
         tmp = @meshes[k]
         @meshes[k] =  @meshes[v]
         @meshes[v] = tmp
