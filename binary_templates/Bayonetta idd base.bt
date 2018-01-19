@@ -1,0 +1,27 @@
+struct {
+    char id[4];
+    int32 lastDataIndex;
+} header;
+
+struct {
+    int32 index;
+    uint32 offset <format=hex>;
+} dataRecord[header.lastDataIndex+1];
+
+local int i;
+
+for( i = 0; i <= header.lastDataIndex; i++ ) {
+    FSeek(dataRecord[i].offset);
+    struct {
+        struct {
+            char directory_name[4];
+            int32 recordNumber;
+        } dataHeader;
+        struct {
+            int32 identifier;
+            uint32 offset <format=hex>;
+        } recordList[dataHeader.recordNumber];
+    } datas;
+
+
+}
