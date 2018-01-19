@@ -10,6 +10,7 @@ require_relative 'bayonetta/exp'
 require_relative 'bayonetta/bxm'
 require_relative 'bayonetta/clp'
 require_relative 'bayonetta/clh'
+require_relative 'bayonetta/clw'
 
 module Bayonetta
   include Alignment
