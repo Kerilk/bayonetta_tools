@@ -58,7 +58,11 @@ def merge_bones(wmb1, wmb2)
 #mapping = get_bone_mapping(bones2, bones1)
 
   if $options[:bone_map]
-    common_mapping = YAML::load_file( $options[:bone_map] )
+    if $options[:bone_map] == "same"
+      common_mapping = tt2_orig.keys.collect { |k| [k,k] }.to_h
+    else
+      common_mapping = YAML::load_file( $options[:bone_map] )
+    end
   else
     common_mapping = {}
   end
