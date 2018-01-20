@@ -740,6 +740,13 @@ module Bayonetta
       self
     end
 
+    def duplicate_meshes(list)
+      @meshes += list.collect { |i|
+        @meshes[i]
+      }
+      @header.num_meshes = @meshes.size
+    end
+
     def swap_meshes(hash)
       hash.each { |k, v|
         raise "Mesh #{k} was not found in the model!" unless @meshes[k]

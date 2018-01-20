@@ -46,8 +46,12 @@ OptionParser.new do |opts|
     $options[:swap_meshes] = eval(mesh_hash).to_h
   end
 
-  opts.on("-m", "--delete-meshes=MESHList", "Delete specified meshes") do |mesh_list|
+  opts.on("-m", "--delete-meshes=MESHLIST", "Delete specified meshes") do |mesh_list|
     $options[:delete_meshes] = eval(mesh_list).to_a
+  end
+
+  opts.on("--duplicate-meshes=MESHLIST", "Duplicate specified meshes") do |mesh_list|
+    $options[:duplicate_meshes] = eval(mesh_list).to_a
   end
 
   opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
@@ -84,6 +88,7 @@ raise "Invalid file #{input_file}" unless File::file?(input_file)
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
+wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
 wmb.cleanup_bones if $options[:bones]
