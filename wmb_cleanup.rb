@@ -99,6 +99,7 @@ wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
+wmb.cleanup_textures(input_file) if $options[:textures]
 wmb.renumber_batches
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )

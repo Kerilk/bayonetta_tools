@@ -1,4 +1,5 @@
 require 'set'
+require 'digest'
 module Bayonetta
 
   class WMBFile < DataConverter
@@ -762,6 +763,72 @@ module Bayonetta
       used_bones = (@header.num_bones.times.to_a - list)
       restrict_bones(used_bones)
       self
+    end
+
+    def cleanup_textures(input_name)
+      if File.exist?(input_name.gsub(".wmb",".wtb"))
+        wtb = WTBFile::new(File::new(input_name.gsub(".wmb",".wtb"), "rb"))
+        output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wtb"
+        wtp = false
+      elsif File.exist?(input_name.gsub(".wmb",".wta"))
+        wtb = WTBFile::new(File::new(input_name.gsub(".wmb",".wta"), "rb"), true, File::new(input_name.gsub(".wmb",".wtp"), "rb"))
+        output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wta"
+        wtp = true
+      else
+        raise "Could not find texture file!"
+      end
+
+      available_textures = {}
+      digests = []
+      wtb.each.with_index { |(info, t), i|
+        if @tex_info #Bayo 2
+          digest = Digest::SHA1.hexdigest(t.read)
+          available_textures[info[2]] = digest
+          digests.push( digest )
+        else #Bayo 1
+          digest = Digest::SHA1.hexdigest(t.read)
+          available_textures[i] = digest
+          digests.push( digest )
+        end
+        t.rewind
+      }
+      used_textures_digest_map = {}
+      used_texture_digests = Set[]
+      @materials.each { |m|
+        m.material_data[0..4].each { |tex_id|
+          if available_textures.key?(tex_id)
+            digest = available_textures[tex_id]
+            used_textures_digest_map[tex_id] = digest
+            used_texture_digests.add(digest)
+          end
+        }
+      }
+      index_list = digests.each_with_index.collect { |d,i| [i,d] }.select { |i, d|
+        used_texture_digests.delete?(d)
+      }.collect { |i,d| i }
+      new_wtb = WTBFile::new(nil, wtb.big, wtp)
+      j = 0
+      digest_to_tex_id_map = {}
+      wtb.each.with_index { |(info, t), i|
+        if index_list.include?(i)
+          new_wtb.push( t, info[1], info[2])
+          if @tex_info
+            digest_to_tex_id_map[digests[i]] = info[2]
+          else
+            digest_to_tex_id_map[digests[i]] = j
+          end
+          j += 1
+        end
+      }
+      new_wtb.dump(output_name)
+      @materials.each { |m|
+        m.material_data[0..4].each_with_index { |tex_id, i|
+          if available_textures.key?(tex_id)
+            digest = available_textures[tex_id]
+            m.material_data[i] = digest_to_tex_id_map[digest]
+          end
+        }
+      }
     end
 
     def cleanup_materials
