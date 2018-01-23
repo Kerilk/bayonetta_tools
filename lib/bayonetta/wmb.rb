@@ -940,7 +940,7 @@ module Bayonetta
       }
       used_vertex_indexes = used_vertex_indexes.sort.uniq
       @vertexes = used_vertex_indexes.collect { |i| @vertexes[i] }
-      @vertexes_ex_data = used_vertex_indexes.collect { |i| @vertexes_ex_data[i] }
+      @vertexes_ex_data = used_vertex_indexes.collect { |i| @vertexes_ex_data[i] } if @vertexes_ex_data
       @header.num_vertexes = @vertexes.size
       vertex_map = used_vertex_indexes.each_with_index.to_h
       @meshes.each { |m|
@@ -987,7 +987,7 @@ module Bayonetta
       last_offset = @header.offset_vertexes
 
       last_offset += @header.num_vertexes * 32
-      last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20)
+      last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20) if @vertexes_ex_data
 
       last_offset += @header.num_vertexes * @header.vertex_ex_data_size * 4
       last_offset = @header.offset_bone_hierarchy = align(last_offset, 0x20)
