@@ -63,15 +63,19 @@ OptionParser.new do |opts|
   end
 
   opts.on("-c", "--cleanup-materials", "Cleanup materials") do |cleanup_mat|
-     $options[:cleanup_mat] = cleanup_mat
+    $options[:cleanup_mat] = cleanup_mat
   end
 
   opts.on("--cleanup-material-sizes", "Cleanup material sizes") do |cleanup_mat_sizes|
-     $options[:cleanup_mat_sizes] = cleanup_mat_sizes
+    $options[:cleanup_mat_sizes] = cleanup_mat_sizes
   end
 
   opts.on("--maximize-material-sizes", "Maximize material sizes") do |cleanup_mat_sizes|
-     $options[:maximize_mat_sizes] = cleanup_mat_sizes
+    $options[:maximize_mat_sizes] = cleanup_mat_sizes
+  end
+
+  opts.on("--scale=SCALE", "Scales the given mesh by a factor") do |scale|
+    $options[:scale] = scale.to_f
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -88,6 +92,7 @@ raise "Invalid file #{input_file}" unless File::file?(input_file)
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
+wmb.scale($options[:scale]) if $options[:scale]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]

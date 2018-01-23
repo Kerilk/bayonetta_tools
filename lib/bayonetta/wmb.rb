@@ -699,6 +699,24 @@ module Bayonetta
       self
     end
 
+    def scale(s)
+      @vertexes.each { |v|
+        v.x = v.x * s
+        v.y = v.y * s
+        v.z = v.z * s
+      }
+      @bone_positions.each { |p|
+        p.x = p.x * s
+        p.y = p.y * s
+        p.z = p.z * s
+      }
+      @bone_relative_positions.each { |p|
+        p.x = p.x * s
+        p.y = p.y * s
+        p.z = p.z * s
+      }
+    end
+
     def restrict_bones(used_bones)
       bones = get_bone_structure
       used_bones_array = used_bones.to_a.sort
