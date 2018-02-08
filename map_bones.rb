@@ -30,7 +30,7 @@ class WMBHeader < FFI::Struct
          :unknownK,                          :int,
          :unknownL,                          :int,
          :offset_unknownJ,                   :uint,
-         :offset_bone_infos,                 :uint,
+         :offset_bone_symmetries,            :uint,
          :offset_bone_flags,                 :uint,
          :ex_mat_info,                      [:int, 4]
 end

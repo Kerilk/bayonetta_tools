@@ -27,7 +27,7 @@ struct {
     int32   unknownK;
     int32   unknownL;
     uint32  offsetUnknownJ;
-    uint32  offsetBoneInfos;
+    uint32  offsetBoneSymmetries;
     uint32  offsetBoneFlags;
     int32   exMatInfo[4];
 } header;
@@ -138,9 +138,9 @@ if ( header.offsetUnknownJ ) {
     } unknownStruct;
 }
 
-if ( header.offsetBoneInfos ) {
-    FSeek( header.offsetBoneInfos );
-    int16 boneInfos[header.numBones];
+if ( header.offsetBoneSymmetries ) {
+    FSeek( header.offsetBoneSymmetries );
+    int16 boneSymmetries[header.numBones];
 }
 
 if ( header.offsetBoneFlags ) {

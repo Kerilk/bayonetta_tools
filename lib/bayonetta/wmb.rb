@@ -541,7 +541,7 @@ module Bayonetta
       register_field :u_k, :l
       register_field :u_l, :l
       register_field :offset_u_j, :L
-      register_field :offset_bone_infos, :L
+      register_field :offset_bone_symmetries, :L
       register_field :offset_bone_flags, :L
       register_field :offset_shader_names, :L
       register_field :offset_tex_infos, :L
@@ -560,7 +560,7 @@ module Bayonetta
     register_field :bone_index_translate_table, BoneIndexTranslateTable,
                    offset: 'header\offset_bone_index_translate_table'
     register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
-    register_field :bone_infos, :s, count: 'header\num_bones', offset: 'header\offset_bone_infos'
+    register_field :bone_symmetries, :s, count: 'header\num_bones', offset: 'header\offset_bone_symmetries'
     register_field :bone_flags, :c, count: 'header\num_bones', offset: 'header\offset_bone_flags'
     register_field :shader_names, ShaderName, count: 'header\num_materials', offset: 'header\offset_shader_names'
     register_field :tex_infos, TexInfos, offset: 'header\offset_tex_infos'
@@ -667,7 +667,7 @@ module Bayonetta
         end
         b.index = i
         b.relative_position = @bone_relative_positions[i]
-        b.info = @bone_infos[i] if @header.offset_bone_infos > 0x0
+        b.symmetric = @bone_symmetries[i] if @header.offset_bone_symmetries > 0x0
         b.flag = @bone_flags[i] if @header.offset_bone_flags > 0x0
       }
     end
@@ -676,7 +676,7 @@ module Bayonetta
       @bone_hierarchy = []
       @bone_relative_positions = []
       @bone_positions = []
-      @bone_infos = [] if @header.offset_bone_infos > 0x0
+      @bone_symmetries = [] if @header.offset_bone_symmetries > 0x0
       @bone_flags = [] if @header.offset_bone_flags > 0x0
       bones.each { |b|
         p_index = -1
@@ -692,7 +692,7 @@ module Bayonetta
           end
         end
         @bone_relative_positions.push rel_position
-        @bone_infos.push b.info if @header.offset_bone_infos > 0x0
+        @bone_symmetries.push b.symmetric if @header.offset_bone_symmetries > 0x0
         @bone_flags.push b.flag if @header.offset_bone_flags > 0x0
       }
       @header.num_bones = bones.size
@@ -926,11 +926,11 @@ module Bayonetta
     end
 
     def dump_bones(list = nil)
-      bone_struct = Struct::new(:index, :parent, :relative_position, :position, :global_index, :info, :flag)
+      bone_struct = Struct::new(:index, :parent, :relative_position, :position, :global_index, :symmetric, :flag)
       table = @bone_index_translate_table.table.invert
       list = (0...@header.num_bones) unless list
       list.collect { |bi|
-        bone_struct::new(bi, @bone_hierarchy[bi], @bone_relative_positions[bi], @bone_positions[bi], table[bi],  @header.offset_bone_infos > 0x0 ? @bone_infos[bi] : -1, @header.offset_bone_flags > 0x0 ? @bone_flags[bi] : 5)
+        bone_struct::new(bi, @bone_hierarchy[bi], @bone_relative_positions[bi], @bone_positions[bi], table[bi],  @header.offset_bone_symmetries > 0x0 ? @bone_symmetries[bi] : -1, @header.offset_bone_flags > 0x0 ? @bone_flags[bi] : 5)
       }
     end
 
@@ -942,7 +942,7 @@ module Bayonetta
         @bone_hierarchy.push b[:parent]
         @bone_relative_positions.push b[:relative_position]
         @bone_positions.push b[:position]
-        @bone_infos.push b[:info] if @header.offset_bone_infos > 0x0
+        @bone_symmetries.push b[:symmetric] if @header.offset_bone_symmetries > 0x0
         @bone_flags.push b[:flag] if @header.offset_bone_flags > 0x0
       }
       @bone_index_translate_table.table = table
@@ -1024,8 +1024,8 @@ module Bayonetta
         last_offset = @header.offset_u_j = align(last_offset, 0x20)
         last_offset += @u_j.size
       end
-      if @header.offset_bone_infos > 0x0
-        last_offset = @header.offset_bone_infos = align(last_offset, 0x20)
+      if @header.offset_bone_symmetries > 0x0
+        last_offset = @header.offset_bone_symmetries = align(last_offset, 0x20)
         last_offset += @header.num_bones * 2
       end
       if @header.offset_bone_flags > 0x0

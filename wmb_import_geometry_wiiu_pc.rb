@@ -93,7 +93,7 @@ def merge_bones(wmb1, wmb2)
     b = bones2[bi].dup
     b.index = new_bone_index
     b.parent = bones1[mapping[b.parent.index]] if b.parent
-    b.info = b.info ? b.info : -1
+    b.symmetric = b.symmetric ? b.symmetric : -1
     b.flag = b.flag ? b.flag : 5
 
     bones1.push b
@@ -269,8 +269,8 @@ def recompute_layout(wmb1, wmb2)
     last_offset = wmb1.header.offset_u_j = align(last_offset, 0x20)
     last_offset += wmb1.u_j.size
   end
-  if wmb1.header.offset_bone_infos > 0x0
-    last_offset = wmb1.header.offset_bone_infos = align(last_offset, 0x20)
+  if wmb1.header.offset_bone_symmetries > 0x0
+    last_offset = wmb1.header.offset_bone_symmetries = align(last_offset, 0x20)
     last_offset += 2*wmb1.header.num_bones
   end
   if wmb1.header.offset_bone_flags > 0x0

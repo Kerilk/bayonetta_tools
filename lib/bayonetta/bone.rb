@@ -6,14 +6,14 @@ module Bayonetta
     attr_accessor :index
     attr_accessor :position
     attr_accessor :relative_position
-    attr_accessor :info
+    attr_accessor :symmetric
     attr_accessor :flag
-    def initialize( position)
+    def initialize( position )
       @position = position
       @children = []
       @parent = nil
       @relative_position = nil
-      @info = nil
+      @symmetric = nil
       @flag = nil
       @index = nil
     end
