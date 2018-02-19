@@ -1,0 +1,234 @@
+LittleEndian();
+
+typedef uint16 pghalf<read=pghalfRead>;
+
+string pghalfRead( pghalf value )
+{
+    double f = 0.0;
+    uint32 ui = value;
+    uint32 sign = ui & 0x8000;
+    ui = ui ^ sign;
+
+    uint32 exponent = ui & 0x7E00;
+    uint32 significand = ui ^ exponent;
+    int i;
+    int bit = 0x1 << 8;
+    for ( i = 1; i <= 9; i++ ) {
+        if ( bit & significand ) {
+            f += Pow(2.0, -i);
+        }
+        bit >>= 1;
+    }
+    string s;
+
+    int32 sexponent;
+    if ( exponent == 0x7E00 ) {
+        if (significand) {
+            SPrintf( s, "NaN" );
+        } else if (sign) {
+            SPrintf( s, "-Infinity" );
+        } else {
+            SPrintf( s, "+Infinity" );
+        }
+    } else if ( exponent != 0 ) {
+        exponent >>= 9;
+        sexponent = exponent;
+        sexponent -= 47;
+        f += 1.0;
+        f *= Pow(2.0, sexponent);
+        if (sign) {
+            f *= -1.0;
+        }
+        SPrintf( s, "%e", f );
+    } else {
+        if (significand) { //denorm
+            if( sign ) {
+                f *= -1;
+            }
+            f *= Pow(2.0, -46);
+            SPrintf( s, "%e", f );
+        } else if (sign) {
+            SPrintf( s, "-0.0" );
+        } else {
+            SPrintf( s, "0.0" );
+        }
+    }
+    return s;
+}
+
+
+struct {
+    char      id[4]; // "mot\0"
+    uint32    hash;
+    uint16    flag;
+    int16     frameCount;
+    uint32    recordOffset;
+    uint32    recordNumber;
+    uint32    unknown; // usually 0 or 0x003c0000, maybe two uint16
+    string    animName; // found at most 12 bytes with terminating 0
+} header;
+
+FSeek( header.recordOffset );
+
+struct RECORD{
+    int16    boneIndex;
+    char     index;
+    char     flag;
+    int16    elemNumber;
+    int16    unknown; //always -1
+    union {
+        float    flt;
+        uint32   offset;
+    } value;
+} records[header.recordNumber];
+
+local int i;
+for ( i = 0; i < header.recordNumber; i++) {
+
+    // 0: constant value for each frame. The value is in records[i].value.flt. -1: only found on terminator (bone index 0x7fff).
+    if( records[i].flag == 0 || records[i].flag == -1)
+        continue;
+
+    FSeek( header.recordOffset + i * sizeof(RECORD) + records[i].value.offset );
+
+    switch ( records[i].flag ) {
+
+    // usually one value per frame, if some are missing the last is to be repeated
+    case 1:
+        struct {
+            float values[records[i].elemNumber];
+        } interpol1;
+        break;
+
+    // same as 1 but with quantized data
+    // value: p + dp * cp;
+    case 2:
+        struct {
+            struct {
+                float p;
+                float dp;
+            } values;
+            uint16 cp[records[i].elemNumber];
+        } interpol2;
+        break;
+
+    // same as 2 but with reduced precision
+    case 3:
+        struct {
+            struct {
+                pghalf p;
+                pghalf dp;
+            } values;
+            ubyte cp[records[i].elemNumber];
+        } interpol3;
+        break;
+
+    // spline coeffs values at key point index :
+    // value: p
+    // incoming derivative: m0
+    // outcoming derivative: m1
+    // if some ranges are missing at start or after last index, first value or last value should be repeated for missing values.
+    case 4:
+        struct {
+            struct {
+                uint16 index; // absolute frame index
+                uint16 dummy;
+                float p;
+                float m0;
+                float m1;
+            } keys[records[i].elemNumber];
+        } interpol4;
+        break;
+
+    // same as 4 but with quantized values:
+    // value: p + dp * cp
+    // incoming derivative: m0 + dm0 * cm0
+    // outcoming derivative: m1 + dm1 * cm1
+    // if some ranges are missing at start or after last index, first value or last value should be repeated for missing values.
+    case 5:
+        struct {
+            struct {
+                float p;
+                float dp;
+                float m0;
+                float dm0;
+                float m1;
+                float dm1;
+            } values;
+            struct {
+                uint16 index; // absolute frame index
+                uint16 cp;
+                uint16 cm0;
+                uint16 cm1;
+            } keys[records[i].elemNumber];
+        } interpol5;
+        break;
+
+
+    // same as 5 with reduced precision
+    case 6:
+        struct {
+            struct {
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
+            } values;
+            struct {
+                ubyte index; // absolute frame index
+                ubyte cp;
+                ubyte cm0;
+                ubyte cm1;
+            } keys[records[i].elemNumber];
+        } interpol6;
+        break;
+
+    // same as 6 with relative frame index encoding
+    case 7:
+        struct {
+            struct {
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
+            } values;
+            struct {
+                ubyte index; // frame index relative to previous key
+                ubyte cp;
+                ubyte cm0;
+                ubyte cm1;
+            } keys[records[i].elemNumber];
+        } interpol7;
+        break;
+
+    // same as 7 but with absolute frame index (at least one relative frame index would have been > 255)
+    case 8:
+        struct {
+            struct {
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
+            } values;
+            struct {
+                BigEndian();
+                uint16 index; // absolute frame index (in big endian order!!!!)
+                LittleEndian();
+                ubyte cp;
+                ubyte cm0;
+                ubyte cm1;
+            } keys[records[i].elemNumber];
+        } interpol8;
+        break;
+
+    default:
+        Printf("Missing flag %d (%d)\n", records[i].flag, i);
+        break;
+    }
+}
