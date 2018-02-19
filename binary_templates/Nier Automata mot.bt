@@ -116,8 +116,8 @@ for ( i = 0; i < header.recordNumber; i++) {
     case 3:
         struct {
             struct {
-                hfloat p;
-                hfloat dp;
+                pghalf p;
+                pghalf dp;
             } values;
             ubyte cp[records[i].elemNumber];
         } interpol3;
@@ -169,12 +169,12 @@ for ( i = 0; i < header.recordNumber; i++) {
     case 6:
         struct {
             struct {
-                hfloat p;
-                hfloat dp;
-                hfloat m0;
-                hfloat dm0;
-                hfloat m1;
-                hfloat dm1;
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
             } values;
             struct {
                 ubyte index; // absolute frame index
@@ -189,12 +189,12 @@ for ( i = 0; i < header.recordNumber; i++) {
     case 7:
         struct {
             struct {
-                hfloat p;
-                hfloat dp;
-                hfloat m0;
-                hfloat dm0;
-                hfloat m1;
-                hfloat dm1;
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
             } values;
             struct {
                 ubyte index; // frame index relative to previous key
@@ -209,12 +209,12 @@ for ( i = 0; i < header.recordNumber; i++) {
     case 8:
         struct {
             struct {
-                hfloat p;
-                hfloat dp;
-                hfloat m0;
-                hfloat dm0;
-                hfloat m1;
-                hfloat dm1;
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
             } values;
             struct {
                 BigEndian();
