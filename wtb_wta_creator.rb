@@ -24,7 +24,7 @@ idx = []
 idx = YAML::load_file(".metadata/texture_idx.yaml") if File.exist?(".metadata/texture_idx.yaml")
 infos = []
 infos = YAML::load_file(".metadata/texture_infos.yaml") if File.exist?(".metadata/texture_infos.yaml")
-unknown = []
+unknown = 0
 unknown = YAML::load_file(".metadata/unknown.yaml") if File.exist?(".metadata/unknown.yaml")
 
 
