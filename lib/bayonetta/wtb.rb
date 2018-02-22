@@ -236,7 +236,20 @@ module Bayonetta
       when "DDS ".b
         @texture_types.push( ".dds" )
       else
-        raise "Unsupported texture type! #{id}"
+        begin
+          warn "Determining type by extension!"
+          p = file.path
+          case File.extname(p).downcase
+          when ".dds"
+            @texture_types.push( ".dds" )
+          when ".gtx"
+            @texture_types.push( ".gtx" )
+          else
+            raise "Unsupported texture type! #{File.extname(p)}"
+          end
+        rescue
+          raise "Unsupported texture type! #{id}"
+        end
       end
       invalidate_layout
       uint = get_uint
