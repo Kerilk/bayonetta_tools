@@ -74,7 +74,7 @@ OptionParser.new do |opts|
     $options[:maximize_mat_sizes] = cleanup_mat_sizes
   end
 
-  opts.on("--scale=SCALE", "Scales the given mesh by a factor") do |scale|
+  opts.on("--scale=SCALE", "Scales the model by a factor") do |scale|
     $options[:scale] = scale.to_f
   end
 
