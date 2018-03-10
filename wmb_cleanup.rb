@@ -5,7 +5,7 @@ require_relative 'lib/bayonetta.rb'
 include Bayonetta
 
 $options = {
-  :vertexes => true,
+  :vertexes => false,
   :bones => false,
   :textures => false,
   :cleanup_mat => false,
