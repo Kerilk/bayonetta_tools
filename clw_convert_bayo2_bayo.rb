@@ -37,8 +37,12 @@ input_file = ARGV[0]
 
 raise "Invalid file #{input_file}" unless File::file?(input_file)
 
-clp = CLWFile::load_bxm(input_file)
-
-clp.remap($bone_map) if $options[:remap_bones]
-
-clp.dump("clp_output/#{File.basename(ARGV[0]).gsub("_clw.bxm",".clw")}")
+if File.extname(ARGV[0]) == ".bxm"
+  clw = CLWFile::load_bxm(input_file)
+  clw.remap($bone_map) if $options[:remap_bones]
+  clw.dump("clp_output/#{File.basename(ARGV[0]).gsub("_clw.bxm",".clw")}")
+else
+  clw = CLWFile::load(input_file)
+  clw.remap($bone_map) if $options[:remap_bones]
+  clw.dump("clp_output/#{File.basename(ARGV[0])}")
+end
