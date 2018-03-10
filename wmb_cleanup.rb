@@ -16,7 +16,8 @@ $options = {
   :fix => false,
   :swap => nil,
   :swap_meshes => nil,
-  :delete_meshes => nil
+  :delete_meshes => nil,
+  :merge_meshes => nil
 }
 
 OptionParser.new do |opts|
@@ -42,16 +43,20 @@ OptionParser.new do |opts|
     $options[:swap] = swap
   end
 
+  opts.on("--duplicate-meshes=MESHLIST", "Duplicate specified meshes") do |mesh_list|
+    $options[:duplicate_meshes] = eval(mesh_list).to_a
+  end
+
   opts.on("-s", "--swap-meshes=MESHHASH", "Swap specified meshes") do |mesh_hash|
     $options[:swap_meshes] = eval(mesh_hash).to_h
   end
 
-  opts.on("-m", "--delete-meshes=MESHLIST", "Delete specified meshes") do |mesh_list|
-    $options[:delete_meshes] = eval(mesh_list).to_a
+  opts.on("--merge-meshes=MESHHASH", "Merge specified meshes") do |mesh_hash|
+    $options[:merge_meshes] = eval(mesh_hash).to_h
   end
 
-  opts.on("--duplicate-meshes=MESHLIST", "Duplicate specified meshes") do |mesh_list|
-    $options[:duplicate_meshes] = eval(mesh_list).to_a
+  opts.on("-m", "--delete-meshes=MESHLIST", "Delete specified meshes") do |mesh_list|
+    $options[:delete_meshes] = eval(mesh_list).to_a
   end
 
   opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
@@ -95,6 +100,7 @@ wmb = WMBFile::load(input_file)
 wmb.scale($options[:scale]) if $options[:scale]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
+wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
 wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]

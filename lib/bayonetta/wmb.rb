@@ -777,6 +777,15 @@ module Bayonetta
       self
     end
 
+    def merge_meshes(hash)
+      hash.each { |k, v|
+        raise "Mesh #{k} was not found in the model!" unless @meshes[k]
+        raise "Mesh #{v} was not found in the model!" unless @meshes[v]
+        @meshes[k].batches += @meshes[v].batches
+        @meshes[k].header.num_batch = @meshes[k].batches.length
+      }
+    end
+
     def delete_bones(list)
       used_bones = (@header.num_bones.times.to_a - list)
       restrict_bones(used_bones)
