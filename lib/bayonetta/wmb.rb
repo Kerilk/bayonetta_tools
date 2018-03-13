@@ -778,10 +778,13 @@ module Bayonetta
     end
 
     def merge_meshes(hash)
-      hash.each { |k, v|
+      hash.each { |k, vs|
         raise "Mesh #{k} was not found in the model!" unless @meshes[k]
-        raise "Mesh #{v} was not found in the model!" unless @meshes[v]
-        @meshes[k].batches += @meshes[v].batches
+        vs = [vs].flatten
+        vs.each { |v|
+          raise "Mesh #{v} was not found in the model!" unless @meshes[v]
+          @meshes[k].batches += @meshes[v].batches
+        }
         @meshes[k].header.num_batch = @meshes[k].batches.length
       }
     end
