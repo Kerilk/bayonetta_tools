@@ -211,7 +211,7 @@ typedef struct {
         byte    unknownE2;
         int32   vertexStart;
         int32   vertexEnd;
-        int32   primitiveType;
+        int32   primitiveType <comment="4: triangles, 5: triangles strip">;
         uint32  offsetIndices;
         int32   numIndices;
         int32  vertexOffset;
