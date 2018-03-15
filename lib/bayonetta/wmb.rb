@@ -447,7 +447,14 @@ module Bayonetta
         sorted_indices = @indices.sort.uniq
         @header.vertex_start = sorted_indices.first
         @header.vertex_end = sorted_indices.last + 1
-        @header.vertex_offset = 0
+        if sorted_indices.last > 0xffff
+          offset = @header.vertex_offset = @header.vertex_start
+          @indices.collect! { |i|
+            i - offset
+          }
+        else
+          @header.vertex_offset = 0
+        end
         self
       end
 
@@ -965,7 +972,7 @@ module Bayonetta
       used_vertex_indexes = []
       @meshes.each { |m|
         m.batches.each { |b|
-          used_vertex_indexes += (b.header.vertex_start...b.header.vertex_end).to_a
+          used_vertex_indexes += ((b.indices.min+b.header.vertex_offset)..(b.indices.max+b.header.vertex_offset)).to_a
         }
       }
       used_vertex_indexes = used_vertex_indexes.sort.uniq
@@ -975,10 +982,15 @@ module Bayonetta
       vertex_map = used_vertex_indexes.each_with_index.to_h
       @meshes.each { |m|
         m.batches.each { |b|
-          offset = vertex_map[b.header.vertex_start] - b.header.vertex_start
-          b.header.vertex_start += offset
-          b.header.vertex_end += offset
-          b.header.vertex_offset += offset
+          b.indices.collect! { |i|
+            vertex_map[i + b.header.vertex_offset]
+          }
+          b.header.vertex_start = b.indices.min
+          b.header.vertex_end = b.indices.max + 1
+          b.header.vertex_offset = b.header.vertex_start
+          b.indices.collect! { |i|
+            i - b.header.vertex_offset
+          }
         }
       }
       self
@@ -1001,6 +1013,15 @@ module Bayonetta
             index + offset
           }
           b.header.vertex_offset = 0
+          b.header.vertex_start = b.indices.min
+          b.header.vertex_end = b.indices.max + 1
+          if b.indices.max > 0xffff
+            offset = b.header.vertex_start
+            b.indices.collect! { |index|
+              index - offset
+            }
+            b.header.vertex_offset = offset
+          end
         }
       }
     end
