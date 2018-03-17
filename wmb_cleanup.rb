@@ -84,14 +84,14 @@ OptionParser.new do |opts|
   end
 
   opts.on("--shift=SHIFT_vector", "Shifts the model") do |shift|
-	$options[:shift] = eval(shift).to_a
+    $options[:shift] = eval(shift).to_a
   end
-  
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
   end
-  
+
 end.parse!
 
 

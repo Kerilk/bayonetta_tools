@@ -727,21 +727,21 @@ module Bayonetta
     def shift(a,b,c)
       @vertexes.each { |v|
         v.x = v.x + a
-		v.y = v.y + b
-		v.z = v.z + c
+        v.y = v.y + b
+        v.z = v.z + c
       }
       @bone_positions.each { |p|
         p.x = p.x + a
-		p.y = p.y + b
-		p.z = p.z + c
+        p.y = p.y + b
+        p.z = p.z + c
       }
       @bone_relative_positions.each { |p|
         p.x = p.x + a
-		p.y = p.y + b
-		p.z = p.z + c
+        p.y = p.y + b
+        p.z = p.z + c
       }
     end
-	
+
     def restrict_bones(used_bones)
       bones = get_bone_structure
       used_bones_array = used_bones.to_a.sort
