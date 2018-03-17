@@ -83,11 +83,15 @@ OptionParser.new do |opts|
     $options[:scale] = scale.to_f
   end
 
+  opts.on("--shift=SHIFT_vector", "Shifts the model") do |shift|
+	$options[:shift] = eval(shift).to_a
+  end
+  
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
   end
-
+  
 end.parse!
 
 
@@ -98,6 +102,7 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
 wmb.scale($options[:scale]) if $options[:scale]
+wmb.shift(*($options[:shift])) if $options[:shift]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
