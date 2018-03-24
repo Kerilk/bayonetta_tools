@@ -53,7 +53,14 @@ module Bayonetta
       end
 
       def remap(map)
-        @parts_no = map[@parts_no]
+        @parts_no = check_and_remap_bone(map, @parts_no)
+      end
+
+      private
+      def check_and_remap_bone(map, no)
+	tmp = map[no]
+	raise "No bone found in map for #{no}!" unless tmp
+	tmp
       end
 
     end

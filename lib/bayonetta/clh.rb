@@ -45,8 +45,15 @@ module Bayonetta
       end
 
       def remap(map)
-        @p1 = map[@p1]
-        @p2 = map[@p2]
+        @p1 = check_and_remap_bone(map, @p1)
+        @p2 = check_and_remap_bone(map, @p2)
+      end
+
+      private
+      def check_and_remap_bone(map, no)
+	tmp = map[no]
+	raise "No bone found in map for #{no}!" unless tmp
+	tmp
       end
 
     end

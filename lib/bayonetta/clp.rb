@@ -93,13 +93,21 @@ module Bayonetta
       end
 
       def remap(map, poly = true, fix = true)
-        @no = map[@no]
-        @no_up = map[@no_up]
-        @no_down = map[@no_down]
-        @no_side = map[@no_side]
-        @no_poly = ( poly ? map[@no_poly] : 4095 )
-        @no_fix = ( fix ? map[@no_fix] : 4095 )
+        @no = check_and_remap_bone(map, @no)
+        @no_up = check_and_remap_bone(map, @no_up)
+        @no_down = check_and_remap_bone(map, @no_down)
+        @no_side = check_and_remap_bone(map, @no_side)
+        @no_poly = ( poly ? check_and_remap_bone(map, @no_poly) : 4095 )
+        @no_fix = ( fix ? check_and_remap_bone(map, @no_fix) : 4095 )
       end
+
+      private
+      def check_and_remap_bone(map, no)
+	tmp = map[no]
+	raise "No bone found in map for #{no}!" unless tmp
+	tmp
+      end
+
     end
 
     register_field :header, Header
