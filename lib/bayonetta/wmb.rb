@@ -679,6 +679,18 @@ module Bayonetta
       }
     end
 
+    def recompute_relative_positions
+      @bone_hierarchy.each_with_index { |b, i|
+        if b != -1
+          #puts "bone: #{i} parent: #{b} position: #{@bone_positions[i]} pposition: #{@bone_positions[b]}"
+          @bone_relative_positions[i] = @bone_positions[i] - @bone_positions[b]
+        else
+	  @bone_relative_positions[i] = @bone_positions[i]
+        end
+      }
+      self
+    end
+
     def set_bone_structure(bones)
       @bone_hierarchy = []
       @bone_relative_positions = []
