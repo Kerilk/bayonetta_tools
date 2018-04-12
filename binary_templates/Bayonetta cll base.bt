@@ -1,0 +1,30 @@
+struct {
+    char    id[4];
+    int16   unknown;
+    int16   recordNumber;
+    uint32  offsetRecords;
+    float   whatever;
+} header;
+
+FSeek(header.offsetRecords);
+struct {
+    char    weaponHand <comment="0: ScF, 1: Shu, 2: Kul, 3: DuF, 4: DuL, 5: LCK, 6: SaF, 8: Rod">;
+    char    weaponFeet <comment="0: ScF, 3: DuF, 4: DuL, 5: LCK, 7: Ode, 8: Rod">;
+    uint16  comboNumber;
+    uint32  offset;
+    uint32  dummy[2];
+} records[header.recordNumber];
+
+local int i;
+for( i = 0; i < header.recordNumber; i++ ) {
+    FSeek(records[i].offset);
+    struct {
+        struct {
+            int16   comboType;
+            uint16  flag <format=hex>;
+            int32   comboIdx;
+            int16   attacks[20];
+            int32   dummy[4];
+        } comboString[records[i].comboNumber];
+    } comboSet;
+}
