@@ -214,6 +214,10 @@ module Bayonetta
         [:@x, :@y, :@z]
       end
 
+      def to_s
+        "<#{@x}, #{@y}, #{@z}>"
+      end
+
     end
 
     class BoneIndexTranslateTable < DataConverter
