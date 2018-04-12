@@ -17,7 +17,8 @@ $options = {
   :swap => nil,
   :swap_meshes => nil,
   :delete_meshes => nil,
-  :merge_meshes => nil
+  :merge_meshes => nil,
+  :overwrite => nil
 }
 
 OptionParser.new do |opts|
@@ -79,6 +80,10 @@ OptionParser.new do |opts|
     $options[:maximize_mat_sizes] = cleanup_mat_sizes
   end
 
+  opts.on("--overwrite", "Overwrite input file") do |overwrite|
+    $options[:overwrite] = overwrite
+  end
+
   opts.on("--scale=SCALE", "Scales the model by a factor") do |scale|
     $options[:scale] = scale.to_f
   end
@@ -118,4 +123,8 @@ wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.cleanup_textures(input_file) if $options[:textures]
 wmb.renumber_batches
 wmb.recompute_layout
-wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
+if $options[:overwrite]
+  wmb.dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
+else
+  wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
+end
