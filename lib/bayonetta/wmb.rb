@@ -205,7 +205,7 @@ module Bayonetta
       def -(other)
         b = BonePosition::new
         b.x = @x - other.x
-        b.y = @f - other.y
+        b.y = @y - other.y
         b.z = @z - other.z
         b
       end
