@@ -69,6 +69,7 @@ def merge_bones(wmb1, wmb2)
 #common_bones = YAML::load_file("Bayonetta2_common_bones.yaml")
 #mapping = YAML::load_file("Bayo2_pl0010_Bayo_pl0010_bone_mapping.yaml")
 
+  #mapping in local indexes
   mapping = {}
 
   tt2.each { |key, val|
@@ -76,6 +77,12 @@ def merge_bones(wmb1, wmb2)
   }
   mapping = mapping.to_a.sort { |e1, e2| e1.first <=> e2.first }.to_h
 
+  #update bone positions to meet imported model's ones.
+  if $options[:update_bones]
+    mapping.select { |k,v| v }.each { |k,v|
+      bones1[v].position = bones2[k].position
+    }
+  end
 #missing_bones = mapping.select { |k,v| v.nil? }.collect { |k,v| bones2[k] }
 #missing_mapping = get_bone_mapping(missing_bones, bones1)
 #p missing_mapping
@@ -398,6 +405,10 @@ OptionParser.new do |opts|
     $options[:bone_map] = bone_map
   end
 
+  opts.on("-u", "--update-bones", "Update recognized bone positions") do |update_bones|
+    $options[:update_bones] = update_bones
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -433,6 +444,8 @@ common_mapping = merge_bones(wmb1, wmb2)
 merge_materials(wmb1, wmb2, tex_map)
 
 merge_meshes(wmb1, wmb2)
+
+wmb1.recompute_relative_positions if $options[:update_bones]
 
 recompute_layout(wmb1, wmb2)
 
