@@ -15,11 +15,13 @@ uint32 offsets[header.recordCount];
 
 FSeek(header.typeOffset);
 struct {
-    uint32 u_a;
-    char id[4];
-    uint32 size;
-    uint32 offset;
-} types[23*header.recordCount];
+    struct {
+        uint32 u_a;
+        char id[4];
+        uint32 size;
+        uint32 offset;
+    } types[23];
+}typeGroups[header.recordCount];
 
 typedef struct {
     int16   u_a;
@@ -36,9 +38,9 @@ for ( i=0; i<header.recordCount; i++ ) {
     FSeek(offsets[i]);
     struct {
         for ( j=0; j<23; j++ ) {
-            if (types[23*i + j].size > 0) {
-                FSeek(offsets[i] + types[23*i + j].offset);
-                if ( Strncmp( types[23*i + j].id, "TRAP", 4 ) == 0 ) {
+            if (typeGroups[i].types[j].size > 0) {
+                FSeek(offsets[i] + typeGroups[i].types[j].offset);
+                if ( Strncmp( typeGroups[i].types[j].id, "TRAP", 4 ) == 0 ) {
                     part_s part;
                 }
             }
