@@ -128,11 +128,13 @@ def merge_bones(wmb1, wmb2)
   wmb1.bone_index_translate_table.table = new_tt
 
   #update bone symmetries
-  (-missing_bones_count..-1).each { |i|
-    symmetric = common_mapping[wmb1.bone_symmetries[i]]
-    symmetric = -1 unless symmetric
-    wmb1.bone_symmetries[i] = symmetric
-  }
+  if wmb1.bone_symmetries
+    (-missing_bones_count..-1).each { |i|
+      symmetric = common_mapping[wmb1.bone_symmetries[i]]
+      symmetric = -1 unless symmetric
+      wmb1.bone_symmetries[i] = symmetric
+    }
+  end
 #mapping.each_with_index { |i, j|
 #  p = bones2[j]
 #  q = bones1[i]
