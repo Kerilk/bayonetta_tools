@@ -1,0 +1,70 @@
+struct {
+    char id[4];
+    int32 recordNumber;
+} header;
+
+struct {
+    int32   index;
+    uint32  offset <format=hex>;
+} records[header.recordNumber];
+
+local int i;
+for ( i = 0; i < header.recordNumber; i++ ) {
+    FSeek(records[i].offset);
+    struct {
+        int32   datumNumber;
+        uint32  offsets[datumNumber];
+        local int j;
+        for ( j = 0; j < datumNumber; j++ ) {
+            FSeek(records[i].offset + offsets[j]);
+            struct {
+                struct {
+                    int16   u_a;
+                    int16   u_b;
+                    uint32  u_c <format=hex>;
+                    uint32  u_d <format=hex>;
+                    char    u_f[8];
+                    int16   u_f1;
+                    int16   u_f2;
+                    uint32  u[10];
+                } part;
+                struct {
+                    float   vals0[30];
+                    char    u_f3[2];
+                    int16   u_f4[3];
+                    float   vals1[14];
+                    int16   u_g;
+                    int16   u_h;
+                    float   vals2[11];
+                    int16   u_i;
+                    int16   u_j;
+                    float   vals31[20];
+                    int16   u_j11;
+                    char    u_j12[2];
+                    float   vals311[2];
+                    int16   u_i2;
+                    int16   u_j2;
+                    float   u_j3;
+                    char    u_j4[4];
+                    float   vals32[10];
+                } move;
+                struct {
+                    char    u_k[4];
+                    int16   u_l;
+                    int16   u_m;
+                    char    u_m1[6];
+                    int16   u_m2;
+                    float   vals4[6];
+                    int16   u_n;
+                    int16   u_o;
+                } emif;
+                float   u_p;
+                int16   u_u;
+                int16   u_v;
+                float   vals5[318];
+            } datum;
+        }
+
+    } data;
+    
+}
