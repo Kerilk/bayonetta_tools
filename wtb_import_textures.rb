@@ -51,7 +51,7 @@ texs.each { |name, info|
   end
   if File.extname(name) == ".gtx"
     new_name = name.gsub("gtx","dds")
-    `#{path}/TexConv2.exe -i "#{name}" -o "#{new_name}"`
+    `"#{path}/TexConv2.exe" -i "#{name}" -o "#{new_name}"`
   else
     new_name = name
   end

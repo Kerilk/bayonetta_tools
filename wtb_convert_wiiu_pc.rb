@@ -42,7 +42,7 @@ texs.each { |name, info|
     flags &= 0xfffffffd #remove 0x2 flag
   end
   new_name = name.gsub("gtx","dds")
-  `#{path}/TexConv2.exe -i "#{name}" -o "#{new_name}"`
+  `"#{path}/TexConv2.exe" -i "#{name}" -o "#{new_name}"`
   fl2.push( File::new(new_name, "rb"), flags, idx )
 }
 
