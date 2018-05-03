@@ -88,8 +88,15 @@ OptionParser.new do |opts|
     $options[:scale] = scale.to_f
   end
 
-  opts.on("--shift=SHIFT_vector", "Shifts the model") do |shift|
+  opts.on("--shift=SHIFT_VECTOR", "Shifts the model") do |shift|
     $options[:shift] = eval(shift).to_a
+  end
+
+  opts.on("--rotate=ROTATE_INFO", "Rotates the model.\n\t"+
+                                  "ROTATE_INFO is either:\n\t\t"+
+                                  "[rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)\n\t\t"+
+                                  "[[rx, ry, rz], [x, y, z]] with the center of the rotation specified" ) do |rotate|
+    $options[:rotate] = eval(rotate).to_a
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -107,6 +114,7 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
 wmb.scale($options[:scale]) if $options[:scale]
+wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]

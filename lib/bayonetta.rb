@@ -1,3 +1,4 @@
+require_relative 'bayonetta/linalg'
 require_relative 'bayonetta/endianness'
 require_relative 'bayonetta/alignment'
 require_relative 'bayonetta/bone'

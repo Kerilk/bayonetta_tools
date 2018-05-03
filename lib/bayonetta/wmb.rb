@@ -756,6 +756,30 @@ module Bayonetta
         p.y = p.y + b
         p.z = p.z + c
       }
+    def rotate(*args)
+      if args.length == 2
+        (rx, ry, rz), center = args
+      elsif args.length == 3
+        rx, ry, rz = args
+        center = nil
+      else
+        raise "Invalid arguments for rotate: #{args.inspect}!"
+      end
+      m = Linalg::get_rotation_matrix(rx, ry, rz, center: center)
+      @vertexes.each { |v|
+        r = m * Linalg::Vector::new(v.x, v.y, v.z)
+        v.x = r.x
+        v.y = r.y
+        v.z = r.z
+      }
+      @bone_positions.each { |p|
+        r = m * Linalg::Vector::new(p.x, p.y, p.z)
+        p.x = r.x
+        p.y = r.y
+        p.z = r.z
+      }
+      recompute_relative_positions
+      self
     end
 
     def restrict_bones(used_bones)
