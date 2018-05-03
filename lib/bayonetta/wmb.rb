@@ -738,24 +738,28 @@ module Bayonetta
         p.y = p.y * s
         p.z = p.z * s
       }
+      self
     end
 
-    def shift(a,b,c)
+    def shift(x, y, z)
       @vertexes.each { |v|
-        v.x = v.x + a
-        v.y = v.y + b
-        v.z = v.z + c
+        v.x = v.x + x
+        v.y = v.y + y
+        v.z = v.z + z
       }
       @bone_positions.each { |p|
-        p.x = p.x + a
-        p.y = p.y + b
-        p.z = p.z + c
+        p.x = p.x + x
+        p.y = p.y + y
+        p.z = p.z + z
       }
       @bone_relative_positions.each { |p|
-        p.x = p.x + a
-        p.y = p.y + b
-        p.z = p.z + c
+        p.x = p.x + x
+        p.y = p.y + y
+        p.z = p.z + z
       }
+      self
+    end
+
     def rotate(*args)
       if args.length == 2
         (rx, ry, rz), center = args
