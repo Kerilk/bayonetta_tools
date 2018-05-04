@@ -180,7 +180,9 @@ for ( i = 0; i < header.numMaterials - 1; i++ ) {
             float   val;
         } texture[5];
         dataSize = materialOffsets[i+1] - materialOffsets[i] - 24;
-        float   data[dataSize/4];
+        if (dataSize > 0) {
+            float   data[dataSize/4];
+        }
     } material;
 }
 FSeek( header.offsetMaterials + materialOffsets[header.numMaterials - 1] );
