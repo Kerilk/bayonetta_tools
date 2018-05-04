@@ -864,14 +864,22 @@ module Bayonetta
       self
     end
 
-    def cleanup_textures(input_name)
+    def cleanup_textures(input_name, overwrite)
       if File.exist?(input_name.gsub(".wmb",".wtb"))
         wtb = WTBFile::new(File::new(input_name.gsub(".wmb",".wtb"), "rb"))
-        output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wtb"
+        if overwrite
+          output_name = input_name.gsub(".wmb",".wtb")
+        else
+          output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wtb"
+        end
         wtp = false
       elsif File.exist?(input_name.gsub(".wmb",".wta"))
         wtb = WTBFile::new(File::new(input_name.gsub(".wmb",".wta"), "rb"), true, File::new(input_name.gsub(".wmb",".wtp"), "rb"))
-        output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wta"
+        if overwrite
+          output_name = input_name.gsub(".wmb",".wta")
+        else
+          output_name = "wtb_output/#{File.basename(input_name, ".wmb")}.wta"
+        end
         wtp = true
       else
         raise "Could not find texture file!"
