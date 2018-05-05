@@ -409,6 +409,14 @@ OptionParser.new do |opts|
     $options[:update_bones] = update_bones
   end
 
+  opts.on("-t", "--[no-]import-textures", "Import textures also") do |import_textures|
+    $options[:import_textures] = import_textures
+  end
+
+  opts.on("-o", "--[no-]overwrite", "Overwrite destination files") do |overwrite|
+    $options[:overwrite] = overwrite
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -427,12 +435,14 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb1 = WMBFile::load(input_file1)
 wmb2 = WMBFile::load(input_file2)
 
-
-tex1 = WTBFile::new(File::new(input_file1.gsub(/wmb\z/,"wtb"), "rb"))
+tex1_file_name = input_file1.gsub(/wmb\z/,"wtb")
+tex1 = WTBFile::new(File::new(tex1_file_name, "rb"))
 begin
-  tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wta"), "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
+  tex2_file_name = input_file2.gsub(/wmb\z/,"wta")
+  tex2 = WTBFile::new(File::new(tex2_file_name, "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
 rescue
-  tex2 = WTBFile::new(File::new(input_file2.gsub(/wmb\z/,"wtb"), "rb"))
+  tex2_file_name = input_file2.gsub(/wmb\z/,"wtb")
+  tex2 = WTBFile::new(File::new(tex2_file_name, "rb"))
 end
 
 tex_map = get_texture_map(tex1, tex2)
@@ -453,4 +463,12 @@ File::open("wmb_output/#{File::basename(input_file2,".wmb")}_#{File::basename(in
   f.write YAML::dump(common_mapping)
 }
 
-wmb1.dump("wmb_output/"+File.basename(input_file1))
+if $options[:overwrite]
+  wmb1.dump(input_file1)
+else
+  wmb1.dump("wmb_output/"+File.basename(input_file1))
+end
+
+if $options[:import_textures]
+  `ruby wtb_import_textures.rb "#{tex1_file_name}" "#{tex2_file_name}"#{$options[:overwrite] ? " --overwrite" : ""}`
+end

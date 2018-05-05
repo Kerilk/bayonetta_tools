@@ -1,6 +1,23 @@
 #!ruby
+require 'optparse'
 require_relative 'lib/bayonetta.rb'
 include Bayonetta
+
+$options = {}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: wtb_import_textures.rb target_file source_file [options]"
+
+  opts.on("-o", "--[no-]overwrite", "Overwrite destination file") do |overwrite|
+    $options[:overwrite] = overwrite
+  end
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+end.parse!
 
 input_file1 = ARGV[0]
 input_file2 = ARGV[1]
@@ -58,6 +75,9 @@ texs.each { |name, info|
   fl2.push( File::new(new_name, "rb"), flags, nil )
 }
 
-Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
-fl2.dump("wtb_output/#{File.basename(input_file1)}")
-
+if $options[:overwrite]
+  fl2.dump(input_file1)
+else
+  Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
+  fl2.dump("wtb_output/#{File.basename(input_file1)}")
+end
