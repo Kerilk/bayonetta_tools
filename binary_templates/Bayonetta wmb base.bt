@@ -34,12 +34,6 @@ struct {
 
 FSeek( header.offsetVertexes );
 
-string normalRead( char val ) {
-    string s;
-    SPrintf(s, "%f", val / 127.0);
-    return s;
-}
-
 typedef struct {
     hfloat u;
     hfloat v;
@@ -73,11 +67,37 @@ string ubyteListRead( ubyteList &value ) {
     return s;
 }
 
+float tangentRead( uchar value) {
+    float v;
+    v = value;
+    v -= 127.0;
+    v /= 127.0;
+    return v;
+}
+
+typedef uint32 tangents_t<read=tangents_tRead>;
+
+string tangents_tRead(uint32 value) {
+    string s;
+    float tx = tangentRead(value & 0xff);
+    float ty = tangentRead((value >> 8 ) & 0xff);
+    float tz = tangentRead((value >> 16 ) & 0xff);
+    float d = tangentRead((value >> 24 ) & 0xff);
+    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
+    if (nrm != 0.0) {
+      tx /= nrm;
+      ty /= nrm;
+      tz /= nrm;
+    }
+    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f", tx, ty, tz, d);
+    return s;
+}
+
 struct {
     vector      position;
     mapping_t   mapping;
     normals_t   normals;
-    int32       unknown;
+    tangents_t  tangents;
     ubyteList   boneIndex;
     ubyteList   boneWeight;
 } vertexes[header.numVertexes];

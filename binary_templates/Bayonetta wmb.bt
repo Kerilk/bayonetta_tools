@@ -7,6 +7,11 @@ typedef struct {
     char   nx<read=normalRead>;
 } normals_t<read=normals_tRead>;
 
+string normalRead( char val ) {
+    string s;
+    SPrintf(s, "%f", val / 126.0);
+    return s;
+}
 
 string normals_tRead( normals_t &value ) {
     string s;
@@ -14,10 +19,12 @@ string normals_tRead( normals_t &value ) {
     double fy = value.ny / 127.0;
     double fz = value.nz / 127.0;
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    if (nrm != 0.0)
-        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
-    else
-        SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
+    if (nrm != 0.0) {
+        fx /= nrm;
+        fy /= nrm;
+        fz /= nrm;
+    }
+    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
     return s;
 }
 

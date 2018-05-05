@@ -1,8 +1,7 @@
 #define game 1;
 
-
 typedef struct {
-  uint32 value;
+  uint32 value <format=binary>;
 } normals_t<read=normals_tRead>;
 
 string normals_tRead( normals_t &value ) {
@@ -29,7 +28,12 @@ string normals_tRead( normals_t &value ) {
     float fy = (float)ny/(float)((1<<9)-1);
     float fz = (float)nz/(float)((1<<9)-1);
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx/nrm, fy/nrm, fz/nrm);
+    if (nrm != 0.0) {
+        fx /= nrm;
+        fy /= nrm;
+        fz /= nrm;
+    }
+    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
     return s;
 }
 

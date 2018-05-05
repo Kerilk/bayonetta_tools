@@ -191,7 +191,7 @@ module Bayonetta
       register_field :u, :S
       register_field :v, :S
       register_field :normals, Normals
-      register_field :unknown, :L
+      register_field :tangeants, :L
       register_field :bone_index, :L
       register_field :bone_weight, :L
 
