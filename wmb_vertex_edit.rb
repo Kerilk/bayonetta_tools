@@ -10,7 +10,8 @@ include Bayonetta
 $options = {
   :vector => [0.0, 1.0, 0.0],
   :point => [0.0, 0.0, 0.0],
-  :reject => false
+  :reject => false,
+  :cut => 0
 }
 
 def normalize(n)
@@ -19,7 +20,11 @@ def normalize(n)
 end
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: wmb_vertex_edit.rb NUMBER [options]"
+  opts.banner = "Usage: wmb_vertex_edit.rb [options]"
+
+  opts.on("-c", "--cut=NUMMBER", "Keep (reject) NUMBER vertexes") do |cut|
+    $options[:cut] = cut.to_i
+  end
 
   opts.on("-n", "--normal=VECTOR", "normal vector (default [0.0, 1.0, 0.0])") do |vector|
     $options[:vector] = normalize(eval(vector).to_a)
@@ -33,6 +38,10 @@ OptionParser.new do |opts|
     $options[:reject] = reject
   end
 
+  opts.on("-s", "--[no-]split", "Split vertexes keeping (rejecting) those below the plane") do |split|
+    $options[:split] = split
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -40,7 +49,7 @@ OptionParser.new do |opts|
 
 end.parse!
 
-cut = ARGV[0].to_i
+cut = $options[:cut]
 
 vertexes = YAML::load($stdin.read).to_a
 
@@ -57,8 +66,12 @@ plot = Nyaplot::Plot3D.new
 #  sc.fill_color(colors.pop)
 #end
 
+def position(n, p, v)
+  s = n[0]*(v[0]-p[0])+n[1]*(v[1]-p[1])+n[2]*(v[2]-p[2])
+end
+
 def distance(n, p, v)
-	(n[0]*v[0] +  n[1]*v[1] +  n[2]*v[2] - (n[0]*p[0] + n[1]*p[1] + n[2]*p[2])).abs
+  position(n, p, v).abs
 end
 
 def cluster(n, p, v, cut)
@@ -77,8 +90,38 @@ def cluster_with_index(n, p, v, cut)
   end
 end
 
+def split(n, p, v)
+  res = [[],[]]
+  v.each { |v1|
+    if  position(n, p, v1) <= 0.0
+      res[0].push v1
+    else
+      res[1].push v1
+    end
+  }
+  res = [res[1], res[0]] if $options[:reject]
+  res.collect(&:transpose)
+end
+
+def split_with_index(n, p, v)
+  res = [[],[]]
+  v.to_a.each { |k, v1|
+    if  position(n, p, v1) <= 0.0
+      res[0].push [k,v1]
+    else
+      res[1].push [k,v1]
+    end
+  }
+  res = [res[1], res[0]] if $options[:reject]
+  res[0]
+end
+
 v = vertexes.collect{ |i, v| [v[0], v[1], v[2]] }
-vs = cluster($options[:vector], $options[:point], v, cut)
+if $options[:split]
+  vs = split($options[:vector], $options[:point], v)
+else
+  vs = cluster($options[:vector], $options[:point], v, cut)
+end
 shapes = ['circle', 'cross']
 vs.each_with_index { |v, i|
   sc = plot.add(:scatter, v[0].collect { |x| x-$options[:point][0] },
@@ -93,8 +136,11 @@ vs.each_with_index { |v, i|
 
 plot.export_html("3dscatter.html")
 
-
-res = cluster_with_index($options[:vector], $options[:point], vertexes, cut)
+if $options[:split]
+  res = split_with_index($options[:vector], $options[:point], vertexes)
+else
+  res = cluster_with_index($options[:vector], $options[:point], vertexes, cut)
+end
 vs = res.collect{ |i, v| [v[0], v[1], v[2]] }
 vs = vs.transpose
 
