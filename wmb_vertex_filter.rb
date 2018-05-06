@@ -39,6 +39,6 @@ vl = YAML::load_file(vertex_list)
 batch = wmb.meshes[$options[:mesh]].batches[$options[:batch]]
 batch.filter_vertexes( vl )
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
-wmb.cleanup_vertexes
+#wmb.cleanup_vertexes
 wmb.recompute_layout
 wmb.dump("wmb_output/"+File.basename(input_file), wmb.was_big? )
