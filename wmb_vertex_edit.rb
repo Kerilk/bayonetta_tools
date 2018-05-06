@@ -81,7 +81,10 @@ v = vertexes.collect{ |i, v| [v[0], v[1], v[2]] }
 vs = cluster($options[:vector], $options[:point], v, cut)
 shapes = ['circle', 'cross']
 vs.each_with_index { |v, i|
-  sc = plot.add(:scatter, v[0], v[1], v[2])
+  sc = plot.add(:scatter, v[0].collect { |x| x-$options[:point][0] },
+                          v[1].collect { |y| y-$options[:point][1] },
+                          v[2].collect { |z| z-$options[:point][2] }
+               )
   sc.shape(shapes[i])
   sc.size(0.5)
 }
@@ -97,7 +100,9 @@ vs = vs.transpose
 
 plot = Nyaplot::Plot3D.new
 
-sc = plot.add(:scatter, vs[0], vs[1], vs[2])
+sc = plot.add(:scatter, vs[0].collect { |x| x-$options[:point][0] },
+                        vs[1].collect { |y| y-$options[:point][1] },
+                        vs[2].collect { |z| z-$options[:point][2] })
 
 plot.export_html("3dscatter2.html")
 puts YAML::dump( res.collect{ |i,v| i }.sort )
