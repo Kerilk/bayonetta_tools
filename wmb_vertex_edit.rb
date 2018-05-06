@@ -7,6 +7,41 @@ require 'nyaplot3d'
 require_relative 'lib/bayonetta.rb'
 include Bayonetta
 
+$options = {
+  :vector => [0.0, 1.0, 0.0],
+  :point => [0.0, 0.0, 0.0],
+  :reject => false
+}
+
+def normalize(n)
+  l = Math.sqrt(n[0]**2 + n[1]**2 + n[2]**2)
+  [n[0]/l, n[1]/l, n[2]/l]
+end
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: wmb_vertex_edit.rb NUMBER [options]"
+
+  opts.on("-n", "--normal=VECTOR", "normal vector (default [0.0, 1.0, 0.0])") do |vector|
+    $options[:vector] = normalize(eval(vector).to_a)
+  end
+
+  opts.on("-p", "--point=POINT", "base point (default [0.0, 0.0, 0.0])") do |point|
+    $options[:point] = eval(point).to_a
+  end
+
+  opts.on("-r", "--[no-]reject", "Reject rather than select vertexes") do |reject|
+    $options[:reject] = reject
+  end
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+end.parse!
+
+cut = ARGV[0].to_i
+
 vertexes = YAML::load($stdin.read).to_a
 
 #print YAML::dump vertexes.sort { |(i, vi), (j, vj)|
@@ -22,50 +57,42 @@ plot = Nyaplot::Plot3D.new
 #  sc.fill_color(colors.pop)
 #end
 
-def normalize(n)
-  l = Math.sqrt(n[0]**2 + n[1]**2 + n[2]**2)
-  [n[0]/l, n[1]/l, n[2]/l]
+def distance(n, p, v)
+	(n[0]*v[0] +  n[1]*v[1] +  n[2]*v[2] - (n[0]*p[0] + n[1]*p[1] + n[2]*p[2])).abs
 end
 
-def distance(n, v)
-  n[0]*v[0] +  n[1]*v[1] +  n[2]*v[2]
-end
-
-def cluster(v)
-  n = [0.0, 0.1, 0.029]
-  n = normalize(n)
-  vs = v.sort { |v1, v2| distance(n, v1) <=> distance(n, v2) }
-  #vs.collect{ |v| distance(n, v) }
-
-
-  res = [vs[0..-82], vs[-81..-55],vs[-54..-28], vs[-27..-1]]
+def cluster(n, p, v, cut)
+  vs = v.sort { |v1, v2| distance(n, p, v1) <=> distance(n, p, v2) }
+  res = [vs[0..cut], vs[(cut+1)..-1]]
+  res = [res[1], res[0]] if $options[:reject]
   res.collect(&:transpose)
 end
 
-def cluster_with_index(v)
-  n = [0.0, 0.1, 0.029]
-  n = normalize(n)
-  vs = v.to_a.sort { |(_, v1), (_, v2)| distance(n, v1) <=> distance(n, v2) }
-  puts YAML::dump vs[-54..-28].sort { |(_, v1), (_, v2)| v1[2] <=> v2[2] }
-  vs[-81..-1]
+def cluster_with_index(n, p, v, cut)
+  vs = v.to_a.sort { |(_, v1), (_, v2)| distance(n, p, v1) <=> distance(n, p, v2) }
+  if $options[:reject]
+    vs[(cut+1)..-1]
+  else
+    vs[0..cut]
+  end
 end
 
-
 v = vertexes.collect{ |i, v| [v[0], v[1], v[2]] }
-vs = cluster(v)
-shapes = ['circle', 'cross', 'rect', 'diamond']
+vs = cluster($options[:vector], $options[:point], v, cut)
+shapes = ['circle', 'cross']
 vs.each_with_index { |v, i|
   sc = plot.add(:scatter, v[0], v[1], v[2])
   sc.shape(shapes[i])
+  sc.size(0.5)
 }
 
-plot.add(:line, [0.0, 0.0], [0.1, 0.20], [-0.03, -0.007])
+#plot.add(:line, [0.0, 0.0], [0.0, 0.10], [-0.00, -0.00])
 
 plot.export_html("3dscatter.html")
 
-res = cluster_with_index(vertexes)
 
-vs = res.collect{ |i, v| [v[0], v[1] - 1.5, v[2]] }
+res = cluster_with_index($options[:vector], $options[:point], vertexes, cut)
+vs = res.collect{ |i, v| [v[0], v[1], v[2]] }
 vs = vs.transpose
 
 plot = Nyaplot::Plot3D.new
