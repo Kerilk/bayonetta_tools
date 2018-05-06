@@ -35,7 +35,7 @@ wmb = WMBFile::load(input_file)
 
 batch = wmb.meshes[$options[:mesh]].batches[$options[:batch]]
 vertexes = wmb.vertexes
-vertex_indices = batch.header.vertex_start...batch.header.vertex_end
+vertex_indices = batch.indices.collect { |i| i + batch.header.vertex_offset }
 print YAML::dump vertex_indices.collect { |i| [i, [vertexes[i].x, vertexes[i].y, vertexes[i].z] ] }.to_h
 
 
