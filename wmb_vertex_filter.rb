@@ -25,6 +25,10 @@ OptionParser.new do |opts|
     exit
   end
 
+  opts.on("-o", "--overwrite", "Overwrite input file") do |overwrite|
+    $options[:overwrite] = overwrite
+  end
+
 end.parse!
 
 
@@ -41,4 +45,8 @@ batch.filter_vertexes( vl )
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 #wmb.cleanup_vertexes
 wmb.recompute_layout
-wmb.dump("wmb_output/"+File.basename(input_file), wmb.was_big? )
+if $options[:overwrite]
+  wmb.dump(input_file, wmb.was_big? )
+else
+  wmb.dump("wmb_output/"+File.basename(input_file), wmb.was_big? )
+end
