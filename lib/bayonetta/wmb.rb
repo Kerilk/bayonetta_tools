@@ -504,6 +504,7 @@ module Bayonetta
       end
 
       def recompute_layout
+        @header.num_batch = @batches.length
         off = @header.num_batch * 4
         @header.num_batch.times { |j|
           off = align(off, 0x20)
