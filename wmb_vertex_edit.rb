@@ -124,6 +124,7 @@ else
 end
 shapes = ['circle', 'cross']
 vs.each_with_index { |v, i|
+  next if v.empty?
   sc = plot.add(:scatter, v[0].collect { |x| x-$options[:point][0] },
                           v[1].collect { |y| y-$options[:point][1] },
                           v[2].collect { |z| z-$options[:point][2] }
@@ -143,6 +144,7 @@ else
 end
 vs = res.collect{ |i, v| [v[0], v[1], v[2]] }
 vs = vs.transpose
+vs = [[],[],[]] if vs.empty?
 
 plot = Nyaplot::Plot3D.new
 
