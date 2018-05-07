@@ -449,15 +449,17 @@ module Bayonetta
         @indices = trs.flatten
         @header.num_indices = @indices.length
         sorted_indices = @indices.sort.uniq
-        @header.vertex_start = sorted_indices.first
-        @header.vertex_end = sorted_indices.last + 1
-        if sorted_indices.last > 0xffff
-          offset = @header.vertex_offset = @header.vertex_start
-          @indices.collect! { |i|
-            i - offset
-          }
-        else
-          @header.vertex_offset = 0
+        unless @header.num_indices == 0
+          @header.vertex_start = sorted_indices.first
+          @header.vertex_end = sorted_indices.last + 1
+          if sorted_indices.last > 0xffff
+            offset = @header.vertex_offset = @header.vertex_start
+            @indices.collect! { |i|
+              i - offset
+            }
+          else
+            @header.vertex_offset = 0
+          end
         end
         self
       end
