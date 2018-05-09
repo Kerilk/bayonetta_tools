@@ -24,6 +24,10 @@ $options = {
 OptionParser.new do |opts|
   opts.banner = "Usage: wmb_cleanup.rb target_file [options]"
 
+  opts.on("--[no-]bone-refs", "Cleanup bone refs in batches") do |bone_refs|
+    $options[:bone_refs] = bone_refs
+  end
+
   opts.on("-b", "--[no-]bones", "Cleanup bones") do |bones|
     $options[:bones] = bones
   end
@@ -92,10 +96,10 @@ OptionParser.new do |opts|
     $options[:shift] = eval(shift).to_a
   end
 
-  opts.on("--rotate=ROTATE_INFO", "Rotates the model.\n\t"+
-                                  "ROTATE_INFO is either:\n\t\t"+
-                                  "[rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)\n\t\t"+
-                                  "[[rx, ry, rz], [x, y, z]] with the center of the rotation specified" ) do |rotate|
+  opts.on("--rotate=ROTATE_INFO", "Rotates the model.",
+                                  "  ROTATE_INFO is either:",
+                                  "    [rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)",
+                                  "    [[rx, ry, rz], [x, y, z]] with the center of the rotation specified" ) do |rotate|
     $options[:rotate] = eval(rotate).to_a
   end
 
@@ -120,6 +124,7 @@ wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
+wmb.cleanup_bone_refs if $options[:bone_refs]
 wmb.cleanup_bones if $options[:bones]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]

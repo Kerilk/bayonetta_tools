@@ -195,6 +195,40 @@ module Bayonetta
       register_field :bone_index, :L
       register_field :bone_weight, :L
 
+      def get_bone_indexes_and_weights
+        res = []
+        4.times { |i|
+          bi = (@bone_index >> (i*8)) & 0xff
+          bw = (@bone_weight >> (i*8)) & 0xff
+          res.push [bi, bw] if bw > 0
+        }
+        res
+      end
+
+      def get_bone_indexes
+        get_bone_indexes_and_weights.collect { |bi, _| bi }
+      end
+
+      def remap_bone_indexes(map)
+        new_bone_info = get_bone_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
+        set_bone_indexes_and_weights(new_bone_info)
+        self
+      end
+
+      def set_bone_indexes_and_weights(bone_info)
+        raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
+        @bone_index = 0
+        @bone_weight = 0
+        bone_info.each_with_index { |(bi, bw), i|
+          raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
+          @bone_index |= ( bi << (i*8) )
+          bw = 0 if bw < 0
+          bw = 255 if bw > 255
+          @bone_weight |= (bw << (i*8) )
+        }
+        self
+      end
+
     end
 
     class BonePosition < DataConverter
@@ -469,6 +503,24 @@ module Bayonetta
         trs = triangles
         new_trs = trs.select { |tr| vertex_map.include?(tr[0]) && vertex_map.include?(tr[1]) && vertex_map.include?(tr[2]) }
         set_triangles(new_trs)
+      end
+
+      def vertex_indices
+        indices.collect { |i| i + @header.vertex_offset }
+      end
+
+      def cleanup_bone_refs(vertexes)
+        bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
+        used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].get_bone_indexes }.flatten.uniq
+        new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
+        new_bone_refs_reverse_map = new_bone_refs_list.each_with_index.collect { |b, i| [b, i] }.to_h
+        translation_map = used_bone_refs_indexes.collect { |ri|
+          [ri, new_bone_refs_reverse_map[bone_refs_map[ri]]]
+        }.to_h
+        vertex_indices.uniq.sort.each { |vi| vertexes[vi].remap_bone_indexes(translation_map) }
+        @bone_refs = new_bone_refs_list
+        @header.num_bone_ref = @bone_refs.length
+        self
       end
 
     end
@@ -1002,6 +1054,15 @@ module Bayonetta
       self
     end
 
+    def cleanup_bone_refs
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.cleanup_bone_refs(@vertexes)
+        }
+      }
+      self
+    end
+
     def cleanup_bones
       used_bones = Set[]
       @meshes.each { |m|
@@ -1154,7 +1215,7 @@ module Bayonetta
         off += @materials[i].size
         off =  align(off, 0x4)
       }
-      
+
       last_offset += 4*@header.num_materials
       last_offset = @header.offset_materials = align(last_offset, 0x20)
 
