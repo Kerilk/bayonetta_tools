@@ -1045,7 +1045,7 @@ module Bayonetta
       used_vertex_indexes = []
       @meshes.each { |m|
         m.batches.each { |b|
-          used_vertex_indexes += ((b.indices.min+b.header.vertex_offset)..(b.indices.max+b.header.vertex_offset)).to_a
+          used_vertex_indexes += b.indices.collect { |i| i + b.header.vertex_offset }  #((b.indices.min+b.header.vertex_offset)..(b.indices.max+b.header.vertex_offset)).to_a
         }
       }
       used_vertex_indexes = used_vertex_indexes.sort.uniq
