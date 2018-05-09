@@ -11,7 +11,9 @@ $options = {
   :vector => [0.0, 1.0, 0.0],
   :point => [0.0, 0.0, 0.0],
   :reject => false,
-  :cut => 0
+  :cut => 0,
+  :positions = false,
+  :order = 2
 }
 
 def normalize(n)
@@ -40,6 +42,14 @@ OptionParser.new do |opts|
 
   opts.on("-s", "--[no-]split", "Split vertexes keeping (rejecting) those below the plane") do |split|
     $options[:split] = split
+  end
+
+  opts.on("--[no-]output-with-positions", "Output vertex indexes and positions") do |positions|
+    $options[:positions] = positions
+  end
+
+  opts.on("--positions-order=INDEX", "Sort vertexes by index when using vertex indexes and positions (default 2)") do |order|
+    $options[:order] = order
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -153,4 +163,8 @@ sc = plot.add(:scatter, vs[0].collect { |x| x-$options[:point][0] },
                         vs[2].collect { |z| z-$options[:point][2] })
 
 plot.export_html("3dscatter2.html")
-puts YAML::dump( res.collect{ |i,v| i }.sort )
+if $options[:positions]
+  puts YAML::dump( res.collect{ |i,v| [i,v] }.sort { |(i1,v1),(i2,v2)| v1[$options[:order]] <=> v2[$options[:order]] } )
+else
+  puts YAML::dump( res.collect{ |i,_| i }.sort )
+end
