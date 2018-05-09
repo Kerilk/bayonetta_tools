@@ -457,6 +457,34 @@ module Bayonetta
       register_field :bone_refs, :C, count: 'header\num_bone_ref'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
+      def duplicate(vertexes, vertexes_ex)
+        b = Batch::new
+        b.header = @header.dup
+        b.bone_refs = @bone_refs.dup
+        old_indices_map = vertex_indices.uniq.sort.each_with_index.collect { |vi, i| [vi, vertexes.length + i] }.to_h
+        old_indices_map.each { |vi, nvi| vertexes[nvi] = vertexes[vi] }
+        old_indices_map.each { |vi, nvi| vertexes_ex[nvi] = vertexes_ex[vi] } if vertexes_ex
+        b.indices = vertex_indices.collect { |vi| old_indices_map[vi] }
+        b.recompute_from_absolute_indices
+        b
+      end
+
+      def recompute_from_absolute_indices
+        @header.num_indices = @indices.length
+        unless @header.num_indices == 0
+          sorted_indices = @indices.sort.uniq
+          @header.vertex_start = sorted_indices.first
+          @header.vertex_end = sorted_indices.last + 1
+          if sorted_indices.last > 0xffff
+            offset = @header.vertex_offset = @header.vertex_start
+            @indices.collect! { |i| i - offset }
+          else
+            @header.vertex_offset = 0
+          end
+        end
+        self
+      end
+
       def size(position = 0, parent = nil, index = nil)
         sz = @header.offset_indices
         sz += @header.num_indices * 2
@@ -481,20 +509,7 @@ module Bayonetta
       def set_triangles(trs)
         @header.primitive_type = 4
         @indices = trs.flatten
-        @header.num_indices = @indices.length
-        sorted_indices = @indices.sort.uniq
-        unless @header.num_indices == 0
-          @header.vertex_start = sorted_indices.first
-          @header.vertex_end = sorted_indices.last + 1
-          if sorted_indices.last > 0xffff
-            offset = @header.vertex_offset = @header.vertex_start
-            @indices.collect! { |i|
-              i - offset
-            }
-          else
-            @header.vertex_offset = 0
-          end
-        end
+        recompute_from_absolute_indices
         self
       end
 
@@ -563,6 +578,14 @@ module Bayonetta
           @batch_offsets[j] = off
           off += @batches[j].size
         }
+      end
+
+      def duplicate(vertexes, vertexes_ex)
+        m = Mesh::new
+        m.header = @header
+        m.batch_offsets = @batch_offsets
+        m.batches = @batches.collect { |b| b.duplicate(vertexes, vertexes_ex) }
+        m
       end
 
     end
@@ -744,7 +767,7 @@ module Bayonetta
           #puts "bone: #{i} parent: #{b} position: #{@bone_positions[i]} pposition: #{@bone_positions[b]}"
           @bone_relative_positions[i] = @bone_positions[i] - @bone_positions[b]
         else
-	  @bone_relative_positions[i] = @bone_positions[i]
+          @bone_relative_positions[i] = @bone_positions[i]
         end
       }
       self
@@ -885,9 +908,11 @@ module Bayonetta
 
     def duplicate_meshes(list)
       @meshes += list.collect { |i|
-        @meshes[i]
+        @meshes[i].duplicate(@vertexes, @vertexes_ex_data)
       }
       @header.num_meshes = @meshes.size
+      @header.num_vertexes = @vertexes.size
+      self
     end
 
     def swap_meshes(hash)
@@ -1170,6 +1195,8 @@ module Bayonetta
 
     def recompute_layout
       last_offset = @header.offset_vertexes
+
+      @header.num_vertexes = @vertexes.size
 
       last_offset += @header.num_vertexes * 32
       last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20) if @vertexes_ex_data
