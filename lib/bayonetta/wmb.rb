@@ -461,7 +461,8 @@ module Bayonetta
         b = Batch::new
         b.header = @header.dup
         b.bone_refs = @bone_refs.dup
-        old_indices_map = vertex_indices.uniq.sort.each_with_index.collect { |vi, i| [vi, vertexes.length + i] }.to_h
+        l = vertexes.length
+        old_indices_map = vertex_indices.uniq.sort.each_with_index.collect { |vi, i| [vi, l + i] }.to_h
         old_indices_map.each { |vi, nvi| vertexes[nvi] = vertexes[vi] }
         old_indices_map.each { |vi, nvi| vertexes_ex[nvi] = vertexes_ex[vi] } if vertexes_ex
         b.indices = vertex_indices.collect { |vi| old_indices_map[vi] }
@@ -1131,7 +1132,7 @@ module Bayonetta
       used_vertex_indexes = []
       @meshes.each { |m|
         m.batches.each { |b|
-          used_vertex_indexes += b.indices.collect { |i| i + b.header.vertex_offset }  #((b.indices.min+b.header.vertex_offset)..(b.indices.max+b.header.vertex_offset)).to_a
+          used_vertex_indexes += b.vertex_indices
         }
       }
       used_vertex_indexes = used_vertex_indexes.sort.uniq
@@ -1144,15 +1145,39 @@ module Bayonetta
           b.indices.collect! { |i|
             vertex_map[i + b.header.vertex_offset]
           }
-          b.header.vertex_start = b.indices.min
-          b.header.vertex_end = b.indices.max + 1
-          b.header.vertex_offset = b.header.vertex_start
-          b.indices.collect! { |i|
-            i - b.header.vertex_offset
-          }
+          b.recompute_from_absolute_indices
         }
       }
       self
+    end
+
+    def get_vertex_usage
+      vertex_usage = Hash::new { |h, k| h[k] = [] }
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.vertex_indices.each { |i|
+            vertex_usage[i].push(b)
+          }
+        }
+      }
+      vertex_usage.each { |k,v| v.uniq! }
+      vertex_usage
+    end
+
+    # Duplicate vertexes used by several batches
+    def normalize_vertex_usage
+      vertex_usage = get_vertex_usage
+      vertex_usage.select! { |k, v| v.length > 1 }
+      batches = Set::new
+      vertex_usage.each { |vi, blist|
+        batches.merge blist[1..-1]
+      }
+      batches.each { |b|
+        new_batch = b.duplicate(@vertexes, @vertexes_ex_data)
+        b.header = new_batch.header
+        b.indices = new_batch.indices
+      }
+      @header.num_vertexes = @vertexes.size
     end
 
     def renumber_batches
@@ -1167,22 +1192,11 @@ module Bayonetta
     def remove_batch_vertex_offsets
       @meshes.each { |m|
         m.batches.each { |b|
-          offset = b.header.vertex_offset
-          b.indices.collect! { |index|
-            index + offset
-          }
-          b.header.vertex_offset = 0
-          b.header.vertex_start = b.indices.min
-          b.header.vertex_end = b.indices.max + 1
-          if b.indices.max > 0xffff
-            offset = b.header.vertex_start
-            b.indices.collect! { |index|
-              index - offset
-            }
-            b.header.vertex_offset = offset
-          end
+          b.indices = b.vertex_indices
+          b.recompute_from_absolute_indices
         }
       }
+      self
     end
 
     def fix_ex_data
