@@ -33,15 +33,15 @@ input_file = ARGV[0]
 raise "Invalid file #{input_file}" unless File::file?(input_file)
 wmb = WMBFile::load(input_file)
 
+vertex_indices = []
 if $options[:batch] == :all
-  vertex_indices = []
   wmb.meshes[$options[:mesh]].batches.each { |batch|
     vertex_indices += batch.indices.collect { |i| i + batch.header.vertex_offset }
   }
 else
   $options[:batch].each { |i|
     batch = wmb.meshes[$options[:mesh]].batches[i]
-    vertex_indices = batch.indices.collect { |i| i + batch.header.vertex_offset }
+    vertex_indices += batch.indices.collect { |i| i + batch.header.vertex_offset }
   }
 end
 
