@@ -191,7 +191,7 @@ module Bayonetta
       register_field :u, :S
       register_field :v, :S
       register_field :normals, Normals
-      register_field :tangeants, :L
+      register_field :tangents, :L
       register_field :bone_index, :L
       register_field :bone_weight, :L
 
@@ -1178,6 +1178,65 @@ module Bayonetta
         b.indices = new_batch.indices
       }
       @header.num_vertexes = @vertexes.size
+      self
+    end
+
+    def copy_vertex_properties(vertex_hash, **options)
+      vertex_usage = nil
+      vertex_usage = get_vertex_usage if options[:bone_infos]
+      vertex_hash.each { |ivi, ovis|
+        ovis = [ovis].flatten
+        ovis.each { |ovi|
+          iv = @vertexes[ivi]
+          ov = @vertexes[ovi]
+          if options[:position]
+            ov.x = iv.x
+            ov.y = iv.y
+            ov.z = iv.z
+          end
+          if options[:mapping]
+            ov.u = iv.u
+            ov.v = iv.v
+            if @vertexes_ex_data && @header.vertex_ex_data_size > 1
+              @vertexes_ex_data[ovi].u = @vertexes_ex_data[ivi].u
+              @vertexes_ex_data[ovi].v = @vertexes_ex_data[ivi].v
+            end
+          end
+          if options[:normal]
+            ov.normals = iv.normals
+          end
+          if options[:tangents]
+            ov.tangents = iv.tangents
+          end
+          if options[:unknown] && @vertexes_ex_data
+            @vertexes_ex_data[ovi].unknown = @vertexes_ex_data[ivi].unknown
+          end
+          if options[:bone_infos]
+            input_batches = vertex_usage[ivi]
+            raise "Unormalized vertex #{ivi} , normalize first, and recompute vertex numbers!" if input_batches.length > 1
+            raise "Unused vertex #{ivi}!" if input_batches.length == 0
+            output_batches = vertex_usage[ovi]
+            raise "Unormalized vertex #{ovi} , normalize first, and recompute vertex numbers!" if output_batches.length > 1
+            raise "Unused vertex #{ovi}!" if output_batches.length == 0
+            input_batch = input_batches.first
+            output_batch = output_batches.first
+            input_bone_indexes_and_weights = iv.get_bone_indexes_and_weights
+            output_bone_indexes_and_weights = input_bone_indexes_and_weights.collect { |bi, bw|
+              [input_batch.bone_refs[bi], bw]
+            }.collect { |bi, bw|
+              new_bi = output_batch.bone_refs.find_index(bi)
+              unless new_bi
+                new_bi = output_batch.bone_refs.length
+                output_batch.bone_refs.push(bi)
+                output_batch.header.num_bone_ref = output_batch.bone_refs.length
+              end
+              [new_bi, bw]
+            }
+            ov.set_bone_indexes_and_weights( output_bone_indexes_and_weights )
+          end
+        }
+      }
+      self
     end
 
     def renumber_batches
@@ -1187,6 +1246,7 @@ module Bayonetta
           b.header.mesh_id = i
         }
       }
+      self
     end
 
     def remove_batch_vertex_offsets
