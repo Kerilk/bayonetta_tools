@@ -41,12 +41,28 @@ for ( j = 0; j < datumNumber; j++ ) {
             char    u_m1[6];
             int16   u_m2;
             float   vals4[6];
-            int16   u_n;
-            int16   u_o;
         } emif;
-        float   u_p;
-        int16   u_u;
-        int16   u_v;
-        float   vals5[318];
+        struct {
+            int16 u_a;
+            int16 u_b;
+            float u_c;
+            int16 u_d;
+            int16 u_e;
+            float u_f[4];
+            struct {
+                float   u_a;
+                int16   u_b;
+                char    u_c[2];
+                float   u_d;
+                char    u_e[4];
+                float   u_f[15];
+            } substruct[1];//maybe 2
+        } tex;
+        float   vals5[103];
+        struct {
+            uint32  u_a;
+            float   u_b[107];// maybe less
+        } emmv;
+        float   vals6[84];
     } datum;
 }
