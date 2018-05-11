@@ -4,6 +4,7 @@ module Bayonetta
     include Endianness
     include Alignment
     attr_reader :big
+    attr_accessor :layout
 
     ALIGNMENTS = {
       'wmb' => 0x1000,
@@ -13,14 +14,6 @@ module Bayonetta
       'sdx' => 0x1000
     }
     ALIGNMENTS.default = 0x10
-
-    def layout
-      @layout
-    end
-
-    def layout=(l)
-      @layout = l
-    end
 
     def self.is_big?(f)
       f.rewind
