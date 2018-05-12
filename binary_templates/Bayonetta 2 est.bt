@@ -33,8 +33,18 @@ typedef struct {
 } part_s;
 
 typedef struct {
-    uint32 u_a;
-    float u_b[95];
+    uint32  u_a;
+    float   offset_x;
+    float   offset_y;
+    float   offset_z;
+    float   u_b[29];
+    float   scale;
+    float   u_c[16];
+    float   red;
+    float   green;
+    float   blue;
+    float   alpha;//intensity?
+    float   u_d[42];
 } move_s;
 
 typedef struct {

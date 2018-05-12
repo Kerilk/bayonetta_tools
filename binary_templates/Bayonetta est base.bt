@@ -9,19 +9,32 @@ for ( j = 0; j < datumNumber; j++ ) {
             int16   u_b;
             uint32  u_c <format=hex>;
             uint32  u_d <format=hex>;
-            char    u_f[8];
-            int16   u_f1;
-            int16   u_f2;
+            char    u_f1;
+            char    attach_point;
+            char    u_f[6];
+            int16   u_g;
+            int16   u_h;
             uint32  u[10];
         } part;
         struct {
-            float   vals0[30];
+            int32   u_a;
+            float   offset_x;
+            float   offset_y;
+            float   offset_z;
+            float   vals0[26];
             char    u_f3[2];
             int16   u_f4[3];
-            float   vals1[14];
+            float   u_f5;
+            float   scale;
+            float   vals1[12];
             int16   u_g;
             int16   u_h;
-            float   vals2[11];
+            float   vals21[3];
+            float   red;
+            float   green;
+            float   blue;
+            float   alpha; //intensity?
+            float   vals22[4];
             int16   u_i;
             int16   u_j;
             float   vals31[20];
@@ -58,7 +71,11 @@ for ( j = 0; j < datumNumber; j++ ) {
                 float   u_f[15];
             } substruct[1];//maybe 2
         } tex;
-        float   vals5[103];
+        float   vals5[95];
+        struct {
+            int16   u_a[6];
+            int32   u_b[5];
+        } fwk;
         struct {
             uint32  u_a;
             float   u_b[107];// maybe less
