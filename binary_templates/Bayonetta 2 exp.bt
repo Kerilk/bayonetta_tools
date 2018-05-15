@@ -5,14 +5,16 @@ struct {
     int32   tag;
     int32   offsetRecord;
     int32   numRecord;
-    uint32  offsetData;
-    uint32  numData;
+    uint32  offsetInterpolationData;
+    uint32  numInterpolationData;
 } header;
 
 FSeek(header.offsetRecord);
 
 struct {
-    uint32  flags<format=hex>;
+    int16   bone_number;
+    char    animation_track;
+    char    padding;
     int16   valueCount;
     int16   unknown;
     uint32  offset<format=hex>;
@@ -23,26 +25,30 @@ for( i = 0; i < header.numRecord; i++) {
     FSeek(header.offsetRecord + i*12 + records[i].offset);
     struct {
         struct {
-            uchar idx[4];
-            float val;
+            char    type; // 0: terminator, 1: (, 2: ), 3: animation value, 4: immediate value, 5: arithmetic operator, 6: function call, 7: end function call, 8: interpolate using data
+            char    track_number; // or argument count
+            int16   bone_number; // or operator number (0: +, 2: *) or function number, or data number
+            float   val;
         } values[records[i].valueCount];
     } entry;
 }
 
-FSeek(header.offsetData);
+FSeek(header.offsetInterpolationData);
 
 struct {
-    int16   type;
-    int16   unknown;
+    int16   point_number;
+    int16   padding;
     uint32  offset<format=hex>;
-} dataRecords[header.numData];
+} interpolationData[header.numInterpolationData];
 
-for( i = 0; i < header.numData; i++) {
-    FSeek(header.offsetData + i*8 + dataRecords[i].offset);
-    switch (dataRecords[i].type) {
-    case 3:
+for( i = 0; i < header.numInterpolationData; i++) {
+    FSeek(header.offsetInterpolationData + i*8 + interpolationData[i].offset);
+    struct {
         struct {
-            float vals[12];
-        } dataEntry;
-    }
+            float v; // input value
+            float p; // output value
+            float m0; // incoming derivative
+            float m1; // outgoing derivative
+        } points[interpolationData[i].point_number];
+    } interpolationDataEntry;
 }
