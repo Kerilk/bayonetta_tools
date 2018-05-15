@@ -10,8 +10,8 @@ FSeek(header.offsetRecord);
 
 struct {
     int16   u_e;
-    int16   u_f;
-    char    u_g;
+    int16   bone_index;
+    char    animation_track;
     char    entry_type;
     char    u_h;
     char    u_i;
@@ -27,37 +27,37 @@ for( i = 0; i < header.numRecord; i++) {
     switch (record[i].entry_type) {
     case 0:
         break;
-    case 1:
+    case 1: // Copy
         struct {
             uint32  flag <format=hex>;
-            int16   u_a;
-            char    u_b;
-            char    u_c;
+            int16   bone_index;
+            char    animation_track;
+            char    padding;
         } entry<bgcolor=cRed>;
         break;
-    case 3:
+    case 2: // Scal
         struct {
             uint32  flag <format=hex>;
-            int16   u_a;
-            char    u_b;
-            char    u_c;
+            int16   bone_index;
+            char    animation_track;
+            char    padding;
             struct {
-                uint32  flag <format=hex>;
-                float   val;
-            } coeffs[2];
-        } entry<bgcolor=cBlue>;
-        break;
-    case 2:
-        struct {
-            uint32  flag <format=hex>;
-            int16   u_a;
-            char    u_b;
-            char    u_c;
-            struct {
-                uint32  flag <format=hex>;
+                uint32  flag <format=hex, comment="0x4: mul, 0x1: add">;
                 float   val;
             } coeff;
         } entry<bgcolor=cGreen>;
+        break;
+    case 3: // Usually mul then add
+        struct {
+            uint32  flag <format=hex>;
+            int16   bone_index;
+            char    animation_track;
+            char    padding;
+            struct {
+                uint32  flag <format=hex, comment="0x4: mul, 0x1: add">;
+                float   val;
+            } coeffs[2];
+        } entry<bgcolor=cBlue>;
         break;
     }
 }
