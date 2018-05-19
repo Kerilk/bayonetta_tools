@@ -51,9 +51,9 @@ module Bayonetta
 
       private
       def check_and_remap_bone(map, no)
-	tmp = map[no]
-	raise "No bone found in map for #{no}!" unless tmp
-	tmp
+        tmp = map[no]
+        raise "No bone found in map for #{no}!" unless tmp
+        tmp
       end
 
     end

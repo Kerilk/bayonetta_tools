@@ -35,15 +35,6 @@ module Bayonetta
         end
       end
 
-      def self.dump(output, output_big, parent, index)
-        vertex_ex_data_size = parent.header.vertex_ex_data_size
-        if vertex_ex_data_size == 1
-          return VertexExData1::convert(output, output_big, parent, index)
-        else
-          return VertexExData2::convert(output, output_big, parent, index)
-        end
-      end
-
     end
 
     class Normals < DataConverter
