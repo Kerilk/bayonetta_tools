@@ -1,12 +1,148 @@
 module Bayonetta
 
+  class EXPFile2 < DataConverter
+
+    class EXPFileHeader < DataConverter
+      int8 :id, count: 4
+      int32 :version
+      uint32 :offset_records
+      uint32 :num_records
+      uint32 :offset_interpolations
+      uint32 :num_interpolations
+
+      def initialize
+        @id = "exp\0".b
+        @version = 0x20110714
+        @offset_records = 0
+        @num_records = 0
+        @offset_interpolations = 0
+        @num_interpolations = 0
+      end
+    end
+
+    class Record < DataConverter
+      int16 :bone_number
+      int8 :animation_track
+      int8 :padding
+      int16 :num_operations
+      int16 :unknown
+      uint32 :offset
+
+      def initialize
+        @bone_number = 0
+        @animation_track = 0
+        @padding = 0
+        @num_operations = 0
+        @unknown = 0
+        @offset = 0
+      end
+
+    end
+
+    class Operation < DataConverter
+      int8 :type
+      int8 :info
+      int16 :number
+      float :value
+
+      def initialize
+        @type = 0
+        @info = 0
+        @number = 0
+        @value = 0.0
+      end
+
+    end
+
+    class Entry < DataConverter
+      register_field :operations, Operation, count: '..\records[__index]\num_operations'
+
+      def initialize
+        @operations = []
+      end
+
+    end
+
+    class Interpolation < DataConverter
+      int16 :num_points
+      int16 :padding
+      uint32 :offset
+
+      def initialize
+        @num_points = 0
+        @padding = 0
+        @offset = 0
+      end
+
+    end
+
+    class Points < DataConverter
+      float :v
+      float :p
+      float :m0
+      float :m1
+
+      def initialize
+        @v = 0.0
+        @p = 0.0
+        @m0 = 0.0
+        @m1 = 0.0
+      end
+
+    end
+
+    class InterpolationEntry < DataConverter
+      register_field :points, Points, count: '..\interpolations[__index]\num_points'
+    end
+
+    register_field :header, EXPFileHeader
+    register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
+    register_field :entries, Entry, count: 'header\num_records', sequence: true,
+      offset: 'records[__iterator]\offset + header\offset_records + 12*__iterator'
+    register_field :interpolations, Interpolation, count: 'header\num_interpolations', offset: 'header\offset_interpolations'
+    register_field :interpolation_entries, InterpolationEntry, count: 'header\num_interpolations', sequence: true,
+      offset: 'interpolations[__iterator]\offset + header\offset_interpolations + 8*__iterator'
+
+    def recompute_layout
+      self
+    end
+
+    def was_big?
+      @__was_big
+    end
+
+    def dump(output_name, output_big = false)
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
+      output.rewind
+
+      set_dump_type(output, output_big, nil, nil)
+      dump_fields
+      unset_dump_type
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+      self
+    end
+
+  end
+
   class EXPFile < DataConverter
 
     class EXPFileHeader < DataConverter
       int8 :id, count: 4
-      int32 :u_a
+      int32 :version
       uint32 :offset_records
       uint32 :num_records
+
+      def initialize
+        @id = "exp\0".b
+        @version = 0
+        @offset_records = 0
+        @num_records = 0
+      end
+
     end
 
     class Record < DataConverter
@@ -40,7 +176,7 @@ module Bayonetta
 
       def initialize
         @flags = 0
-        @value = 0
+        @value = 0.0
       end
 
     end
@@ -204,6 +340,16 @@ module Bayonetta
       return big
     end
 
+    def self.is_bayo2?(f, big)
+      f.rewind
+      id = f.read(4)
+      uint = "L<"
+      uint = "L>" if big
+      version = f.read(4).unpack(uint).first
+      f.rewind
+      return version == 0x20110714
+    end
+
     def self.convert(input_name, output_name, input_big = true, output_big = false)
       input = File.open(input_name, "rb")
       id = input.read(4).unpack("a4").first
@@ -213,7 +359,11 @@ module Bayonetta
       input.seek(0);
       output.seek(0);
 
-      exp = self::new
+      if is_bayo2?(input, input_big)
+        exp = EXPFile2::new
+      else
+        exp = self::new
+      end
       exp.convert(input, output, input_big, output_big)
 
       input.close
@@ -228,7 +378,11 @@ module Bayonetta
       end
       input_big = is_big?(input)
 
-      exp = self::new
+      if is_bayo2?(input, input_big)
+        exp = EXPFile2::new
+      else
+        exp = self::new
+      end
       exp.instance_variable_set(:@__was_big, input_big)
       exp.load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
