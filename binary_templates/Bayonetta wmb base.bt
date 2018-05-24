@@ -93,14 +93,35 @@ string tangents_tRead(uint32 value) {
     return s;
 }
 
-struct {
-    vector      position;
-    mapping_t   mapping;
-    normals_t   normals;
-    tangents_t  tangents;
-    ubyteList   boneIndex;
-    ubyteList   boneWeight;
-} vertexes[header.numVertexes];
+if (( header.unknownB & 0xff ) == 0x1f ) {
+    struct {
+        vector      position;
+        mapping_t   mapping;
+        normals_t   normals;
+        tangents_t  tangents;
+        ubyteList   boneIndex;
+        ubyteList   boneWeight;
+    } vertexes[header.numVertexes];
+} else {
+    if ( header.vertexExDataSize == 1 ) {
+        struct {
+            vector      position;
+            mapping_t   mapping;
+            normals_t   normals;
+            ubyteList   unknwonA;
+            ubyteList   unknownB;
+        } vertexes[header.numVertexes];
+    } else {
+        struct {
+            vector      position;
+            mapping_t   mapping;
+            normals_t   normals;
+            ubyteList   unknwonA;
+            ubyteList   unknownB;
+            mapping_t   mapping2;
+        } vertexes[header.numVertexes];
+    }
+}
 
 if ( header.offsetVertexesExData ) {
 FSeek( header.offsetVertexesExData );
@@ -116,15 +137,22 @@ if ( header.vertexExDataSize == 2 ) {
 }
 }
 
+if ( header.offsetBoneHierarchy ) {
 FSeek( header.offsetBoneHierarchy);
 int16 boneParents[header.numBones];
+}
 
+if ( header.offsetBoneRelativePosition) {
 FSeek( header.offsetBoneRelativePosition);
 vector boneRelativePositions[header.numBones];
+}
 
+if ( header.offsetBonePosition) {
 FSeek( header.offsetBonePosition);
 vector bonePositions[header.numBones];
+}
 
+if ( header.offsetBoneIndexTranslateTable) {
 FSeek( header.offsetBoneIndexTranslateTable );
 struct {
     int16 firstLevel[16];
@@ -144,6 +172,7 @@ struct {
     }
     int16 thirdLevel[k*16];
 } BoneIndexTranslateTable;
+}
 
 if ( header.offsetUnknownJ ) {
     FSeek( header.offsetUnknownJ );
@@ -239,9 +268,11 @@ typedef struct {
         int32  vertexOffset;
         int32   unknownF[7];
     } batchHeader;
-    int32 numBoneRefs;
-    if(numBoneRefs > 0) {
-        uchar boneRefs[numBoneRefs];
+    if (batchHeader.unknownB & 0x8000) {
+        int32 numBoneRefs;
+        if(numBoneRefs > 0) {
+            uchar boneRefs[numBoneRefs];
+        }
     }
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
     uint16 indices[batchHeader.numIndices];
