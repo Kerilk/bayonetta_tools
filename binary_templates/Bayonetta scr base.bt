@@ -1,0 +1,31 @@
+struct {
+    char    id[4];
+    uint32  numModels;
+    uint32  offsetTextures;
+    char    unknown[4];
+} header;
+struct {
+    char    name[16];
+    uint32  offset;
+    float   transform[9];
+    int16   unknownA[42];
+} modelDescriptors[header.numModels];
+local int i;
+local uint32 offset;
+local uint32 size;
+for( i = 0; i < header.numModels; i++) {
+    offset = startof(modelDescriptors[i]) + modelDescriptors[i].offset;
+    FSeek(offset);
+    if ( i == (header.numModels - 1) ){
+        size = header.offsetTextures - offset;
+    } else {
+        size = startof(modelDescriptors[i+1]) + modelDescriptors[i+1].offset - offset;
+    }
+    struct {
+        byte data[size];
+    } model;
+}
+FSeek(header.offsetTextures);
+struct {
+    byte data[FileSize() - header.offsetTextures];
+} textures;
