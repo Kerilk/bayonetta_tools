@@ -137,6 +137,14 @@ module Bayonetta
       register_field(field, :L, count: count, offset: offset, sequence: sequence, condition: condition)
     end
 
+    def self.int64( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :q, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.uint64( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :Q, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
     def self.float( field, count: nil, offset: nil, sequence: false, condition: nil)
       register_field(field, :F, count: count, offset: offset, sequence: sequence, condition: condition)
     end

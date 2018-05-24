@@ -13,6 +13,28 @@ module Bayonetta
     end
     private :get_uint
 
+    def get_float(big = @big)
+      if big
+        flt = "g"
+      else
+        flt = "e"
+      end
+      flt
+    end
+
+    private :get_float
+
+    def get_short(big = @big)
+      sh = "s"
+      if big
+        sh <<= ">"
+      else
+        sh <<="<"
+      end
+      sh
+    end
+
+    private :get_short
   end
 
  end
