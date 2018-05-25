@@ -14,10 +14,11 @@ struct {
     char    animation_track;
     char    entry_type;
     char    u_h;
-    char    u_i;
-    int32   u_j;
+    char    interpolation;//?
+    int16   num_points;
+    int16   u_g;
     uint32  offset <format=hex>;
-    int32   u_d;
+    uint32  offset2 <format=hex>;
 } record[header.numRecord];
 
 local int i;
@@ -59,5 +60,23 @@ for( i = 0; i < header.numRecord; i++) {
             } coeffs[2];
         } entry<bgcolor=cBlue>;
         break;
+    }
+    if (record[i].interpolation == 4) {
+        FSeek(record[i].offset2);
+        struct {
+            float p;
+            float dp;
+            float m0;
+            float dm0;
+            float m1;
+            float dm1;
+            struct {
+                float   value;
+                uint16  dummy;
+                uint16  cp;
+                uint16  cm0;
+                uint16  cm1;
+            } points[record[i].num_points];
+        } entry2<bgcolor=cYellow>;
     }
 }
