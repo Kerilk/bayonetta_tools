@@ -278,6 +278,13 @@ module Bayonetta
       register_field :mapping2, Mapping
     end
 
+    class Vertex4 < DataConverter
+      register_field :position, Position
+      register_field :mapping, Mapping
+      register_field :normals, Normals
+      register_field :unknown_a, :L
+    end
+
     class Vertex < DataConverter
 
       def self.convert(input, output, input_big, output_big, parent, index)
@@ -288,6 +295,12 @@ module Bayonetta
             return Vertex2::convert(input, output, input_big, output_big, parent, index)
           else
             return Vertex3::convert(input, output, input_big, output_big, parent, index)
+          end
+        elsif (u_b & 0xff) == 0xd
+          if vertex_ex_data_size == 1
+            return Vertex4::convert(input, output, input_big, output_big, parent, index)
+          else
+            raise "Unknown vertex type!"
           end
         else
           return Vertex1::convert(input, output, input_big, output_big, parent, index)
@@ -302,6 +315,12 @@ module Bayonetta
             return Vertex2::load(input, input_big, parent, index)
           else
             return Vertex3::load(input, input_big, parent, index)
+          end
+        elsif (u_b & 0xff) == 0xd
+          if vertex_ex_data_size == 1
+            return Vertex4::load(input, input_big, parent, index)
+          else
+            raise "Unknown vertex type!"
           end
         else
           return Vertex1::load(input, input_big, parent, index)
