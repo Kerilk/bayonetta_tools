@@ -93,7 +93,7 @@ string tangents_tRead(uint32 value) {
     return s;
 }
 
-if (( header.unknownB & 0xff ) != 0xf ) {
+if (( header.unknownB & 0xff ) > 0xf ) {
     struct {
         vector      position;
         mapping_t   mapping;
@@ -102,7 +102,7 @@ if (( header.unknownB & 0xff ) != 0xf ) {
         ubyteList   boneIndex;
         ubyteList   boneWeight;
     } vertexes[header.numVertexes];
-} else {
+} else if ( ( header.unknownB & 0xff ) == 0xf ) {
     if ( header.vertexExDataSize == 1 ) {
         struct {
             vector      position;
@@ -121,6 +121,13 @@ if (( header.unknownB & 0xff ) != 0xf ) {
             mapping_t   mapping2;
         } vertexes[header.numVertexes];
     }
+} else if ( ( header.unknownB & 0xff ) == 0xd ) {
+    struct {
+        vector      position;
+        mapping_t   mapping;
+        normals_t   normals;
+        ubyteList   unknwonA;
+    } vertexes[header.numVertexes];
 }
 
 if ( header.offsetVertexesExData ) {
