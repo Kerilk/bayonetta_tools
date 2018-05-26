@@ -1,0 +1,39 @@
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("SCR\0", id, 4) == 0, "Wrong file type");
+FSeek(0);
+
+struct {
+    char    id[4];
+    int16   unknownA;
+    int16   numModels;
+    uint32  offsetOffsetsModels;
+} header;
+
+FSeek(header.offsetOffsetsModels);
+
+uint32 offsetsModels[header.numModels];
+
+local int i;
+for(i = 0; i < header.numModels; i++) {
+    FSeek(offsetsModels[i]);
+    struct {
+        uint32 offset;
+        char name[64];
+        float transform[9];
+        int16   unknownA[18];
+    } modelHeader;
+}
+local int size;
+for(i = 0; i < header.numModels; i++) {
+    FSeek(modelHeader[i].offset);
+    if( i == header.numModels - 1) {
+        size = FileSize() - modelHeader[i].offset;
+    } else {
+        size = offsetsModels[i+1] - modelHeader[i].offset;
+    }
+
+    struct {
+        byte data[size];
+    } model;
+}
