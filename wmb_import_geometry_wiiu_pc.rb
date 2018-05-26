@@ -170,8 +170,8 @@ def merge_vertexes(wmb1, wmb2)
         ex = WMBFile::VertexExData2::new
         #workaroud for bayo 2 here
         ex.unknown = 0xffc0c0c0#wmb2.vertexes_ex_data[i].unknown
-        ex.u = wmb2.vertexes[i].u
-        ex.v = wmb2.vertexes[i].v
+        ex.mapping.u = wmb2.vertexes[i].mapping.u
+        ex.mapping.v = wmb2.vertexes[i].mapping.v
         ex
       }
     end

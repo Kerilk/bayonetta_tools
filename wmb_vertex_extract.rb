@@ -46,6 +46,6 @@ else
 end
 
 vertexes = wmb.vertexes
-print YAML::dump vertex_indices.collect { |i| [i, [vertexes[i].x, vertexes[i].y, vertexes[i].z] ] }.to_h
+print YAML::dump vertex_indices.collect { |i| [i, [vertexes[i].position.x, vertexes[i].position.y, vertexes[i].position.z] ] }.to_h
 
 

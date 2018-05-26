@@ -9,10 +9,14 @@ module Bayonetta
       register_field :unknown, :L
     end
 
-    class VertexExData2 < DataConverter
-      register_field :unknown, :L
+    class Mapping < DataConverter
       register_field :u, :S
       register_field :v, :S
+    end
+
+    class VertexExData2 < DataConverter
+      register_field :unknown, :L
+      register_field :mapping, Mapping
     end
 
     class VertexExData < DataConverter
@@ -175,12 +179,47 @@ module Bayonetta
 
     end
 
-    class Vertex < DataConverter
+    class Position < DataConverter
       register_field :x, :F
       register_field :y, :F
       register_field :z, :F
-      register_field :u, :S
-      register_field :v, :S
+
+      def -(other)
+        b = Position::new
+        b.x = @x - other.x
+        b.y = @y - other.y
+        b.z = @z - other.z
+        b
+      end
+
+      def -(other)
+        b = Position::new
+        b.x = @x + other.x
+        b.y = @y + other.y
+        b.z = @z + other.z
+        b
+      end
+
+      def *(scal)
+        b = Position::new
+        b.x = @x*scal
+        b.y = @y*scal
+        b.z = @z*scal
+      end
+
+      def to_yaml_properties
+        [:@x, :@y, :@z]
+      end
+
+      def to_s
+        "<#{@x}, #{@y}, #{@z}>"
+      end
+
+    end
+
+    class Vertex1 < DataConverter
+      register_field :position, Position
+      register_field :mapping, Mapping
       register_field :normals, Normals
       register_field :tangents, :L
       register_field :bone_index, :L
@@ -222,25 +261,51 @@ module Bayonetta
 
     end
 
-    class BonePosition < DataConverter
-      register_field :x, :F
-      register_field :y, :F
-      register_field :z, :F
+    class Vertex2 < DataConverter
+      register_field :position, Position
+      register_field :mapping, Mapping
+      register_field :normals, Normals
+      register_field :unknown_a, :L
+      register_field :unknown_b, :L
+    end
 
-      def -(other)
-        b = BonePosition::new
-        b.x = @x - other.x
-        b.y = @y - other.y
-        b.z = @z - other.z
-        b
+    class Vertex3 < DataConverter
+      register_field :position, Position
+      register_field :mapping, Mapping
+      register_field :normals, Normals
+      register_field :unknown_a, :L
+      register_field :unknown_b, :L
+      register_field :mapping2, Mapping
+    end
+
+    class Vertex < DataConverter
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        u_b = parent.header.u_b
+        vertex_ex_data_size = parent.header.vertex_ex_data_size
+        if (u_b & 0xff) == 0xf
+          if vertex_ex_data_size == 1
+            return Vertex2::convert(input, output, input_big, output_big, parent, index)
+          else
+            return Vertex3::convert(input, output, input_big, output_big, parent, index)
+          end
+        else
+          return Vertex1::convert(input, output, input_big, output_big, parent, index)
+        end
       end
 
-      def to_yaml_properties
-        [:@x, :@y, :@z]
-      end
-
-      def to_s
-        "<#{@x}, #{@y}, #{@z}>"
+      def self.load(input, input_big, parent, index)
+        u_b = parent.header.u_b
+        vertex_ex_data_size = parent.header.vertex_ex_data_size
+        if (u_b & 0xff) == 0xf
+          if vertex_ex_data_size == 1
+            return Vertex2::load(input, input_big, parent, index)
+          else
+            return Vertex3::load(input, input_big, parent, index)
+          end
+        else
+          return Vertex1::load(input, input_big, parent, index)
+        end
       end
 
     end
@@ -635,9 +700,9 @@ module Bayonetta
     register_field :vertexes_ex_data, VertexExData, count: 'header\num_vertexes',
                    offset: 'header\offset_vertexes_ex_data'
     register_field :bone_hierarchy, :s, count: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
-    register_field :bone_relative_positions, BonePosition, count: 'header\num_bones',
+    register_field :bone_relative_positions, Position, count: 'header\num_bones',
                    offset: 'header\offset_bone_relative_position'
-    register_field :bone_positions, BonePosition, count: 'header\num_bones', offset: 'header\offset_bone_position'
+    register_field :bone_positions, Position, count: 'header\num_bones', offset: 'header\offset_bone_position'
     register_field :bone_index_translate_table, BoneIndexTranslateTable,
                    offset: 'header\offset_bone_index_translate_table'
     register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
@@ -794,9 +859,9 @@ module Bayonetta
 
     def scale(s)
       @vertexes.each { |v|
-        v.x = v.x * s
-        v.y = v.y * s
-        v.z = v.z * s
+        v.position.x = v.position.x * s
+        v.position.y = v.position.y * s
+        v.position.z = v.position.z * s
       }
       @bone_positions.each { |p|
         p.x = p.x * s
@@ -813,9 +878,9 @@ module Bayonetta
 
     def shift(x, y, z)
       @vertexes.each { |v|
-        v.x = v.x + x
-        v.y = v.y + y
-        v.z = v.z + z
+        v.position.x = v.position.x + x
+        v.position.y = v.position.y + y
+        v.position.z = v.position.z + z
       }
       @bone_positions.each { |p|
         p.x = p.x + x
@@ -841,10 +906,10 @@ module Bayonetta
       end
       m = Linalg::get_rotation_matrix(rx, ry, rz, center: center)
       @vertexes.each { |v|
-        r = m * Linalg::Vector::new(v.x, v.y, v.z)
-        v.x = r.x
-        v.y = r.y
-        v.z = r.z
+        r = m * Linalg::Vector::new(v.position.x, v.position.y, v.position.z)
+        v.position.x = r.x
+        v.position.y = r.y
+        v.position.z = r.z
       }
       @bone_positions.each { |p|
         r = m * Linalg::Vector::new(p.x, p.y, p.z)
@@ -1181,16 +1246,20 @@ module Bayonetta
           iv = @vertexes[ivi]
           ov = @vertexes[ovi]
           if options[:position]
-            ov.x = iv.x
-            ov.y = iv.y
-            ov.z = iv.z
+            ov.position.x = iv.position.x
+            ov.position.y = iv.position.y
+            ov.position.z = iv.position.z
           end
           if options[:mapping]
-            ov.u = iv.u
-            ov.v = iv.v
+            ov.mapping.u = iv.mapping.u
+            ov.mapping.v = iv.mapping.v
+            if ov.respond_to?(:mapping2) && iv.respond_to?(:mapping2)
+              ov.mapping2.u = iv.mapping2.u
+              ov.mapping2.v = iv.mapping2.v
+            end
             if @vertexes_ex_data && @header.vertex_ex_data_size > 1
-              @vertexes_ex_data[ovi].u = @vertexes_ex_data[ivi].u
-              @vertexes_ex_data[ovi].v = @vertexes_ex_data[ivi].v
+              @vertexes_ex_data[ovi].mapping.u = @vertexes_ex_data[ivi].mapping.u
+              @vertexes_ex_data[ovi].mapping.v = @vertexes_ex_data[ivi].mapping.v
             end
           end
           if options[:normal]
@@ -1201,6 +1270,12 @@ module Bayonetta
           end
           if options[:unknown] && @vertexes_ex_data
             @vertexes_ex_data[ovi].unknown = @vertexes_ex_data[ivi].unknown
+          end
+          if options[:unknown] && ov.respond_to?(:unknown_a) && iv.respond_to?(:unknown_a)
+            ov.unknown_a = iv.unknown_a
+          end
+          if options[:unknown] && ov.respond_to?(:unknown_b) && iv.respond_to?(:unknown_b)
+            ov.unknown_b = iv.unknown_b
           end
           if options[:bone_infos]
             input_batches = vertex_usage[ivi]
@@ -1253,8 +1328,8 @@ module Bayonetta
     def fix_ex_data
       @vertexes.each_with_index { |v, i|
         @vertexes_ex_data[i].unknown = 0xffc0c0c0
-        @vertexes_ex_data[i].u = v.u
-        @vertexes_ex_data[i].v = v.v
+        @vertexes_ex_data[i].mapping.u = v.mapping.u
+        @vertexes_ex_data[i].mapping.v = v.mapping.v
       }
     end
 
