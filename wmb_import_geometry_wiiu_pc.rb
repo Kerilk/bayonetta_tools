@@ -168,9 +168,8 @@ def merge_vertexes(wmb1, wmb2)
     elsif wmb1.header.vertex_ex_data_size == 2 && wmb2.header.vertex_ex_data_size == 1
       wmb1.vertexes_ex_data += num_vertex2.times.collect { |i|
         ex = WMBFile::VertexExData2::new
-        ex.unknown = wmb2.vertexes_ex_data[i].unknown
-        ex.mapping.u = wmb2.vertexes[i].mapping.u
-        ex.mapping.v = wmb2.vertexes[i].mapping.v
+        ex.color = wmb2.vertexes_ex_data[i].color
+        ex.mapping = wmb2.vertexes[i].mapping
         ex
       }
     end

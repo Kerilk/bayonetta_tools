@@ -1372,8 +1372,8 @@ module Bayonetta
           if options[:tangents]
             ov.tangents = iv.tangents
           end
-          if options[:unknown] && @vertexes_ex_data
-            @vertexes_ex_data[ovi].unknown = @vertexes_ex_data[ivi].unknown
+          if options[:color] && @vertexes_ex_data
+            @vertexes_ex_data[ovi].color = @vertexes_ex_data[ivi].color
           end
           if options[:unknown] && ov.respond_to?(:unknown_a) && iv.respond_to?(:unknown_a)
             ov.unknown_a = iv.unknown_a
@@ -1431,7 +1431,7 @@ module Bayonetta
 
     def fix_ex_data
       @vertexes.each_with_index { |v, i|
-        @vertexes_ex_data[i].unknown = 0xffc0c0c0
+        @vertexes_ex_data[i].color.data = 0xffc0c0c0
         @vertexes_ex_data[i].mapping.u = v.mapping.u
         @vertexes_ex_data[i].mapping.v = v.mapping.v
       }

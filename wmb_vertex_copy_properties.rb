@@ -10,6 +10,7 @@ $options = {
   tangents: false,
   bone_infos: true,
   unknown: false,
+  color: false,
   bone_map: nil
 }
 
@@ -35,6 +36,10 @@ OptionParser.new do |opts|
 
   opts.on("-b", "--[no-]bone-infos", "Copy bone indexes and weights (default true)") { |b|
     $options[:bone_infos] = b
+  }
+
+  opts.on("-c", "--[no-]color", "Copy color") { |c|
+    $options[:color] = c
   }
 
   opts.on("-u", "--[no-]unknown", "Copy the unknown field in ex data (default false)") { |u|
