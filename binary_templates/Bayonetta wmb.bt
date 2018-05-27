@@ -19,12 +19,30 @@ string normals_tRead( normals_t &value ) {
     double fy = value.ny / 127.0;
     double fz = value.nz / 127.0;
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    if (nrm != 0.0) {
-        fx /= nrm;
-        fy /= nrm;
-        fz /= nrm;
-    }
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
+    return s;
+}
+
+typedef struct  {
+    ubyte val[4];
+} ubyteList<read=ubyteListRead>;
+
+string ubyteListRead( ubyteList &value ) {
+    string s;
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val[0], value.val[1], value.val[2], value.val[3]);
+    return s;
+}
+
+typedef ubyteList tangents_t<read=tangents_tRead>;
+
+string tangents_tRead(tangents_t &value) {
+    string s;
+    float tx = tangentRead(value.val[0]);
+    float ty = tangentRead(value.val[1]);
+    float tz = tangentRead(value.val[2]);
+    float d = tangentRead(value.val[3]);
+    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
+    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f, nrm: %f", tx, ty, tz, d, nrm);
     return s;
 }
 

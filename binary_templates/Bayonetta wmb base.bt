@@ -57,15 +57,9 @@ string vectorRead( vector &value ) {
     return s;
 }
 
-typedef struct  {
-    uint32 val;
-} ubyteList<read=ubyteListRead>;
-
-string ubyteListRead( ubyteList &value ) {
-    string s;
-    SPrintf(s, "%3d, %3d, %3d, %3d", value.val & 0xff , (value.val >> 8) & 0xff, (value.val >> 16) & 0xff, (value.val >> 24) & 0xff);
-    return s;
-}
+typedef ubyteList color_t;
+typedef ubyteList boneIndexes_t;
+typedef ubyteList boneWeights_t;
 
 float tangentRead( uchar value) {
     float v;
@@ -75,32 +69,14 @@ float tangentRead( uchar value) {
     return v;
 }
 
-typedef uint32 tangents_t<read=tangents_tRead>;
-
-string tangents_tRead(uint32 value) {
-    string s;
-    float tx = tangentRead(value & 0xff);
-    float ty = tangentRead((value >> 8 ) & 0xff);
-    float tz = tangentRead((value >> 16 ) & 0xff);
-    float d = tangentRead((value >> 24 ) & 0xff);
-    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
-    if (nrm != 0.0) {
-      tx /= nrm;
-      ty /= nrm;
-      tz /= nrm;
-    }
-    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f", tx, ty, tz, d);
-    return s;
-}
-
 if (( header.unknownB & 0xff ) > 0xf ) {
     struct {
-        vector      position;
-        mapping_t   mapping;
-        normals_t   normals;
-        tangents_t  tangents;
-        ubyteList   boneIndex;
-        ubyteList   boneWeight;
+        vector          position;
+        mapping_t       mapping;
+        normals_t       normals;
+        tangents_t      tangents;
+        boneIndexes_t   boneIndexes;
+        boneWeights_t   boneWeights;
     } vertexes[header.numVertexes];
 } else if ( ( header.unknownB & 0xff ) == 0xf ) {
     if ( header.vertexExDataSize == 1 ) {
@@ -134,12 +110,12 @@ if ( header.offsetVertexesExData ) {
 FSeek( header.offsetVertexesExData );
 if ( header.vertexExDataSize == 2 ) {
     struct {
-        ubyteList unknown;
-        mapping_t mapping;
+        color_t     color;
+        mapping_t   mapping;
     } vertexesExData[header.numVertexes];
 } else {
     struct {
-        ubyteList unknown;
+        color_t     color;
     } vertexesExData[header.numVertexes];
 }
 }

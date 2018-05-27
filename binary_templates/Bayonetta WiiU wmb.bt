@@ -28,12 +28,30 @@ string normals_tRead( normals_t &value ) {
     float fy = (float)ny/(float)((1<<9)-1);
     float fz = (float)nz/(float)((1<<9)-1);
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
-    if (nrm != 0.0) {
-        fx /= nrm;
-        fy /= nrm;
-        fz /= nrm;
-    }
-    SPrintf(s, "nx: %f, ny: %f, nz: %f", fx, fy, fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
+    return s;
+}
+
+typedef struct  {
+    uint32 val;
+} ubyteList<read=ubyteListRead>;
+
+string ubyteListRead( ubyteList &value ) {
+    string s;
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val & 0xff , (value.val >> 8) & 0xff, (value.val >> 16) & 0xff, (value.val >> 24) & 0xff);
+    return s;
+}
+
+typedef uint32 tangents_t<read=tangents_tRead>;
+
+string tangents_tRead(uint32 value) {
+    string s;
+    float tx = tangentRead(value & 0xff);
+    float ty = tangentRead((value >> 8 ) & 0xff);
+    float tz = tangentRead((value >> 16 ) & 0xff);
+    float d = tangentRead((value >> 24 ) & 0xff);
+    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
+    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f, nrm: %f", tx, ty, tz, d, nrm);
     return s;
 }
 

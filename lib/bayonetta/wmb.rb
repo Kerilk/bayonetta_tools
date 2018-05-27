@@ -1,12 +1,93 @@
 require 'set'
 require 'digest'
 module Bayonetta
-
   class WMBFile < DataConverter
     include Alignment
 
+    class UByteList < DataConverter
+      register_field :data, :L
+
+      def self.inherited(subclass)
+        subclass.instance_variable_set(:@fields, @fields.dup)
+      end
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        h = self::new
+        if parent.__parent.is_bayo2? && input_big
+          h.convert(input, output, false, output_big, parent, index)
+        else
+          h.convert(input, output, input_big, output_big, parent, index)
+        end
+        h
+      end
+
+      def self.load(input, input_big, parent, index)
+        h = self::new
+        if parent.__parent.is_bayo2? && input_big
+          h.load(input, false, parent, index)
+        else
+          h.load(input, input_big, parent, index)
+        end
+        h
+      end
+
+      def dump(output, output_big, parent = nil, index = nil)
+        if parent.__parent.is_bayo2? && output_big
+          set_dump_type(output, false, parent, index)
+        else
+          set_dump_type(output, output_big, parent, index)
+        end
+        dump_fields
+        unset_dump_type
+        self
+      end
+    end
+
+    class Color < UByteList
+
+      def r
+        @data & 0xff
+      end
+
+      def g
+        (@data >> 8) & 0xff
+      end
+
+      def b
+        (@data >> 16) & 0xff
+      end
+
+      def a
+        (@data >> 24) & 0xff
+      end
+
+      def r=(v)
+        @data = (@data & 0xffffff00) | (v & 0xff)
+        v & 0xff
+      end
+
+      def g=(v)
+        @data = (@data & 0xffff00ff) | ((v & 0xff)<<8)
+        v & 0xff
+      end
+
+      def b=(v)
+        @data = (@data & 0xff00ffff) | ((v & 0xff)<<16)
+        v & 0xff
+      end
+
+      def a=(v)
+        @data = (@data & 0x00ffffff) | ((v & 0xff)<<24)
+        v & 0xff
+      end
+
+    end
+
+    class Tangents < UByteList
+    end
+
     class VertexExData1 < DataConverter
-      register_field :unknown, :L
+      register_field :color, Color
     end
 
     class Mapping < DataConverter
@@ -15,7 +96,7 @@ module Bayonetta
     end
 
     class VertexExData2 < DataConverter
-      register_field :unknown, :L
+      register_field :color, Color
       register_field :mapping, Mapping
     end
 
@@ -221,15 +302,15 @@ module Bayonetta
       register_field :position, Position
       register_field :mapping, Mapping
       register_field :normals, Normals
-      register_field :tangents, :L
-      register_field :bone_index, :L
-      register_field :bone_weight, :L
+      register_field :tangents, Tangents
+      register_field :bone_index, UByteList
+      register_field :bone_weight, UByteList
 
       def get_bone_indexes_and_weights
         res = []
         4.times { |i|
-          bi = (@bone_index >> (i*8)) & 0xff
-          bw = (@bone_weight >> (i*8)) & 0xff
+          bi = (@bone_index.data >> (i*8)) & 0xff
+          bw = (@bone_weight.data >> (i*8)) & 0xff
           res.push [bi, bw] if bw > 0
         }
         res
@@ -247,14 +328,14 @@ module Bayonetta
 
       def set_bone_indexes_and_weights(bone_info)
         raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
-        @bone_index = 0
-        @bone_weight = 0
+        @bone_index.data = 0
+        @bone_weight.data = 0
         bone_info.each_with_index { |(bi, bw), i|
           raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
-          @bone_index |= ( bi << (i*8) )
+          @bone_index.data |= ( bi << (i*8) )
           bw = 0 if bw < 0
           bw = 255 if bw > 255
-          @bone_weight |= (bw << (i*8) )
+          @bone_weight.data |= (bw << (i*8) )
         }
         self
       end
@@ -779,6 +860,10 @@ module Bayonetta
 
     def was_big?
       @__was_big
+    end
+
+    def is_bayo2?
+      @offset_shader_names != 0 || @offset_tex_infos != 0
     end
 
     def self.validate_endianness(input)
