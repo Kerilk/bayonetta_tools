@@ -100,6 +100,10 @@ OptionParser.new do |opts|
     $options[:shift] = eval(shift).to_a
   end
 
+  opts.on("--reverse-tangents-byte-order=MESH_LIST", "Fixes the tangents import that was buggy, only use on bayo 2 imported meshes...") do |tan|
+    $options[:reverse_tangents] = eval(tan).to_a
+  end
+
   opts.on("--rotate=ROTATE_INFO", "Rotates the model.",
                                   "  ROTATE_INFO is either:",
                                   "    [rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)",
@@ -134,6 +138,7 @@ wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
+wmb.reverse_tangents_byte_order($options[:reverse_tangents]) if $options[:reverse_tangents]
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]

@@ -1437,6 +1437,20 @@ module Bayonetta
       }
     end
 
+    def reverse_tangents_byte_order(mesh_list)
+      raise "Vertex don't have tangents information!" unless @vertexes[0].respond_to?(:tangents)
+      vertex_indices = []
+      mesh_list.each { |i|
+        @meshes[i].batches.each { |b|
+          vertex_indices += b.vertex_indices
+        }
+      }
+      vertex_indices.uniq!
+      vertex_indices.each { |i|
+        @vertexes[i].tangents.data = [@vertexes[i].tangents.data].pack("L<").unpack("L>").first
+      }
+    end
+
     def recompute_layout
       last_offset = @header.offset_vertexes
 
