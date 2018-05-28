@@ -256,6 +256,10 @@ typedef struct {
         if(numBoneRefs > 0) {
             uchar boneRefs[numBoneRefs];
         }
+    } else {
+        struct {
+            float unknown[4];
+        } unknown;
     }
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
     uint16 indices[batchHeader.numIndices];

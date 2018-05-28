@@ -605,12 +605,13 @@ module Bayonetta
       register_field :num_indices, :l
       register_field :vertex_offset, :l
       register_field :u_f, :l, count: 7
-      register_field :num_bone_ref, :l
     end
 
     class Batch < DataConverter
       register_field :header, BatchHeader
-      register_field :bone_refs, :C, count: 'header\num_bone_ref'
+      register_field :num_bone_ref, :l, condition: '(header\u_b & 0x8000) != 0'
+      register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0'
+      register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
       def duplicate(vertexes, vertexes_ex)
@@ -691,7 +692,7 @@ module Bayonetta
         }.to_h
         vertex_indices.uniq.sort.each { |vi| vertexes[vi].remap_bone_indexes(translation_map) }
         @bone_refs = new_bone_refs_list
-        @header.num_bone_ref = @bone_refs.length
+        @num_bone_ref = @bone_refs.length
         self
       end
 
@@ -1398,7 +1399,7 @@ module Bayonetta
               unless new_bi
                 new_bi = output_batch.bone_refs.length
                 output_batch.bone_refs.push(bi)
-                output_batch.header.num_bone_ref = output_batch.bone_refs.length
+                output_batch.num_bone_ref = output_batch.bone_refs.length
               end
               [new_bi, bw]
             }
@@ -1455,23 +1456,28 @@ module Bayonetta
       last_offset = @header.offset_vertexes
 
       @header.num_vertexes = @vertexes.size
-
       last_offset += @header.num_vertexes * 32
-      last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20) if @vertexes_ex_data
 
-      last_offset += @header.num_vertexes * @header.vertex_ex_data_size * 4
-      last_offset = @header.offset_bone_hierarchy = align(last_offset, 0x20)
-
-      last_offset += @header.num_bones * 2
-      last_offset = @header.offset_bone_relative_position = align(last_offset, 0x20)
-
-      last_offset += @header.num_bones * 12
-      last_offset = @header.offset_bone_position = align(last_offset, 0x20)
-
-      last_offset += @header.num_bones * 12
-      last_offset = @header.offset_bone_index_translate_table = align(last_offset, 0x20)
-
-      last_offset += @bone_index_translate_table.size
+      if @header.offset_vertexes_ex_data > 0x0
+        last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20)
+        last_offset += @header.num_vertexes * @header.vertex_ex_data_size * 4
+      end
+      if @header.offset_bone_relative_position > 0x0
+        last_offset = @header.offset_bone_hierarchy = align(last_offset, 0x20)
+        last_offset += @header.num_bones * 2
+      end
+      if @header.offset_bone_relative_position > 0x0
+        last_offset = @header.offset_bone_relative_position = align(last_offset, 0x20)
+        last_offset += @header.num_bones * 12
+      end
+      if @header.offset_bone_position > 0x0
+        last_offset = @header.offset_bone_position = align(last_offset, 0x20)
+        last_offset += @header.num_bones * 12
+      end
+      if @header.offset_bone_index_translate_table > 0x0
+        last_offset = @header.offset_bone_index_translate_table = align(last_offset, 0x20)
+        last_offset += @bone_index_translate_table.size
+      end
       if @header.offset_u_j > 0x0
         last_offset = @header.offset_u_j = align(last_offset, 0x20)
         last_offset += @u_j.size
