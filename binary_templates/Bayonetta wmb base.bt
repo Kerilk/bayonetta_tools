@@ -251,7 +251,7 @@ typedef struct {
         int32  vertexOffset;
         int32   unknownF[7];
     } batchHeader;
-    if (batchHeader.unknownB & 0x8000) {
+    if ((batchHeader.unknownB & 0x8000) || (batchHeader.unknownB & 0x80)) {
         int32 numBoneRefs;
         if(numBoneRefs > 0) {
             uchar boneRefs[numBoneRefs];
