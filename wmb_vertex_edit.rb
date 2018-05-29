@@ -12,8 +12,8 @@ $options = {
   :point => [0.0, 0.0, 0.0],
   :reject => false,
   :cut => 0,
-  :positions = false,
-  :order = 2
+  :positions => false,
+  :order => 2
 }
 
 def normalize(n)
@@ -63,18 +63,7 @@ cut = $options[:cut]
 
 vertexes = YAML::load($stdin.read).to_a
 
-#print YAML::dump vertexes.sort { |(i, vi), (j, vj)|
-#  vi[1] <=> vj[1]
-#}
-# Scatter
 plot = Nyaplot::Plot3D.new
-#colors = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072']
-#['circle', 'rect', 'rect', 'diamond'].each do |shape|
-#  x, y, z = [0,0,0].map{|d| next Array.new(20, rand*5).map{|v| next v+rand}}
-#  sc = plot.add(:scatter, x, y, z)
-#  sc.shape(shape)
-#  sc.fill_color(colors.pop)
-#end
 
 def position(n, p, v)
   s = n[0]*(v[0]-p[0])+n[1]*(v[1]-p[1])+n[2]*(v[2]-p[2])
@@ -142,8 +131,6 @@ vs.each_with_index { |v, i|
   sc.shape(shapes[i])
   sc.size(0.5)
 }
-
-#plot.add(:line, [0.0, 0.0], [0.0, 0.10], [-0.00, -0.00])
 
 plot.export_html("3dscatter.html")
 
