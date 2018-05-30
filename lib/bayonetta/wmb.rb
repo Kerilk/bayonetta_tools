@@ -616,8 +616,13 @@ module Bayonetta
 
       def duplicate(vertexes, vertexes_ex)
         b = Batch::new
-        b.header = @header.dup
-        b.bone_refs = @bone_refs.dup
+        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+          b.header = @header.dup
+          b.num_bone_ref = @num_bone_ref
+          b.bone_refs = @bone_refs.dup
+        else
+          b.unknown = @unknown
+        end
         l = vertexes.length
         old_indices_map = vertex_indices.uniq.sort.each_with_index.collect { |vi, i| [vi, l + i] }.to_h
         old_indices_map.each { |vi, nvi| vertexes[nvi] = vertexes[vi] }
