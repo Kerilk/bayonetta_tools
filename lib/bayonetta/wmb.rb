@@ -688,16 +688,18 @@ module Bayonetta
       end
 
       def cleanup_bone_refs(vertexes)
-        bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
-        used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].get_bone_indexes }.flatten.uniq
-        new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
-        new_bone_refs_reverse_map = new_bone_refs_list.each_with_index.collect { |b, i| [b, i] }.to_h
-        translation_map = used_bone_refs_indexes.collect { |ri|
-          [ri, new_bone_refs_reverse_map[bone_refs_map[ri]]]
-        }.to_h
-        vertex_indices.uniq.sort.each { |vi| vertexes[vi].remap_bone_indexes(translation_map) }
-        @bone_refs = new_bone_refs_list
-        @num_bone_ref = @bone_refs.length
+        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+          bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
+          used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].get_bone_indexes }.flatten.uniq
+          new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
+          new_bone_refs_reverse_map = new_bone_refs_list.each_with_index.collect { |b, i| [b, i] }.to_h
+          translation_map = used_bone_refs_indexes.collect { |ri|
+            [ri, new_bone_refs_reverse_map[bone_refs_map[ri]]]
+          }.to_h
+          vertex_indices.uniq.sort.each { |vi| vertexes[vi].remap_bone_indexes(translation_map) }
+          @bone_refs = new_bone_refs_list
+          @num_bone_ref = @bone_refs.length
+        end
         self
       end
 
