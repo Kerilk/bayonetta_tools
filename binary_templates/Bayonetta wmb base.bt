@@ -9,7 +9,7 @@ struct {
     char    vertexExDataSize;
     char    vertexExData;
     int16   unknownE;
-    int32   unknownF;
+    uint32  offsetPositions;
     uint32  offsetVertexes;
     uint32  offsetVertexesExData;
     int32   unknownG[4];
@@ -32,8 +32,6 @@ struct {
     int32   exMatInfo[4];
 } header;
 
-FSeek( header.offsetVertexes );
-
 typedef struct {
     hfloat u;
     hfloat v;
@@ -42,6 +40,33 @@ typedef struct {
 string mapping_tRead( mapping_t &value ) {
     string s;
     SPrintf(s, "u: %f, v: %f", value.u, value.v);
+    return s;
+}
+
+typedef struct {
+    float u;
+    float v;
+} fmapping_t<read=fmapping_tRead>;
+
+string fmapping_tRead( fmapping_t &value ) {
+    string s;
+    SPrintf(s, "u: %f, v: %f", value.u, value.v);
+    return s;
+}
+
+typedef struct {
+    float nx;
+    float ny;
+    float nz;
+} fnormals_t<read=fnormals_tRead>;
+
+string fnormals_tRead( fnormals_t &value ) {
+    string s;
+    double fx = value.nx;
+    double fy = value.ny;
+    double fz = value.nz;
+    double nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
     return s;
 }
 
@@ -69,7 +94,43 @@ float tangentRead( uchar value) {
     return v;
 }
 
-if (( header.unknownB & 0xff ) > 0xf ) {
+if ( header.offsetPositions ) {
+    FSeek( header.offsetPositions );
+    vector positions[header.numVertexes];
+}
+
+FSeek( header.offsetVertexes );
+if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
+    if ( header.vertexExDataSize == 2 ) {
+        struct {
+            fnormals_t      normal;
+            ubyteList       color;
+            tangents_t      tangents;
+            boneIndexes_t   boneIndexes;
+            boneWeights_t   boneWeights;
+            fmapping_t      mapping;
+            fmapping_t      mapping2;
+        } vertexes[header.numVertexes];
+    } else {
+        struct {
+            fnormals_t      normal;
+            ubyteList       color;
+            tangents_t      tangents;
+            boneIndexes_t   boneIndexes;
+            boneWeights_t   boneWeights;
+            fmapping_t      mapping; 
+        } vertexes[header.numVertexes];
+    }
+} else if (( header.unknownB & 0xff ) == 0x2f ) {
+    struct {
+        vector          position;
+        mapping_t       mapping;
+        normals_t       normals;
+        tangents_t      tangents;
+        ubyteList       color;
+        vector          position2;
+    } vertexes[header.numVertexes];
+} else if (( header.unknownB & 0xff ) == 0x1f ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -84,16 +145,16 @@ if (( header.unknownB & 0xff ) > 0xf ) {
             vector      position;
             mapping_t   mapping;
             normals_t   normals;
-            ubyteList   unknwonA;
-            ubyteList   unknownB;
+            tangents_t  tangents;
+            ubyteList   color;
         } vertexes[header.numVertexes];
     } else {
         struct {
             vector      position;
             mapping_t   mapping;
             normals_t   normals;
-            ubyteList   unknwonA;
-            ubyteList   unknownB;
+            tangents_t  tangents;
+            ubyteList   color;
             mapping_t   mapping2;
         } vertexes[header.numVertexes];
     }
@@ -106,7 +167,7 @@ if (( header.unknownB & 0xff ) > 0xf ) {
     } vertexes[header.numVertexes];
 }
 
-if ( header.offsetVertexesExData ) {
+if ( header.offsetVertexesExData && ( header.unknownB & 0xff ) != 0x2f ) {
 FSeek( header.offsetVertexesExData );
 if ( header.vertexExDataSize == 2 ) {
     struct {
@@ -226,7 +287,9 @@ struct {
         float   val;
     } texture[5];
     dataSize = header.offsetMeshesOffsets - (header.offsetMaterials + materialOffsets[header.numMaterials - 1]) - 24;
-    float   data[dataSize/4];
+    if (dataSize > 0) {
+        float   data[dataSize/4];
+    }
 } material;
 
 FSeek( header.offsetMeshesOffsets );

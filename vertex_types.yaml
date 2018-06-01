@@ -1,0 +1,135 @@
+---
+? - 1744830495 #6800001f
+  - 2
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :bone_infos: true
+  :color: true
+  :mapping2: true
+? - 1744830495 #6800001f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :bone_infos: true
+  :color: true
+? - 1207959567 #4800000f
+  - 2
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+  :mapping2: true
+? - 1207959567 #4800000f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+? - 1744830527 #6800003f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :bone_infos: true
+  :color: true
+  :unknown1: true
+  :unknown2: true
+  :unknown3: true
+? - 1610612767 #6000001f
+  - 2
+  - 1
+: :sposition: true
+  :fnormal: true
+  :color: true
+  :tangents: true
+  :bone_infos: true
+  :fmapping: true
+  :fmapping2: true
+? - 1207959583 #4800001f
+  - 2
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :bone_infos: true
+  :color: true
+  :mapping2: true
+? - 1207959583 #4800001f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :bone_infos: true
+  :color: true
+? - 1073741855 #4000001f
+  - 1
+  - 1
+: :sposition: true
+  :fnormal: true
+  :color: true
+  :tangents: true
+  :bone_infos: true
+  :fmapping: true
+? - 1610612767 #6000001f
+  - 1
+  - 1
+: :sposition: true
+  :fnormal: true
+  :color: true
+  :tangents: true
+  :bone_infos: true
+  :fmapping: true
+? - 1476395023 #5800000f
+  - 2
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+  :mapping2: true
+? - 1476395023 #5800000f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+? - 1476395055 #5800002f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+  :position2: true
+? - 1207959563 #4800000b
+  - 1
+  - 1
+: {}
+? - 1207959599 #4800002f
+  - 1
+  - 1
+: :position: true
+  :mapping: true
+  :normal: true
+  :tangents: true
+  :color: true
+  :position2: true
