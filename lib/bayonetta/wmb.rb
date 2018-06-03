@@ -1,5 +1,6 @@
 require 'set'
 require 'digest'
+require 'yaml'
 module Bayonetta
   class WMBFile < DataConverter
     include Alignment
@@ -7,13 +8,22 @@ module Bayonetta
     class UByteList < DataConverter
       register_field :data, :L
 
+      def self.is_bayo2?(parent)
+        if parent.__parent.respond_to?(:is_bayo2?)
+          return parent.__parent.is_bayo2?
+        elsif parent.__parent.__parent.respond_to?(:is_bayo2?)
+          return parent.__parent.__parent.is_bayo2?
+        end
+        raise "Cannot determine if Bayo2 or not!"
+      end
+
       def self.inherited(subclass)
         subclass.instance_variable_set(:@fields, @fields.dup)
       end
 
       def self.convert(input, output, input_big, output_big, parent, index)
         h = self::new
-        if parent.__parent.is_bayo2? && input_big
+        if is_bayo2?(parent) && input_big
           h.convert(input, output, false, output_big, parent, index)
         else
           h.convert(input, output, input_big, output_big, parent, index)
@@ -23,7 +33,7 @@ module Bayonetta
 
       def self.load(input, input_big, parent, index)
         h = self::new
-        if parent.__parent.is_bayo2? && input_big
+        if is_bayo2?(parent) && input_big
           h.load(input, false, parent, index)
         else
           h.load(input, input_big, parent, index)
@@ -32,7 +42,7 @@ module Bayonetta
       end
 
       def dump(output, output_big, parent = nil, index = nil)
-        if parent.__parent.is_bayo2? && output_big
+        if self.class.is_bayo2?(parent) && output_big
           set_dump_type(output, false, parent, index)
         else
           set_dump_type(output, output_big, parent, index)
@@ -86,43 +96,23 @@ module Bayonetta
     class Tangents < UByteList
     end
 
-    class VertexExData1 < DataConverter
-      register_field :color, Color
-    end
-
     class Mapping < DataConverter
       register_field :u, :S
       register_field :v, :S
     end
 
-    class VertexExData2 < DataConverter
-      register_field :color, Color
-      register_field :mapping, Mapping
+    class FloatMapping < DataConverter
+      register_field :u, :F
+      register_field :v, :F
     end
 
-    class VertexExData < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        vertex_ex_data_size = parent.header.vertex_ex_data_size
-        if vertex_ex_data_size == 1
-          return VertexExData1::convert(input, output, input_big, output_big, parent, index)
-        else
-          return VertexExData2::convert(input, output, input_big, output_big, parent, index)
-        end
-      end
-
-      def self.load(input, input_big, parent, index)
-        vertex_ex_data_size = parent.header.vertex_ex_data_size
-        if vertex_ex_data_size == 1
-          return VertexExData1::load(input, input_big, parent, index)
-        else
-          return VertexExData2::load(input, input_big, parent, index)
-        end
-      end
-
+    class FloatNormal < DataConverter
+      register_field :nx, :F
+      register_field :ny, :F
+      register_field :nz, :F
     end
 
-    class Normals < DataConverter
+    class Normal < DataConverter
 
       def size(position, parent, index)
         4
@@ -134,7 +124,7 @@ module Bayonetta
         [fx/nrm, fy/nrm, fz/nrm]
       end
 
-      def decode_big_normals(vs)
+      def decode_big_normal(vs)
         v = vs.unpack("L>").first
         nx = v & ((1<<10)-1)
         ny = (v >> 10) & ((1<<10)-1)
@@ -163,7 +153,7 @@ module Bayonetta
         normalize(fx, fy, fz)
       end
 
-      def decode_small_normals(v)
+      def decode_small_normal(v)
         n = v.unpack("c4")
         nx = n[3]
         ny = n[2]
@@ -185,10 +175,10 @@ module Bayonetta
         v
       end
 
-      def encode_small_normals(normals)
-        fx = normals[0]
-        fy = normals[1]
-        fz = normals[2]
+      def encode_small_normal(normal)
+        fx = normal[0]
+        fy = normal[1]
+        fz = normal[2]
         nx = (fx*127.0).to_i
         ny = (fy*127.0).to_i
         nz = (fz*127.0).to_i
@@ -198,10 +188,10 @@ module Bayonetta
         [0, nz, ny, nx].pack("c4")
       end
 
-      def encode_big_normals(normals)
-        fx = normals[0]
-        fy = normals[1]
-        fz = normals[2]
+      def encode_big_normal(normal)
+        fx = normal[0]
+        fy = normal[1]
+        fz = normal[2]
         mag = (1<<9)-1
         nx = (fx*(mag).to_f).to_i
         ny = (fy*(mag).to_f).to_i
@@ -219,43 +209,43 @@ module Bayonetta
         [v].pack("L>")
       end
 
-      def load_normals
+      def load_normal
         s = @input.read(4)
         if @input_big
-          @normals_big_orig = s
-          @normals_small_orig = nil
-          @normals = decode_big_normals(s)
+          @normal_big_orig = s
+          @normal_small_orig = nil
+          @normal = decode_big_normal(s)
         else
-          @normals_small_orig = s
-          @normals_big_orig = nil
-          @normals = decode_small_normals(s)
+          @normal_small_orig = s
+          @normal_big_orig = nil
+          @normal = decode_small_normal(s)
         end
       end
 
-      def dump_normals
+      def dump_normal
         if @output_big
-          s2 = (@normals_big_orig ? @normals_big_orig : encode_big_normals(@normals))
+          s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
         else
-          s2 = (@normals_small_orig ? @normals_small_orig : encode_small_normals(@normals))
+          s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
         end
         @output.write(s2)
       end
 
-      def convert_normals
-        load_normals
-        dump_normals
+      def convert_normal
+        load_normal
+        dump_normal
       end
 
       def convert_fields
-        convert_normals
+        convert_normal
       end
 
       def load_fields
-        load_normals
+        load_normal
       end
 
       def dump_fields
-        dump_normals
+        dump_normal
       end
 
     end
@@ -298,114 +288,81 @@ module Bayonetta
 
     end
 
-    class Vertex1 < DataConverter
-      register_field :position, Position
-      register_field :mapping, Mapping
-      register_field :normals, Normals
-      register_field :tangents, Tangents
-      register_field :bone_index, UByteList
-      register_field :bone_weight, UByteList
+    class BoneInfos < DataConverter
+      register_field :indexes, UByteList
+      register_field :weights, UByteList
 
-      def get_bone_indexes_and_weights
+      def get_indexes_and_weights
         res = []
         4.times { |i|
-          bi = (@bone_index.data >> (i*8)) & 0xff
-          bw = (@bone_weight.data >> (i*8)) & 0xff
+          bi = (@indexes.data >> (i*8)) & 0xff
+          bw = (@weights.data >> (i*8)) & 0xff
           res.push [bi, bw] if bw > 0
         }
         res
       end
 
-      def get_bone_indexes
-        get_bone_indexes_and_weights.collect { |bi, _| bi }
+      def get_indexes
+        get_indexes_and_weights.collect { |bi, _| bi }
       end
 
-      def remap_bone_indexes(map)
-        new_bone_info = get_bone_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
-        set_bone_indexes_and_weights(new_bone_info)
+      def remap_indexes(map)
+        new_bone_info = get_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
+        set_indexes_and_weights(new_bone_info)
         self
       end
 
-      def set_bone_indexes_and_weights(bone_info)
+      def set_indexes_and_weights(bone_info)
         raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
-        @bone_index.data = 0
-        @bone_weight.data = 0
+        @indexs.data = 0
+        @weights.data = 0
         bone_info.each_with_index { |(bi, bw), i|
           raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
-          @bone_index.data |= ( bi << (i*8) )
+          @indexes.data |= ( bi << (i*8) )
           bw = 0 if bw < 0
           bw = 255 if bw > 255
-          @bone_weight.data |= (bw << (i*8) )
+          @weights.data |= (bw << (i*8) )
         }
         self
       end
 
     end
 
-    class Vertex2 < DataConverter
-      register_field :position, Position
-      register_field :mapping, Mapping
-      register_field :normals, Normals
-      register_field :unknown_a, :L
-      register_field :unknown_b, :L
-    end
+    VERTEX_TYPES = {}
+    VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
+    VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
-    class Vertex3 < DataConverter
-      register_field :position, Position
-      register_field :mapping, Mapping
-      register_field :normals, Normals
-      register_field :unknown_a, :L
-      register_field :unknown_b, :L
-      register_field :mapping2, Mapping
-    end
+    VERTEX_FIELDS = {
+      position_t: [ Position, 12 ],
+      mapping_t: [ Mapping, 4 ],
+      normal_t: [ Normal, 4 ],
+      tangents_t: [ Tangents, 4 ],
+      bone_infos_t: [ BoneInfos, 8],
+      color_t: [ Color, 4],
+      fnormal_t: [ FloatNormal, 12 ],
+      fmapping_t: [ FloatMapping, 8]
+    }
 
-    class Vertex4 < DataConverter
-      register_field :position, Position
-      register_field :mapping, Mapping
-      register_field :normals, Normals
-      register_field :unknown_a, :L
+    class VertexExData < DataConverter
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        return parent.get_vertex_types[1]::convert(input, output, input_big, output_big, parent, index)
+      end
+
+      def self.load(input, input_big, parent, index)
+        return parent.get_vertex_types[1]::load(input, input_big, parent, index)
+      end
+
     end
 
     class Vertex < DataConverter
 
       def self.convert(input, output, input_big, output_big, parent, index)
-        u_b = parent.header.u_b
-        vertex_ex_data_size = parent.header.vertex_ex_data_size
-        if (u_b & 0xff) == 0xf
-          if vertex_ex_data_size == 1
-            return Vertex2::convert(input, output, input_big, output_big, parent, index)
-          else
-            return Vertex3::convert(input, output, input_big, output_big, parent, index)
-          end
-        elsif (u_b & 0xff) == 0xd
-          if vertex_ex_data_size == 1
-            return Vertex4::convert(input, output, input_big, output_big, parent, index)
-          else
-            raise "Unknown vertex type!"
-          end
-        else
-          return Vertex1::convert(input, output, input_big, output_big, parent, index)
-        end
+        return parent.get_vertex_types[0]::convert(input, output, input_big, output_big, parent, index)
       end
 
       def self.load(input, input_big, parent, index)
-        u_b = parent.header.u_b
-        vertex_ex_data_size = parent.header.vertex_ex_data_size
-        if (u_b & 0xff) == 0xf
-          if vertex_ex_data_size == 1
-            return Vertex2::load(input, input_big, parent, index)
-          else
-            return Vertex3::load(input, input_big, parent, index)
-          end
-        elsif (u_b & 0xff) == 0xd
-          if vertex_ex_data_size == 1
-            return Vertex4::load(input, input_big, parent, index)
-          else
-            raise "Unknown vertex type!"
-          end
-        else
-          return Vertex1::load(input, input_big, parent, index)
-        end
+        return parent.get_vertex_types[0]::load(input, input_big, parent, index)
       end
 
     end
@@ -614,7 +571,7 @@ module Bayonetta
       register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0 && (header\u_b & 0x80) == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
-      def duplicate(vertexes, vertexes_ex)
+      def duplicate(positions, vertexes, vertexes_ex)
         b = Batch::new
         if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
           b.header = @header.dup
@@ -625,6 +582,7 @@ module Bayonetta
         end
         l = vertexes.length
         old_indices_map = vertex_indices.uniq.sort.each_with_index.collect { |vi, i| [vi, l + i] }.to_h
+        old_indices_map.each { |vi, nvi| positions[nvi] = positions[vi] } if positions
         old_indices_map.each { |vi, nvi| vertexes[nvi] = vertexes[vi] }
         old_indices_map.each { |vi, nvi| vertexes_ex[nvi] = vertexes_ex[vi] } if vertexes_ex
         b.indices = vertex_indices.collect { |vi| old_indices_map[vi] }
@@ -690,13 +648,13 @@ module Bayonetta
       def cleanup_bone_refs(vertexes)
         if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
-          used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].get_bone_indexes }.flatten.uniq
+          used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
           new_bone_refs_reverse_map = new_bone_refs_list.each_with_index.collect { |b, i| [b, i] }.to_h
           translation_map = used_bone_refs_indexes.collect { |ri|
             [ri, new_bone_refs_reverse_map[bone_refs_map[ri]]]
           }.to_h
-          vertex_indices.uniq.sort.each { |vi| vertexes[vi].remap_bone_indexes(translation_map) }
+          vertex_indices.uniq.sort.each { |vi| vertexes[vi].bone_infos.remap_indexes(translation_map) }
           @bone_refs = new_bone_refs_list
           @num_bone_ref = @bone_refs.length
         end
@@ -745,11 +703,11 @@ module Bayonetta
         }
       end
 
-      def duplicate(vertexes, vertexes_ex)
+      def duplicate(positions, vertexes, vertexes_ex)
         m = Mesh::new
         m.header = @header
         m.batch_offsets = @batch_offsets
-        m.batches = @batches.collect { |b| b.duplicate(vertexes, vertexes_ex) }
+        m.batches = @batches.collect { |b| b.duplicate(positions, vertexes, vertexes_ex) }
         m
       end
 
@@ -777,7 +735,7 @@ module Bayonetta
       register_field :vertex_ex_data_size, :c
       register_field :vertex_ex_data, :c
       register_field :u_e, :s
-      register_field :u_f, :l
+      register_field :offset_positions, :l
       register_field :offset_vertexes, :L
       register_field :offset_vertexes_ex_data, :L
       register_field :u_g, :l, count: 4
@@ -804,6 +762,7 @@ module Bayonetta
     end
 
     register_field :header, WMBFileHeader
+    register_field :positions, Position, count: 'header\num_vertexes', offset: 'header\offset_positions'
     register_field :vertexes, Vertex, count: 'header\num_vertexes', offset: 'header\offset_vertexes'
     register_field :vertexes_ex_data, VertexExData, count: 'header\num_vertexes',
                    offset: 'header\offset_vertexes_ex_data'
@@ -824,6 +783,75 @@ module Bayonetta
     register_field :meshes_offsets, :L, count: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
     register_field :meshes, Mesh, count: 'header\num_meshes', sequence: true,
                    offset: 'header\offset_meshes + meshes_offsets[__iterator]'
+
+    def get_vertex_types
+      if @vertex_type
+        return [@vertex_type, @vertex_ex_type]
+      else
+        types = VERTEX_TYPES[ [ @header.u_b, @header.vertex_ex_data_size, @header.vertex_ex_data] ]
+        @vertex_type = Class::new(DataConverter)
+        @vertex_size = 0
+        if types[0]
+          types[0].each { |name, type|
+            @vertex_type.register_field(name, VERTEX_FIELDS[type][0])
+            @vertex_size += VERTEX_FIELDS[type][1]
+          }
+        end
+        @vertex_ex_type = Class::new(DataConverter)
+        @vertex_ex_size = 0
+        if types[1]
+          types[1].each { |name, type|
+            @vertex_ex_type.register_field(name, VERTEX_FIELDS[type][0])
+            @vertex_ex_size += VERTEX_FIELDS[type][1]
+          }
+        end
+        return [@vertex_type, @vertex_ex_type]
+      end
+    end
+
+    def get_vertex_fields
+      if @vertex_fields
+        return @vertex_fields
+      else
+        types = VERTEX_TYPES[ [ @header.u_b, @header.vertex_ex_data_size, @header.vertex_ex_data] ]
+        @vertex_fields = []
+        if types[0]
+          types[0].each { |name, type|
+            @vertex_fields.push(name)
+          }
+        end
+        if types[1]
+          types[1].each { |name, type|
+            @vertex_fields.push(name)
+          }
+        end
+        return @vertex_fields
+      end
+    end
+
+    def get_vertex_field(field, vi)
+      if @vertexes[vi].respond_to?(field)
+        return @vertexes[vi].send(field)
+      elsif @vertexes_ex_data && @vertexes_ex_data[vi].respond_to?(field)
+        return @vertexes_ex_data[vi].send(field)
+      elsif field == :position && @positions
+        return @positions[vi]
+      else
+        return nil
+      end
+    end
+
+    def set_vertex_field(field, vi, val)
+      if @vertexes[vi].respond_to?(field)
+        return @vertexes[vi].send(:"#{field}=", val)
+      elsif @vertexes_ex_data && @vertexes_ex_data[vi].respond_to?(field)
+        return @vertexes_ex_data[vi].send(:"#{field}=", val)
+      elsif field == :position && @positions
+        return @positions[vi] = val
+      else
+        raise "Couldn't find field: #{field}!"
+      end
+    end
 
     def self.convert(input_name, output_name, output_big = false)
       if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
@@ -871,7 +899,7 @@ module Bayonetta
     end
 
     def is_bayo2?
-      @offset_shader_names != 0 || @offset_tex_infos != 0
+      @header.offset_shader_names != 0 || @header.offset_tex_infos != 0
     end
 
     def self.validate_endianness(input)
@@ -970,40 +998,82 @@ module Bayonetta
     end
 
     def scale(s)
-      @vertexes.each { |v|
-        v.position.x = v.position.x * s
-        v.position.y = v.position.y * s
-        v.position.z = v.position.z * s
-      }
-      @bone_positions.each { |p|
-        p.x = p.x * s
-        p.y = p.y * s
-        p.z = p.z * s
-      }
-      @bone_relative_positions.each { |p|
-        p.x = p.x * s
-        p.y = p.y * s
-        p.z = p.z * s
-      }
+      if @positions
+        @positions.each { |p|
+          p.x = p.x * s
+          p.y = p.y * s
+          p.z = p.z * s
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position)
+        @vertexes.each { |v|
+          v.position.x = v.position.x * s
+          v.position.y = v.position.y * s
+          v.position.z = v.position.z * s
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position2)
+        @vertexes.each { |v|
+          v.position2.x = v.position2.x * s
+          v.position2.y = v.position2.y * s
+          v.position2.z = v.position2.z * s
+        }
+      end
+      if @vertexes_ex_data && @vertexes_ex_data.first.respond_to?(:position2)
+        @vertexes_ex_data.each { |v|
+          v.position2.x = v.position2.x * s
+          v.position2.y = v.position2.y * s
+          v.position2.z = v.position2.z * s
+        }
+      end
+      if @bone_positions
+        @bone_positions.each { |p|
+          p.x = p.x * s
+          p.y = p.y * s
+          p.z = p.z * s
+        }
+        recompute_relative_positions
+      end
       self
     end
 
     def shift(x, y, z)
-      @vertexes.each { |v|
-        v.position.x = v.position.x + x
-        v.position.y = v.position.y + y
-        v.position.z = v.position.z + z
-      }
-      @bone_positions.each { |p|
-        p.x = p.x + x
-        p.y = p.y + y
-        p.z = p.z + z
-      }
-      @bone_relative_positions.each { |p|
-        p.x = p.x + x
-        p.y = p.y + y
-        p.z = p.z + z
-      }
+      if @positions
+        @positions.each { |p|
+          p.x = p.x + x
+          p.y = p.y + y
+          p.z = p.z + z
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position)
+        @vertexes.each { |v|
+          v.position.x = v.position.x + x
+          v.position.y = v.position.y + y
+          v.position.z = v.position.z + z
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position2)
+        @vertexes.each { |v|
+          v.position2.x = v.position2.x + x
+          v.position2.y = v.position2.y + y
+          v.position2.z = v.position2.z + z
+        }
+      end
+      if @vertexes_ex_data && @vertexes_ex_data.first.respond_to?(:position2)
+        @vertexes_ex_data.each { |v|
+          v.position2.x = v.position2.x + x
+          v.position2.y = v.position2.y + y
+          v.position2.z = v.position2.z + z
+        }
+      end
+      if @bone_positions
+        @bone_positions.each { |p|
+          p.x = p.x + x
+          p.y = p.y + y
+          p.z = p.z + z
+        }
+        recompute_relative_positions
+      end
       self
     end
 
@@ -1017,19 +1087,47 @@ module Bayonetta
         raise "Invalid arguments for rotate: #{args.inspect}!"
       end
       m = Linalg::get_rotation_matrix(rx, ry, rz, center: center)
-      @vertexes.each { |v|
-        r = m * Linalg::Vector::new(v.position.x, v.position.y, v.position.z)
-        v.position.x = r.x
-        v.position.y = r.y
-        v.position.z = r.z
-      }
-      @bone_positions.each { |p|
-        r = m * Linalg::Vector::new(p.x, p.y, p.z)
-        p.x = r.x
-        p.y = r.y
-        p.z = r.z
-      }
-      recompute_relative_positions
+      if @positions
+        @positions.each { |p|
+          r = m * Linalg::Vector::new(p.x, p.y, p.z)
+          p.x = r.x
+          p.y = r.y
+          p.z = r.z
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position)
+        @vertexes.each { |v|
+          r = m * Linalg::Vector::new(v.position.x, v.position.y, v.position.z)
+          v.position.x = r.x
+          v.position.y = r.y
+          v.position.z = r.z
+        }
+      end
+      if @vertexes && @vertexes.first.respond_to?(:position2)
+        @vertexes.each { |v|
+          r = m * Linalg::Vector::new(v.position2.x, v.position2.y, v.position2.z)
+          v.position2.x = r.x
+          v.position2.y = r.y
+          v.position2.z = r.z
+        }
+      end
+      if @vertexes_ex_data && @vertexes_ex_data.first.respond_to?(:position2)
+        @vertexes_ex_data.each { |v|
+          r = m * Linalg::Vector::new(v.position2.x, v.position2.y, v.position2.z)
+          v.position2.x = r.x
+          v.position2.y = r.y
+          v.position2.z = r.z
+        }
+      end
+      if @bone_positions
+        @bone_positions.each { |p|
+          r = m * Linalg::Vector::new(p.x, p.y, p.z)
+          p.x = r.x
+          p.y = r.y
+          p.z = r.z
+        }
+        recompute_relative_positions
+      end
       self
     end
 
@@ -1077,7 +1175,7 @@ module Bayonetta
 
     def duplicate_meshes(list)
       @meshes += list.collect { |i|
-        @meshes[i].duplicate(@vertexes, @vertexes_ex_data)
+        @meshes[i].duplicate(@positions, @vertexes, @vertexes_ex_data)
       }
       @header.num_meshes = @meshes.size
       @header.num_vertexes = @vertexes.size
@@ -1358,38 +1456,58 @@ module Bayonetta
           iv = @vertexes[ivi]
           ov = @vertexes[ovi]
           if options[:position]
-            ov.position.x = iv.position.x
-            ov.position.y = iv.position.y
-            ov.position.z = iv.position.z
+            if @positions
+              @positions[ovi].x = @positions[ivi].x
+              @positions[ovi].y = @positions[ivi].y
+              @positions[ovi].z = @positions[ivi].z
+            end
+            if ov.respond_to?(:position)
+              ov.position.x = iv.position.x
+              ov.position.y = iv.position.y
+              ov.position.z = iv.position.z
+            end
+            if ov.respond_to?(:position2)
+              ov.position2.x = iv.position2.x
+              ov.position2.y = iv.position2.y
+              ov.position2.z = iv.position2.z
+            end
+            if @vertexes_ex_data
+              if @vertexes_ex_data[ovi].respond_to?(:position2)
+                @vertexes_ex_data[ovi].position2.x = @vertexes_ex_data[ivi].position2.x
+                @vertexes_ex_data[ovi].position2.y = @vertexes_ex_data[ivi].position2.y
+                @vertexes_ex_data[ovi].position2.z = @vertexes_ex_data[ivi].position2.z
+              end
+            end
           end
           if options[:mapping]
-            ov.mapping.u = iv.mapping.u
-            ov.mapping.v = iv.mapping.v
-            if ov.respond_to?(:mapping2) && iv.respond_to?(:mapping2)
+            if ov.respond_to?(:mapping) 
+              ov.mapping.u = iv.mapping.u
+              ov.mapping.v = iv.mapping.v
+            end
+            if ov.respond_to?(:mapping2)
               ov.mapping2.u = iv.mapping2.u
               ov.mapping2.v = iv.mapping2.v
             end
-            if @vertexes_ex_data && @header.vertex_ex_data_size > 1
-              @vertexes_ex_data[ovi].mapping.u = @vertexes_ex_data[ivi].mapping.u
-              @vertexes_ex_data[ovi].mapping.v = @vertexes_ex_data[ivi].mapping.v
+            if @vertexes_ex_data && @vertexes_ex_data[ovi].respond_to?(:mapping2)
+              @vertexes_ex_data[ovi].mapping2.u = @vertexes_ex_data[ivi].mapping2.u
+              @vertexes_ex_data[ovi].mapping2.v = @vertexes_ex_data[ivi].mapping2.v
             end
           end
           if options[:normal]
-            ov.normals = iv.normals
+            ov.normal = iv.normal
           end
           if options[:tangents]
             ov.tangents = iv.tangents
           end
-          if options[:color] && @vertexes_ex_data
-            @vertexes_ex_data[ovi].color = @vertexes_ex_data[ivi].color
+          if options[:color]
+            if ov.respond_to?(:color)
+              ov.color = iv.color
+            end
+            if @vertexes_ex_data && @vertexes_ex_data[ovi].respond_to?(:color)
+              @vertexes_ex_data[ovi].color = @vertexes_ex_data[ivi].color
+            end
           end
-          if options[:unknown] && ov.respond_to?(:unknown_a) && iv.respond_to?(:unknown_a)
-            ov.unknown_a = iv.unknown_a
-          end
-          if options[:unknown] && ov.respond_to?(:unknown_b) && iv.respond_to?(:unknown_b)
-            ov.unknown_b = iv.unknown_b
-          end
-          if options[:bone_infos]
+          if options[:bone_infos] && ov.respond_to?(:bone_infos)
             input_batches = vertex_usage[ivi]
             raise "Unormalized vertex #{ivi} , normalize first, and recompute vertex numbers!" if input_batches.length > 1
             raise "Unused vertex #{ivi}!" if input_batches.length == 0
@@ -1398,7 +1516,7 @@ module Bayonetta
             raise "Unused vertex #{ovi}!" if output_batches.length == 0
             input_batch = input_batches.first
             output_batch = output_batches.first
-            input_bone_indexes_and_weights = iv.get_bone_indexes_and_weights
+            input_bone_indexes_and_weights = iv.bone_infos.get_indexes_and_weights
             output_bone_indexes_and_weights = input_bone_indexes_and_weights.collect { |bi, bw|
               [input_batch.bone_refs[bi], bw]
             }.collect { |bi, bw|
@@ -1410,7 +1528,7 @@ module Bayonetta
               end
               [new_bi, bw]
             }
-            ov.set_bone_indexes_and_weights( output_bone_indexes_and_weights )
+            ov.bone_infos.set_indexes_and_weights( output_bone_indexes_and_weights )
           end
         }
       }
@@ -1439,9 +1557,13 @@ module Bayonetta
 
     def fix_ex_data
       @vertexes.each_with_index { |v, i|
-        @vertexes_ex_data[i].color.data = 0xffc0c0c0
-        @vertexes_ex_data[i].mapping.u = v.mapping.u
-        @vertexes_ex_data[i].mapping.v = v.mapping.v
+        if @vertexes_ex_data[i].respond_to?(:color)
+          @vertexes_ex_data[i].color.data = 0xffc0c0c0
+        end
+        if @vertexes_ex_data[i].respond_to?(:mapping2) 
+          @vertexes_ex_data[i].mapping2.u = v.mapping.u
+          @vertexes_ex_data[i].mapping2.v = v.mapping.v
+        end
       }
     end
 
@@ -1460,14 +1582,29 @@ module Bayonetta
     end
 
     def recompute_layout
-      last_offset = @header.offset_vertexes
+      get_vertex_types
 
-      @header.num_vertexes = @vertexes.size
-      last_offset += @header.num_vertexes * 32
+      if is_bayo2?
+        last_offset = 0xc0
+      else
+        last_offset = 0x80
+      end
 
+      @header.num_vertexes = @vertexes.size if @vertexes
+
+      if @header.offset_positions > 0x0
+        last_offset = @header.offset_positions = align(last_offset, 0x20)
+        last_offset += @header.num_vertexes * 12
+      end
+
+      if @header.offset_vertexes > 0x0
+        last_offset = @header.offset_vertexes = align(last_offset, 0x20)
+        last_offset += @header.num_vertexes * @vertex_size
+      end
       if @header.offset_vertexes_ex_data > 0x0
+        last_offset += 0x20 if is_bayo2?
         last_offset = @header.offset_vertexes_ex_data = align(last_offset, 0x20)
-        last_offset += @header.num_vertexes * @header.vertex_ex_data_size * 4
+        last_offset += @header.num_vertexes * @vertex_ex_size
       end
       if @header.offset_bone_relative_position > 0x0
         last_offset = @header.offset_bone_hierarchy = align(last_offset, 0x20)

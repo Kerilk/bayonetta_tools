@@ -156,24 +156,48 @@ end
 def merge_vertexes(wmb1, wmb2)
   num_vertex1 = wmb1.header.num_vertexes
   num_vertex2 = wmb2.header.num_vertexes
-  wmb1.vertexes += wmb2.vertexes
+
+  vertex_types = wmb1.get_vertex_types
+
+  wmb1.vertexes += num_vertex2.times.collect {
+    vertex_types[0]::new
+  }
+
+  if wmb1.vertexes_ex_data
+    wmb1.vertexes_ex_data += num_vertex2.times.collect {
+      vertex_types[1]::new
+    }
+  end
+
   wmb1.header.num_vertexes += num_vertex2
 
-  size_vertexes = (num_vertex2 + num_vertex1) * 32
-
-
-  if wmb1.vertexes_ex_data && wmb2.vertexes_ex_data
-    if wmb1.header.vertex_ex_data_size == wmb2.header.vertex_ex_data_size
-      wmb1.vertexes_ex_data += wmb2.vertexes_ex_data
-    elsif wmb1.header.vertex_ex_data_size == 2 && wmb2.header.vertex_ex_data_size == 1
-      wmb1.vertexes_ex_data += num_vertex2.times.collect { |i|
-        ex = WMBFile::VertexExData2::new
-        ex.color = wmb2.vertexes_ex_data[i].color
-        ex.mapping = wmb2.vertexes[i].mapping
-        ex
+  wmb1.get_vertex_fields.each { |field|
+    unless wmb2.get_vertex_field(field, 0)
+      warn "Couldn't find vertex field #{field} in model 2"
+      if field == :color
+        warn "Using default value 0xc0 0xc0 0xc0 0xff"
+        c = WMBFile::Color::new
+        c.r = 0xc0
+        c.g = 0xc0
+        c.b = 0xc0
+        c.a = 0xff
+        num_vertex2.times { |i|
+          wmb1.set_vertex_field(field, num_vertex1 + i, c)
+        }
+      elsif field == :mapping2
+        warn "Using mapping as default"
+        num_vertex2.times { |i|
+          wmb1.set_vertex_field(field, num_vertex1 + i, wmb2.get_vertex_field(:mapping, i))
+        }
+      else
+        warn "No suitable default found..."
+      end
+    else
+      num_vertex2.times { |i|
+        wmb1.set_vertex_field(field, num_vertex1 + i, wmb2.get_vertex_field(field, i))
       }
     end
-  end
+  }
   return num_vertex1
 end
 
