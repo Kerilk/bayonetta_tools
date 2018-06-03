@@ -35,6 +35,19 @@ module Bayonetta
     end
 
     private :get_short
+
+    def get_ushort(big = @big)
+      sh = "S"
+      if big
+        sh <<= ">"
+      else
+        sh <<="<"
+      end
+      sh
+    end
+
+    private :get_ushort
+
   end
 
  end
