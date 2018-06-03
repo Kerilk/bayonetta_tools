@@ -121,6 +121,15 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
             fmapping_t      mapping; 
         } vertexes[header.numVertexes];
     }
+} else if (( header.unknownB & 0xff ) == 0x3f ) {
+    struct {
+        vector          position;
+        mapping_t       mapping;
+        normals_t       normals;
+        tangents_t      tangents;
+        boneIndexes_t   boneIndexes;
+        boneWeights_t   boneWeights;
+    } vertexes[header.numVertexes];
 } else if (( header.unknownB & 0xff ) == 0x2f ) {
     struct {
         vector          position;
@@ -131,6 +140,15 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         vector          position2;
     } vertexes[header.numVertexes];
 } else if (( header.unknownB & 0xff ) == 0x1f ) {
+    struct {
+        vector          position;
+        mapping_t       mapping;
+        normals_t       normals;
+        tangents_t      tangents;
+        boneIndexes_t   boneIndexes;
+        boneWeights_t   boneWeights;
+    } vertexes[header.numVertexes];
+} else if (( header.unknownB & 0xff ) == 0x1d ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -163,7 +181,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         vector      position;
         mapping_t   mapping;
         normals_t   normals;
-        ubyteList   unknwonA;
+        tangents_t  tangents;
     } vertexes[header.numVertexes];
 }
 
