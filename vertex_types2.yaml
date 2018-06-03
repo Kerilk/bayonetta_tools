@@ -1,5 +1,33 @@
 ---
-? - 1744830495 #6800001f
+? - 1799356447 #6b40001f
+  - 1
+  - 1
+: - - - :position
+      - :position_t
+    - - :mapping
+      - :mapping_t
+    - - :normal
+      - :normal_t
+    - - :tangents
+      - :tangents_t
+    - - :bone_infos
+      - :bone_infos_t
+  - - - :color
+      - :color_t
+? - 1262485519 #4b40000f
+  - 1
+  - 1
+: - - - :position
+      - :position_t
+    - - :mapping
+      - :mapping_t
+    - - :normal
+      - :normal_t
+    - - :tangents
+      - :tangents_t
+    - - :color
+      - :color_t
+? - 1799356447 #6b40001f
   - 2
   - 1
 : - - - :position
@@ -16,22 +44,7 @@
       - :color_t
     - - :mapping2
       - :mapping_t
-? - 1744830495 #6800001f
-  - 1
-  - 1
-: - - - :position
-      - :position_t
-    - - :mapping
-      - :mapping_t
-    - - :normal
-      - :normal_t
-    - - :tangents
-      - :tangents_t
-    - - :bone_infos
-      - :bone_infos_t
-  - - - :color
-      - :color_t
-? - 1207959567 #4800000f
+? - 1262485519 #4b40000f
   - 2
   - 1
 : - - - :position
@@ -46,52 +59,7 @@
       - :color_t
     - - :mapping2
       - :mapping_t
-? - 1207959567 #4800000f
-  - 1
-  - 1
-: - - - :position
-      - :position_t
-    - - :mapping
-      - :mapping_t
-    - - :normal
-      - :normal_t
-    - - :tangents
-      - :tangents_t
-    - - :color
-      - :color_t
-? - 1744830527 #6800003f
-  - 1
-  - 1
-: - - - :position
-      - :position_t
-    - - :mapping
-      - :mapping_t
-    - - :normal
-      - :normal_t
-    - - :tangents
-      - :tangents_t
-    - - :bone_infos
-      - :bone_infos_t
-  - - - :color
-      - :color_t
-    - - :position2
-      - :position_t
-? - 1610612767 #6000001f
-  - 2
-  - 1
-: - - - :normal
-      - :fnormal_t
-    - - :color
-      - :color_t
-    - - :tangents
-      - :tangents_t
-    - - :bone_infos
-      - :bone_infos_t
-    - - :mapping
-      - :fmapping_t
-    - - :mapping2
-      - :fmapping_t
-? - 1207959583 #4800001f
+? - 1262485535 #4b40001f
   - 2
   - 1
 : - - - :position
@@ -108,7 +76,33 @@
       - :color_t
     - - :mapping2
       - :mapping_t
-? - 1207959583 #4800001f
+? - 1799356445 #6b40001d
+  - 1
+  - 0
+: - - - :position
+      - :position_t
+    - - :mapping
+      - :mapping_t
+    - - :normal
+      - :normal_t
+    - - :tangents
+      - :tangents_t
+    - - :bone_infos
+      - :bone_infos_t
+? - 1262485533 #4b40001d
+  - 1
+  - 0
+: - - - :position
+      - :position_t
+    - - :mapping
+      - :mapping_t
+    - - :normal
+      - :normal_t
+    - - :tangents
+      - :tangents_t
+    - - :bone_infos
+      - :bone_infos_t
+? - 1262485535 #4b40001f
   - 1
   - 1
 : - - - :position
@@ -123,35 +117,9 @@
       - :bone_infos_t
   - - - :color
       - :color_t
-? - 1073741855 #4000001f
-  - 1
-  - 1
-: - - - :normal
-      - :fnormal_t
-    - - :color
-      - :color_t
-    - - :tangents
-      - :tangents_t
-    - - :bone_infos
-      - :bone_infos_t
-    - - :mapping
-      - :fmapping_t
-? - 1610612767 #6000001f
-  - 1
-  - 1
-: - - - :normal
-      - :fnormal_t
-    - - :color
-      - :color_t
-    - - :tangents
-      - :tangents_t
-    - - :bone_infos
-      - :bone_infos_t
-    - - :mapping
-      - :fmapping_t
-? - 1476395023 #5800000f
+? - 1262485533 #4b40001d
   - 2
-  - 1
+  - 0
 : - - - :position
       - :position_t
     - - :mapping
@@ -160,13 +128,15 @@
       - :normal_t
     - - :tangents
       - :tangents_t
-    - - :color
+    - - :bone_infos
+      - :bone_infos_t
+  - - - :color
       - :color_t
     - - :mapping2
       - :mapping_t
-? - 1476395023 #5800000f
+? - 1262485517 #4b40000d
   - 1
-  - 1
+  - 0
 : - - - :position
       - :position_t
     - - :mapping
@@ -175,11 +145,9 @@
       - :normal_t
     - - :tangents
       - :tangents_t
-    - - :color
-      - :color_t
-? - 1476395055 #5800002f
-  - 1
-  - 1
+? - 1799356445 #6b40001d
+  - 2
+  - 0
 : - - - :position
       - :position_t
     - - :mapping
@@ -188,26 +156,9 @@
       - :normal_t
     - - :tangents
       - :tangents_t
-    - - :color
+    - - :bone_infos
+      - :bone_infos_t
+  - - - :color
       - :color_t
-    - - :position2
-      - :position_t
-? - 1207959563 #4800000b
-  - 1
-  - 1
-: {}
-? - 1207959599 #4800002f
-  - 1
-  - 1
-: - - - :position
-      - :position_t
-    - - :mapping
+    - - :mapping2
       - :mapping_t
-    - - :normal
-      - :normal_t
-    - - :tangents
-      - :tangents_t
-    - - :color
-      - :color_t
-    - - :position2
-      - :position_t
