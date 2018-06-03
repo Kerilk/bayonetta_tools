@@ -104,6 +104,10 @@ OptionParser.new do |opts|
     $options[:reverse_tangents] = eval(tan).to_a
   end
 
+  opts.on("--[no-]recompute-relative-positions", "Recomputes relative bone positions...") do |recomp|
+    $options[:recompute_relative_positions] = recomp
+  end
+
   opts.on("--rotate=ROTATE_INFO", "Rotates the model.",
                                   "  ROTATE_INFO is either:",
                                   "    [rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)",
@@ -134,6 +138,7 @@ wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
 wmb.cleanup_bone_refs if $options[:bone_refs]
 wmb.cleanup_bones if $options[:bones]
+wmb.recompute_relative_positions if $options[:recompute_relative_positions]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
