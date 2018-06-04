@@ -94,6 +94,71 @@ module Bayonetta
     end
 
     class Tangents < UByteList
+
+      def clamp(v, max, min)
+        if v > max
+          v = max
+        elsif v < min
+          v = min
+        end
+        v
+      end
+
+      def x
+        ((@data & 0xff) - 127.0)/127.0
+      end
+
+      def y
+	(((@data >> 8) & 0xff) - 127.0)/127.0
+      end
+
+      def z
+        (((@data >> 16) & 0xff) -127.0)/127.0
+      end
+
+      def s
+        (((@data >> 24) & 0xff) -127.0)/127.0
+      end
+
+      def x=(v)
+        v2 = clamp((v*127.0+127.0).round, 0, 255)
+        @data = (@data & 0xffffff00) | v2
+        v
+      end
+
+      def y=(v)
+        v2 = clamp((v*127.0+127.0).round, 0, 255)
+        @data = (@data & 0xffff00ff) | (v2 << 8)
+        v
+      end
+
+      def z=(v)
+        v2 = clamp((v*127.0+127.0).round, 0, 255)
+        @data = (@data & 0xff00ffff) | (v2 << 16)
+        v
+      end
+
+      def s=(v)
+        v2 = clamp((v*127.0+127.0).round, 0, 255)
+        @data = (@data & 0x00ffffff) | (v2 << 24)
+        v
+      end
+
+      def normalize(fx, fy, fz)
+        nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
+        return [0.0, 0.0, 0.0] if nrm == 0.0
+        [fx/nrm, fy/nrm, fz/nrm]
+      end
+
+      def set(x, y, z, s = nil)
+        x, y, z = normalize(x, y, z)
+        self.x = x
+        self.y = y
+        self.z = z
+        self.s = s if s
+        self
+      end
+
     end
 
     class Mapping < DataConverter
@@ -113,6 +178,37 @@ module Bayonetta
     end
 
     class Normal < DataConverter
+      attr_accessor :normal
+
+      def x
+        @normal[0]
+      end
+
+      def y
+        @normal[1]
+      end
+
+      def z
+        @normal[2]
+      end
+
+      def x=(v)
+        @normal_big_orig = nil
+        @normal_small_orig = nil
+        @normal[0] = v
+      end
+
+      def y=(v)
+        @normal_big_orig = nil
+        @normal_small_orig = nil
+        @normal[1] = v
+      end
+
+      def z=(v)
+        @normal_big_orig = nil
+        @normal_small_orig = nil
+        @normal[2] = v
+      end
 
       def size(position, parent, index)
         4
@@ -1127,6 +1223,21 @@ module Bayonetta
           p.z = r.z
         }
         recompute_relative_positions
+      end
+      m = Linalg::get_rotation_matrix(rx, ry, rz, center: nil)
+      if @vertexes
+        @vertexes.each { |v|
+          r = m * Linalg::Vector::new(v.normal.x, v.normal.y, v.normal.z)
+          v.normal.x = r.x
+          v.normal.y = r.y
+          v.normal.z = r.z
+          if v.tangents.data != 0xc0c0c0ff
+            r = m * Linalg::Vector::new(v.tangents.x, v.tangents.y, v.tangents.z)
+            v.tangents.x = r.x
+            v.tangents.y = r.y
+            v.tangents.z = r.z
+          end
+        }
       end
       self
     end
