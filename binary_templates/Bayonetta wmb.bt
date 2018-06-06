@@ -9,7 +9,7 @@ typedef struct {
 
 string normalRead( char val ) {
     string s;
-    SPrintf(s, "%f", val / 126.0);
+    SPrintf(s, "%f", val / 127.0);
     return s;
 }
 

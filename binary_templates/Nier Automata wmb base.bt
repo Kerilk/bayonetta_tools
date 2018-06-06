@@ -24,13 +24,9 @@ string mapping_tRead( mapping_t &value ) {
     return s;
 }
 
-typedef struct  {
-    uint32 val;
-} ubyteList<read=ubyteListRead>;
-
 string ubyteListRead( ubyteList &value ) {
     string s;
-    SPrintf(s, "%3d, %3d, %3d, %3d", value.val & 0xff , (value.val >> 8) & 0xff, (value.val >> 16) & 0xff, (value.val >> 24) & 0xff);
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val[0], value.val[1], value.val[2], value.val[3]);
     return s;
 }
 
@@ -124,12 +120,31 @@ if( header.offsetVertexGroups != 0 ) {
         FSeek(vertexOffset);
         struct {
             vector      position;
-            normals_t   normals;
+            tangents_t  tangents;
             mapping_t   mapping;
             ubyteList   boneIndex;
             ubyteList   boneWeight;
         } vertexes[numVertexes];
         FSeek(vertexExDataOffset);
+        if( vertexExDataFlags == 0xb ) {
+            struct {
+                mapping_t   mapping2;
+                ubyteList   color;
+                normal_t    normal;
+                mapping_t   mapping3;
+            } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0x7 ) {
+            struct {
+                mapping_t   mapping2;
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0xa ) {
+            struct {
+                mapping_t   mapping2;
+                ubyteList   color;
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        }
         FSeek(indexBufferOffset);
         uint32 indexes[numIndexes];
         FSeek(pos);
