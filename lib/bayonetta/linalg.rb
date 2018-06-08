@@ -108,11 +108,31 @@ module Bayonetta
     end
 
     def self.get_translation_matrix(*args)
-      m = Matrix::new
+      m = get_unit_matrix
       v = get_translation_vector(*args)
       m.data[0][3] = v.x
       m.data[1][3] = v.y
       m.data[2][3] = v.z
+      m
+    end
+
+    def self.scaling_vector(*args)
+      if args.length == 1
+        v = args.first.dup
+      elsif args.length == 3
+        v = Vector::new(*args)
+      else
+        raise "Invalid translation arguments: #{args.inspect}!"
+      end
+      v
+    end
+
+    def self.get_scaling_matrix(*args)
+      m = get_unit_matrix
+      v = get_scaling_vector(*args)
+      m.data[0][0] = v.x
+      m.data[1][1] = v.y
+      m.data[2][2] = v.z
       m
     end
 
