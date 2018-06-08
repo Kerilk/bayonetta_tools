@@ -522,21 +522,36 @@ module Bayonetta
 
     def convert_fields
       self.class.instance_variable_get(:@fields).each { |args|
-        convert_field(*args)
+        begin
+          convert_field(*args)
+        rescue
+          STDERR.puts "#{self.class}: #{args[0]}(#{args[1]})"
+          raise
+        end
       }
       self
     end
 
     def load_fields
       self.class.instance_variable_get(:@fields).each { |args|
-        load_field(*args)
+        begin
+          load_field(*args)
+        rescue
+          STDERR.puts "#{self.class}: #{args[0]}(#{args[1]})"
+          raise
+        end
       }
       self
     end
 
     def dump_fields
       self.class.instance_variable_get(:@fields).each { |args|
-        dump_field(*args)
+        begin
+          dump_field(*args)
+        rescue
+          STDERR.puts "#{self.class}: #{args[0]}(#{args[1]})"
+          raise
+        end
       }
       self
     end
