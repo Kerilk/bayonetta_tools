@@ -1224,15 +1224,14 @@ module Bayonetta
         }
         recompute_relative_positions
       end
-      m = Linalg::get_rotation_matrix(rx, ry, rz, center: nil)
       if @vertexes
         @vertexes.each { |v|
-          r = m * Linalg::Vector::new(v.normal.x, v.normal.y, v.normal.z)
+          r = m * Linalg::Vector::new(v.normal.x, v.normal.y, v.normal.z, 0.0)
           v.normal.x = r.x
           v.normal.y = r.y
           v.normal.z = r.z
           if v.tangents.data != 0xc0c0c0ff
-            r = m * Linalg::Vector::new(v.tangents.x, v.tangents.y, v.tangents.z)
+            r = m * Linalg::Vector::new(v.tangents.x, v.tangents.y, v.tangents.z, 0.0)
             v.tangents.x = r.x
             v.tangents.y = r.y
             v.tangents.z = r.z
