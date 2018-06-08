@@ -337,11 +337,6 @@ module Bayonetta
     register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true,
       offset: 'records[__iterator]\offset_interpolation'
 
-    def convert(input, output, input_big, output_big, parent = nil, index = nil)
-      set_convert_type(input, output, input_big, output_big, parent, index)
-      convert_fields
-    end
-
     def was_big?
       @__was_big
     end
