@@ -32,9 +32,15 @@ module Bayonetta
     class Interpolation1 < DataConverter
       float :keys, count: '..\records[__index]\num_keys'
 
-      def values
-        count = @__parent.header.frame_count
+      def values(frame_count)
+        count = frame_count
         @keys + [@keys.last] * (count - keys.length)
+      end
+
+      def value(frame_index)
+        v = @keys[frame_index]
+        v = @keys.last unless v
+        v
       end
 
     end
@@ -71,8 +77,8 @@ module Bayonetta
         4 * 6 + @points.collect(&:size).reduce(:+)
       end
 
-      def values
-        count = @__parent.header.frame_count
+      def values(frame_count)
+        count = frame_count
         vs = [0.0]*count
         (@keys.length - 1).times { |i|
           (@keys[i+1].index..@keys[i].index).each { |frame|
@@ -91,6 +97,25 @@ module Bayonetta
           vs[i] = vs[@keys.last.index]
         }
         vs
+      end
+
+      def value(frame_index)
+        if frame_index <= @keys.first.index
+          return @p.value + @keys.first.cp * @dp.value
+        elsif frame_index >= @keys.last.index
+          return @p.value + @keys.last.cp * @dp.value
+        else
+          (@keys.length - 1).times { |i|
+            if frame_index <= @keys[i+1].index && frame_index >= @keys[i].index
+              p_0 = @p.value + @keys[i].cp * @dp.value
+              p_1 = @p.value + @keys[i+1].cp * @dp.value
+              m_0 = @m1.value + @keys[i].cm1 * @dm1.value
+              m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+              t = (frame_index - @keys[i].index).to_f / (@keys[i+1].index - @keys[i].index)
+              return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
+            end
+          }
+        end
       end
 
     end
@@ -127,8 +152,8 @@ module Bayonetta
         2 * 6 + @points.collect(&:size).reduce(:+)
       end
 
-      def values
-        count = @__parent.header.frame_count
+      def values(frame_count)
+        count = frame_count
         vs = [0.0]*count
         index1 = @keys.first.index
         (@keys.length - 1).times { |i|
@@ -150,6 +175,30 @@ module Bayonetta
           vs[i] = vs[index1]
         }
         vs
+      end
+
+      def value(frame_index)
+
+        if frame_index <= @keys.first.index
+          return @p.value + @keys.first.cp * @dp.value
+        end
+        index1 = @keys.first.index
+        (@keys.length - 1).times { |i|
+          index2 = @keys[i+1].index + index1
+          if frame_index <= index2 && frame_index >= index1
+            p_0 = @p.value + @keys[i].cp * @dp.value
+            p_1 = @p.value + @keys[i+1].cp * @dp.value
+            m_0 = @m1.value + @keys[i].cm1 * @dm1.value
+            m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+            t = (frame_index - index1).to_f / (index2 - index1)
+            return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
+          end
+          index1 = index2
+        }
+        if frame_index >= index1
+          return @p.value + @keys.last.cp * @dp.value
+        end
+        raise "Error, please report!"
       end
 
     end
@@ -188,8 +237,8 @@ module Bayonetta
         2 * 6 + @points.collect(&:size).reduce(:+)
       end
 
-      def values
-        count = @__parent.header.frame_count
+      def values(frame_count)
+        count = frame_count
         vs = [0.0]*count
         (@keys.length - 1).times { |i|
           (@keys[i+1].index..@keys[i].index).each { |frame|
@@ -208,6 +257,25 @@ module Bayonetta
           vs[i] = vs[@keys.last.index]
         }
         vs
+      end
+
+      def value(frame_index)
+        if frame_index <= @keys.first.index
+          return @p.value + @keys.first.cp * @dp.value
+        elsif frame_index >= @keys.last.index
+          return @p.value + @keys.last.cp * @dp.value
+        else
+          (@keys.length - 1).times { |i|
+            if frame_index <= @keys[i+1].index && frame_index >= @keys[i].index
+              p_0 = @p.value + @keys[i].cp * @dp.value
+              p_1 = @p.value + @keys[i+1].cp * @dp.value
+              m_0 = @m1.value + @keys[i].cm1 * @dm1.value
+              m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+              t = (frame_index - @keys[i].index).to_f / (@keys[i+1].index - @keys[i].index)
+              return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
+            end
+          }
+        end
       end
 
     end
@@ -234,7 +302,7 @@ module Bayonetta
         interpolation
       end
 
-      def self.load(input, output, input_big, output_big, parent, index)
+      def self.load(input, input_big, parent, index)
         interpolation_type = parent.records[index].interpolation_type
         interpolation = nil
         case interpolation_type
@@ -284,6 +352,39 @@ module Bayonetta
     register_field :header, Header
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
     register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true, offset: 'records[__iterator]\offset', condition: 'records[__iterator]\interpolation_type != 0'
+
+    def decode_frame(frame_index)
+      raise "Invalid frame number #{frame_index} (#{0} - #{@header.frame_count}!" if frame_index < 0 || frame_index >= @header.frame_count
+      tracks = Hash::new { |h,k| h[k] = {} }
+      @records.each_with_index { |r, i|
+        if r.interpolation_type != -1
+          if r.interpolation_type == 0
+            tracks[r.bone_index][r.animation_track] = r.value
+          else
+            tracks[r.bone_index][r.animation_track] = @interpolations[i].value(frame_index)
+          end
+        end
+      }
+      tracks
+    end
+
+    def decode
+      tracks = Hash::new { |h,k| h[k] = {} }
+      motion = {}
+      motion[:flag] = @header.flag
+      motion[:frame_count] = frame_count = @header.frame_count
+      motion[:tracks] = tracks
+      @records.each_with_index { |r, i|
+        if r.interpolation_type != -1
+          if r.interpolation_type == 0
+            tracks[r.bone_index][r.animation_track] = [r.value] * frame_count
+          else
+            tracks[r.bone_index][r.animation_track] = @interpolations[i].values(frame_count)
+          end
+        end
+      }
+      motion
+    end
 
     def self.is_bayo2?(f)
       f.rewind
@@ -352,8 +453,8 @@ module Bayonetta
       input_big = is_big?(input)
 
       mot = self::new
-      exp.instance_variable_set(:@__was_big, input_big)
-      exp.load(input, input_big)
+      mot.instance_variable_set(:@__was_big, input_big)
+      mot.load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       mot
