@@ -151,10 +151,11 @@ module Bayonetta
       int8 :animation_track
       int8 :entry_type
       int8 :u_b
-      int8 :u_c
-      int32 :u_d
+      int8 :interpolation_type
+      int16 :num_points
+      int16 :u_c
       uint32 :offset
-      int32 :u_e
+      uint32 :offset_interpolation
 
       def initialize
         @u_a = 0
@@ -162,10 +163,10 @@ module Bayonetta
         @animation_track = 0
         @entry_type = 0
         @u_b = 0
-        @u_c = 0
-        @u_d = 0
+        @interpolation_type = 0
+        @num_points = 0
         @offset = 0
-        @u_e = 0
+        @offset_interpolation = 0
       end
 
     end
@@ -237,11 +238,11 @@ module Bayonetta
         entry = nil
         case entry_type
         when 1
-          entry = Entry1::convert(input, output, input_big, output_big)
+          entry = Entry1::convert(input, output, input_big, output_big, parent, index)
         when 2
-          entry = Entry2::convert(input, output, input_big, output_big)
+          entry = Entry2::convert(input, output, input_big, output_big, parent, index)
         when 3
-          entry = Entry3::convert(input, output, input_big, output_big)
+          entry = Entry3::convert(input, output, input_big, output_big, parent, index)
         end
         entry
       end
@@ -262,10 +263,79 @@ module Bayonetta
 
     end
 
+    class Point4 < DataConverter
+      float :value
+      uint16 :dummy
+      uint16 :cp
+      uint16 :cm0
+      uint16 :cm1
+
+      def initialize
+        @value = 0.0
+        @dummy = 0
+        @cp = 0
+        @cm0 = 0
+        @cm1 = 0
+      end
+
+      def size
+        3 * 4
+      end
+
+    end
+
+    class Interpolation4 < DataConverter
+      float :p
+      float :dp
+      float :m0
+      float :dm0
+      float :m1
+      float :dm1
+      register_field :points, Point4, count: '..\records[__index]\num_points'
+
+      def size
+        4 * 6 + @points.collect(&:size).reduce(:+)
+      end
+    end
+
+    class Interpolation < DataConverter
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        interpolation_type = parent.records[index].interpolation_type
+        interpolation = nil
+        case interpolation_type
+        when 4
+          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index)
+        when -1
+          interpolation = nil
+        else
+          raise "Unknown Interpolation type: #{interpolation_type}, please report!"
+        end
+        interpolation
+      end
+
+      def self.load(input, input_big, parent, index)
+        interpolation_type = parent.records[index].interpolation_type
+        interpolation = nil
+        case interpolation_type
+        when 4
+          interpolation = Interpolation4::load(input, input_big, parent, index)
+        when -1
+          interpolation = nil
+        else
+          raise "Unknown Interpolation type: #{interpolation_type}, please report!"
+        end
+        interpolation
+      end
+
+    end
+
     register_field :header, EXPFileHeader
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
     register_field :entries, Entry, count: 'header\num_records', sequence: true,
       offset: 'records[__iterator]\offset'
+    register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true,
+      offset: 'records[__iterator]\offset_interpolation'
 
     def convert(input, output, input_big, output_big, parent = nil, index = nil)
       set_convert_type(input, output, input_big, output_big, parent, index)
@@ -303,8 +373,10 @@ module Bayonetta
       last_offset = @header.offset_records
       last_offset += @records.collect(&:size).reduce(:+)
 
-      table = @records.zip(entries).to_h
+      table = @records.zip(@entries).to_h
       reverse_table = table.invert
+      interpolation_table = @records.zip(@interpolations).to_h
+      reverse_interpolation_table = interpolation_table.invert
 
       @records.sort_by! { |r| [r.bone_index, r.animation_track] }
       @entries.sort_by! { |e| e ? [e.bone_index, e.animation_track] : [32767, -1] }
@@ -317,7 +389,15 @@ module Bayonetta
           reverse_table[e].offset = 0
         end
       }
+      @interpolations.each { |i|
+        if i
+          reverse_interpolation_table[i].offset_interpolation = last_offset
+          last_offset += i.size
+        end
+      }
+
       @entries = @records.collect { |r| table[r] }
+      @interpolation = @records.collect { |r| interpolation_table[r] }
       self
     end
 
