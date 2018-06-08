@@ -1,4 +1,13 @@
-require 'float-formats'
+def silence_warnings(&block)
+  warn_level = $VERBOSE
+  $VERBOSE = nil
+  result = block.call
+  $VERBOSE = warn_level
+  result
+end
+
+silence_warnings { require 'float-formats' }
+
 Flt::IEEE.binary :IEEE_binary16_pg, significand: 9, exponent: 6, bias: 47
 
 module Bayonetta
