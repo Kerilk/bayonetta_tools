@@ -108,6 +108,10 @@ OptionParser.new do |opts|
     $options[:recompute_relative_positions] = recomp
   end
 
+  opts.on("--set-pose=POSE_FILE", "Set model to the given pose") do |pose|
+    $options[:set_pose] = YAML::load_file(pose)
+  end
+
   opts.on("--rotate=ROTATE_INFO", "Rotates the model.",
                                   "  ROTATE_INFO is either:",
                                   "    [rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)",
@@ -144,6 +148,14 @@ wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
 wmb.reverse_tangents_byte_order($options[:reverse_tangents]) if $options[:reverse_tangents]
+if $options[:set_pose]
+  exp_name = input_file.gsub(".wmb", ".exp")
+  exp = nil
+  if File::file?(exp_name)
+    exp = EXPFile::load(exp_name)
+  end
+  wmb.set_pose($options[:set_pose], exp)
+end
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]

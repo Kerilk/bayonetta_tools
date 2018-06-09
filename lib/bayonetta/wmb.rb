@@ -1241,6 +1241,92 @@ module Bayonetta
       self
     end
 
+    def set_pose(pose, exp)
+      table = @bone_index_translate_table.table
+      bones = get_bone_structure
+      tracks = Hash::new { |h,k| h[k] = {} }
+      tracks = bones.collect { |b|
+        [ b.relative_position.x,
+          b.relative_position.y,
+          b.relative_position.z,
+          0.0, 0.0, 0.0,
+          0.0,
+          1.0, 1.0, 1.0 ]
+      }
+      pose.each { |b, ts|
+        bi = table[b]
+        if bi
+          ts.each { |ti, v|
+            tracks[bi][ti] = v
+          }
+        end
+      }
+      if exp
+        exp.apply(tracks, table)
+      end
+      matrices = tracks.collect { |ts|
+        m = Linalg::get_translation_matrix(*ts[0..2])
+        m = m * Linalg::get_rotation_matrix(*ts[3..5])
+        m = m * Linalg::get_scaling_matrix(*ts[7..9])
+      }
+      multiplied_matrices = []
+      inverse_bind_pose = bones.collect { |b|
+        Linalg::get_translation_matrix(-1 * b.position.x, -1 * b.position.y, -1 * b.position.z)
+      }
+      bones.each { |b|
+        if b.parent
+          multiplied_matrices[b.index] = multiplied_matrices[b.parent.index] * matrices[b.index]
+        else
+          multiplied_matrices[b.index] = matrices[b.index]
+        end
+      }
+      bones.each { |b|
+        v = multiplied_matrices[b.index] * Linalg::Vector::new( 0.0, 0.0, 0.0 )
+        b.position.x = v.x
+        b.position.y = v.y
+        b.position.z = v.z
+        b.relative_position = nil
+      }
+      set_bone_structure(bones)
+      multiplied_matrices = bones.collect { |b|
+        multiplied_matrices[b.index] * inverse_bind_pose[b.index]
+      }
+      vertex_usage = get_vertex_usage
+      vertex_usage.each { |vi, bs|
+        bone_refs = bs.first.bone_refs
+        bone_infos = get_vertex_field(:bone_infos, vi)
+        indexes_and_weights = bone_infos.get_indexes_and_weights
+        vertex_matrix = Linalg::get_zero_matrix
+        indexes_and_weights.each { |bi, bw|
+          i = bone_refs[bi]
+          vertex_matrix = vertex_matrix + multiplied_matrices[i] * (bw.to_f/255.to_f)
+        }
+        vp = get_vertex_field(:position, vi)
+        new_vp = vertex_matrix * Linalg::Vector::new(vp.x, vp.y, vp.z)
+        vp.x = new_vp.x
+        vp.y = new_vp.y
+        vp.z = new_vp.z
+        n = get_vertex_field(:normal, vi)
+        new_n = vertex_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)
+        n.x = new_n.x
+        n.y = new_n.y
+        n.z = new_n.z
+        t = get_vertex_field(:tangents, vi)
+        new_t = vertex_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)
+        t.x = new_t.x
+        t.y = new_t.y
+        t.z = new_t.z
+        p2 = get_vertex_field(:position2, vi)
+        if p2
+          new_p2 = vertex_matrix * Linalg::Vector::new(p2.x, p2.y, p2.z)
+          p2.x = new_p2.x
+          p2.y = new_p2.y
+          p2.z = new_p2.z
+        end
+      }
+      self
+    end
+
     def restrict_bones(used_bones)
       bones = get_bone_structure
       used_bones_array = used_bones.to_a.sort

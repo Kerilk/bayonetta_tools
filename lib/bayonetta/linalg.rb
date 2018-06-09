@@ -11,6 +11,20 @@ module Bayonetta
 	               [0.0, 0.0, 0.0, 1.0]]
       end
 
+      def +(other)
+        if other.kind_of?(Matrix)
+          m = Matrix::new
+          4.times { |i|
+            4.times { |j|
+              m.data[i][j] = data[i][j] + other.data[i][j]
+            }
+          }
+          return m
+        else
+          raise "Invalid argument for matrix miltiply: #{other.inspect}!"
+        end
+      end
+
       def *(other)
         if other.kind_of?(Matrix)
           m = Matrix::new
@@ -30,6 +44,14 @@ module Bayonetta
             @data[2][0] * other.x + @data[2][1] * other.y + @data[2][2] * other.z + @data[2][3] * other.w,
             @data[3][0] * other.x + @data[3][1] * other.y + @data[3][2] * other.z + @data[3][3] * other.w
           )
+        elsif other.kind_of?(Numeric)
+          m = Matrix::new
+          4.times { |i|
+            4.times { |j|
+              m.data[i][j] = data[i][j] * other
+            }
+          }
+          return m
         else
           raise "Invalid argument for matrix miltiply: #{other.inspect}!"
         end
@@ -116,7 +138,7 @@ module Bayonetta
       m
     end
 
-    def self.scaling_vector(*args)
+    def self.get_scaling_vector(*args)
       if args.length == 1
         v = args.first.dup
       elsif args.length == 3
@@ -136,7 +158,6 @@ module Bayonetta
       m
     end
 
-    #rotation matrix using the same convention as bayonetta motions (-rx around the x axis then ry around the y axis then -rz around the z axis) (use radians)
     def self.get_rotation_matrix(rx, ry, rz, center: nil)
       if center
         vt = get_translation_vector(*[center].flatten)
@@ -147,15 +168,19 @@ module Bayonetta
         mt2 = get_unit_matrix
       end
       m = mt2
-      m = m * rotation_matrix(-rz, Vector::new(0.0, 0.0, 1.0))
+      m = m * rotation_matrix( rz, Vector::new(0.0, 0.0, 1.0))
       m = m * rotation_matrix( ry, Vector::new(0.0, 1.0, 0.0))
-      m = m * rotation_matrix(-rx, Vector::new(1.0, 0.0, 0.0))
+      m = m * rotation_matrix( rx, Vector::new(1.0, 0.0, 0.0))
       m = m * mt1
       m
     end
 
     def self.get_unit_matrix
       Matrix::new
+    end
+
+    def self.get_zero_matrix
+      Matrix::new * 0.0
     end
  
     private

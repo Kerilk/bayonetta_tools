@@ -180,6 +180,19 @@ module Bayonetta
         @value = 0.0
       end
 
+      def transform_value( v )
+        if @flags == 0x4
+          v *= @value
+        elsif @flags == 0x20004
+          v = v.abs * @value
+        elsif @flags == 0x1
+          v += @value
+        else
+          raise "Unknown operation #{ "%x" % @flags }, please report!"
+        end
+        v
+      end
+
     end
 
     class Entry1 < DataConverter
@@ -193,6 +206,10 @@ module Bayonetta
         @bone_index = 0
         @animation_track = 0
         @padding = 0
+      end
+
+      def get_value(pose, table)
+        pose[table[@bone_index]][@animation_track]
       end
 
     end
@@ -212,6 +229,10 @@ module Bayonetta
         @operation = Operation::new
       end
 
+      def get_value(pose, table)
+        @operation.transform_value( pose[table[@bone_index]][@animation_track] )
+      end
+
     end
 
     class Entry3 < DataConverter
@@ -227,6 +248,11 @@ module Bayonetta
         @animation_track = 0
         @padding = 0
         @operations = [Operation::new, Operation::new]
+      end
+
+      def get_value(pose, table)
+        v = @operations[0].transform_value( pose[table[@bone_index]][@animation_track] )
+        v = @operations[1].transform_value( v )
       end
 
     end
@@ -339,6 +365,39 @@ module Bayonetta
 
     def was_big?
       @__was_big
+    end
+
+    def apply(tracks, table)
+      rad_to_deg = 180.0 / Math::PI
+      deg_to_rad = Math::PI / 180.0
+      tracks.each { |tr|
+        tr[0] *= 10.0
+        tr[1] *= 10.0
+        tr[2] *= 10.0
+        tr[3] *= rad_to_deg
+        tr[4] *= rad_to_deg
+        tr[5] *= rad_to_deg
+      }
+      @records.each_with_index { |r, i|
+        bone_index = table[r.bone_index]
+        next unless bone_index
+        animation_track = r.animation_track
+        if @entries[i]
+          value = @entries[i].get_value(tracks, table)
+        end
+        if @interpolations[i]
+          value = @interpolations[i].interpolate(value)
+        end
+        tracks[bone_index][animation_track] = value
+      }
+      tracks.each { |tr|
+        tr[0] *= 0.1
+        tr[1] *= 0.1
+        tr[2] *= 0.1
+        tr[3] *= deg_to_rad
+        tr[4] *= deg_to_rad
+        tr[5] *= deg_to_rad
+      }
     end
 
     def add_entries(hash)
