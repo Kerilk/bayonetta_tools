@@ -32,7 +32,7 @@ string ubyteListRead( ubyteList &value ) {
 
 struct {
 	char    id[4]; //WMB3
-    char    version[4] <format=hex>;
+    uint32  version<format=hex>;
     int32   unknownA;
     int16   unknownCount;
     int16   unknownTerminator;
@@ -118,15 +118,16 @@ if( header.offsetVertexGroups != 0 ) {
         int32   numIndexes;
         local uint32 pos = FTell();
         FSeek(vertexOffset);
-        struct {
-            vector      position;
-            tangents_t  tangents;
-            mapping_t   mapping;
-            ubyteList   boneIndex;
-            ubyteList   boneWeight;
-        } vertexes[numVertexes];
-        FSeek(vertexExDataOffset);
         if( vertexExDataFlags == 0xb ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
             struct {
                 mapping_t   mapping2;
                 ubyteList   color;
@@ -135,18 +136,100 @@ if( header.offsetVertexGroups != 0 ) {
             } vertexesExData[numVertexes];
         } else if( vertexExDataFlags == 0x7 ) {
             struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
                 mapping_t   mapping2;
                 normal_t    normal;
             } vertexesExData[numVertexes];
         } else if( vertexExDataFlags == 0xa ) {
             struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
                 mapping_t   mapping2;
                 ubyteList   color;
                 normal_t    normal;
             } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0x5 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+                ubyteList   color;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                mapping_t   mapping3;
+            } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0x4 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+                ubyteList   color;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0xe ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+                ubyteList   color;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                mapping_t   mapping3;
+                mapping_t   mapping4;
+            } vertexesExData[numVertexes];
+        } else if( vertexExDataFlags == 0xc ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+                ubyteList   color;
+            } vertexes[numVertexes];
+
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                mapping_t   mapping3;
+                mapping_t   mapping4;
+                mapping_t   mapping5;
+            } vertexesExData[numVertexes];
         }
         FSeek(indexBufferOffset);
-        uint32 indexes[numIndexes];
+        if(header.unknownCount == 10) {
+            uint32 indexes[numIndexes];
+        } else if (header.unknownCount == 2) {
+            uint16 indexes[numIndexes];
+        } else {
+            Printf("Unknown unknownCount %d!!!\n", header.unknownCount);
+        }
         FSeek(pos);
     } vertexGroups[header.numVertexGroups] <optimize=false>;
 }
