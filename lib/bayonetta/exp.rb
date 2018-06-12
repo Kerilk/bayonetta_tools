@@ -21,7 +21,7 @@ module Bayonetta
     end
 
     class Record < DataConverter
-      int16 :bone_number
+      int16 :bone_index
       int8 :animation_track
       int8 :padding
       int16 :num_operations
@@ -29,7 +29,7 @@ module Bayonetta
       uint32 :offset
 
       def initialize
-        @bone_number = 0
+        @bone_index = 0
         @animation_track = 0
         @padding = 0
         @num_operations = 0
@@ -61,6 +61,52 @@ module Bayonetta
         @operations = []
       end
 
+      def abs(v)
+        v.abs
+      end
+
+      def get_value(tracks, table, interpolation_entries)
+        s = ""
+        @operations.each { |o|
+          case o.type
+          when 0
+            nil
+          when 1
+            s << "("
+          when 2
+            s << ")"
+          when 3
+            s << "tracks[table[#{o.number}]][#{o.info}]"
+          when 4
+            s << "#{o.value}"
+          when 5
+            case o.number
+            when 0
+              s << " + "
+            when 2
+              s << " * "
+            else
+              raise "Unknown arithmetic operation: #{o.number}!"
+            end
+          when 6
+            raise "Unknown function argument number: #{o.info}!" if o.info != 1
+            case o.number
+            when 1
+              s << "abs("
+            else
+              raise "Unknown function: #{o.number}!"
+            end
+          when 7
+            s << ")"
+          when 8
+            s << "interpolation_entries[#{o.number}].get_value("
+          else
+            raise "Unknown operation: #{o.type}!"
+          end
+        }
+        eval s
+      end
+
     end
 
     class Interpolation < DataConverter
@@ -76,7 +122,7 @@ module Bayonetta
 
     end
 
-    class Points < DataConverter
+    class Point < DataConverter
       float :v
       float :p
       float :m0
@@ -92,7 +138,23 @@ module Bayonetta
     end
 
     class InterpolationEntry < DataConverter
-      register_field :points, Points, count: '..\interpolations[__index]\num_points'
+      register_field :points, Point, count: '..\interpolations[__index]\num_points'
+
+      def get_value(val)
+        @points.each_cons(2) { |left, right|
+          if left.v <= val && right.v >= val
+            p0 = left.p
+            p1 = right.p
+            m0 = left.m1
+            m1 = right.m0
+            t = (val - left.v).to_f / (right.v - left.v)
+            return (2 * t*t*t - 3 * t*t + 1)*p0 + (t*t*t - 2 * t*t + t)*m0 + (-2 * t*t*t + 3 * t*t)*p1 + (t*t*t - t * t)*m1
+          end
+
+        }
+        return 0.0
+      end
+
     end
 
     register_field :header, EXPFileHeader
@@ -102,6 +164,36 @@ module Bayonetta
     register_field :interpolations, Interpolation, count: 'header\num_interpolations', offset: 'header\offset_interpolations'
     register_field :interpolation_entries, InterpolationEntry, count: 'header\num_interpolations', sequence: true,
       offset: 'interpolations[__iterator]\offset + header\offset_interpolations + 8*__iterator'
+
+    def apply(tracks, table)
+      rad_to_deg = 180.0 / Math::PI
+      deg_to_rad = Math::PI / 180.0
+      tracks.each { |tr|
+        tr[0] *= 10.0
+        tr[1] *= 10.0
+        tr[2] *= 10.0
+        tr[3] *= rad_to_deg
+        tr[4] *= rad_to_deg
+        tr[5] *= rad_to_deg
+      }
+      @records.each_with_index { |r, i|
+        bone_index = table[r.bone_index]
+        next unless bone_index
+        animation_track = r.animation_track
+        if @entries[i]
+          value = @entries[i].get_value(tracks, table, interpolation_entries)
+        end
+        tracks[bone_index][animation_track] = value
+      }
+      tracks.each { |tr|
+        tr[0] *= 0.1
+        tr[1] *= 0.1
+        tr[2] *= 0.1
+        tr[3] *= deg_to_rad
+        tr[4] *= deg_to_rad
+        tr[5] *= deg_to_rad
+      }
+    end
 
     def recompute_layout
       self
@@ -290,14 +382,14 @@ module Bayonetta
     end
 
     class Point4 < DataConverter
-      float :value
+      float :v
       uint16 :dummy
       uint16 :cp
       uint16 :cm0
       uint16 :cm1
 
       def initialize
-        @value = 0.0
+        @v = 0.0
         @dummy = 0
         @cp = 0
         @cm0 = 0
@@ -321,6 +413,21 @@ module Bayonetta
 
       def size
         4 * 6 + @points.collect(&:size).reduce(:+)
+      end
+
+      def interpolate(val)
+        @points.each_cons(2) { |left, right|
+          if left.v <= val && right.v >= val
+            p0 = @p + left.cp * @dp
+            p1 = @p + right.cp * @dp
+            m0 = @m1 + left.cm1 * @dm1
+            m1 = @m0 + right.cm0 * @dm0
+            t = (val - left.v).to_f / (right.v - left.v)
+            return (2 * t*t*t - 3 * t*t + 1)*p0 + (t*t*t - 2 * t*t + t)*m0 + (-2 * t*t*t + 3 * t*t)*p1 + (t*t*t - t * t)*m1
+          end
+
+        }
+        return 0.0
       end
     end
 

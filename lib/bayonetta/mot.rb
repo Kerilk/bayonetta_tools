@@ -1,5 +1,42 @@
 module Bayonetta
 
+  module MOTDecoder
+
+    def decode_frame(frame_index)
+      raise "Invalid frame number #{frame_index} (#{0} - #{@header.frame_count}!" if frame_index < 0 || frame_index >= @header.frame_count
+      tracks = Hash::new { |h,k| h[k] = {} }
+      @records.each_with_index { |r, i|
+        if r.interpolation_type != -1
+          if r.interpolation_type == 0
+            tracks[r.bone_index][r.animation_track] = r.value
+          else
+            tracks[r.bone_index][r.animation_track] = @interpolations[i].value(frame_index)
+          end
+        end
+      }
+      tracks
+    end
+
+    def decode
+      tracks = Hash::new { |h,k| h[k] = {} }
+      motion = {}
+      motion[:flag] = @header.flag
+      motion[:frame_count] = frame_count = @header.frame_count
+      motion[:tracks] = tracks
+      @records.each_with_index { |r, i|
+        if r.interpolation_type != -1
+          if r.interpolation_type == 0
+            tracks[r.bone_index][r.animation_track] = [r.value] * frame_count
+          else
+            tracks[r.bone_index][r.animation_track] = @interpolations[i].values(frame_count)
+          end
+        end
+      }
+      motion
+    end
+
+  end
+
   module QuantizedValues
     def get_p(i)
       @p + @keys[i].cp * @dp
@@ -91,6 +128,7 @@ module Bayonetta
   end
 
   class MOT2File < DataConverter
+    include MOTDecoder
 
     class Interpolation1 < DataConverter
       float :keys, count: '..\records[__index]\num_keys'
@@ -166,7 +204,7 @@ module Bayonetta
       register_field :keys, Key4, count: '..\records[__index]\num_keys'
 
       def size
-        @keys.collect(&:size).reduce(:+)
+        @keys.length * 16
       end
 
     end
@@ -191,14 +229,275 @@ module Bayonetta
       register_field :keys, Key5, count: '..\records[__index]\num_keys'
 
       def size
-        24 + @keys.length*8
+        24 + @keys.length * 8
       end
 
+    end
+
+    class Key6 < DataConverter
+      uint8 :index
+      uint8 :cp
+      uint8 :cm0
+      uint8 :cm1
+    end
+
+    class Interpolation6 < DataConverter
+      include QuantizedValues
+      include AbsoluteIndexes
+      include KeyFrameInterpolate
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
+      register_field :keys, Key6, count: '..\records[__index]\num_keys'
+
+      def size
+        12 + @keys.length * 4
+      end
+
+    end
+
+    class Key7 < DataConverter
+      uint8 :index
+      uint8 :cp
+      uint8 :cm0
+      uint8 :cm1
+    end
+
+    class Interpolation7 < DataConverter
+      include QuantizedValues
+      include RelativeIndexes
+      include KeyFrameInterpolate
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
+      register_field :keys, Key7, count: '..\records[__index]\num_keys'
+
+      def size
+        12 + @keys.length * 4
+      end
+
+    end
+
+    class Key8 < DataConverter
+      uint8 :index_proxy, count: 2
+      uint8 :cp
+      uint8 :cm0
+      uint8 :cm1
+      def index
+        @index_proxy.pack("C2").unpack("S>").first
+      end
+
+      def index=(v)
+        @index_proxy = [v].pack("S>").unpack("C2")
+        v
+      end
+    end
+
+    class Interpolation8 < DataConverter
+      include QuantizedValues
+      include AbsoluteIndexes
+      include KeyFrameInterpolate
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
+      register_field :keys, Key8, count: '..\records[__index]\num_keys'
+
+      def size
+        12 + @keys.length * 4
+      end
+
+    end
+
+    class Interpolation < DataConverter
+
+      def self.convert(input, output, input_big, output_big, parent, index)
+        interpolation_type = parent.records[index].interpolation_type
+        interpolation = nil
+        case interpolation_type
+        when 1
+          interpolation = Interpolation1::convert(input, output, input_big, output_big, parent, index)
+        when 2
+          interpolation = Interpolation2::convert(input, output, input_big, output_big, parent, index)
+        when 3
+          interpolation = Interpolation3::convert(input, output, input_big, output_big, parent, index)
+        when 4
+          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index)
+        when 5
+          interpolation = Interpolation5::convert(input, output, input_big, output_big, parent, index)
+        when 6
+          interpolation = Interpolation6::convert(input, output, input_big, output_big, parent, index)
+        when 7
+          interpolation = Interpolation7::convert(input, output, input_big, output_big, parent, index)
+        when 8
+          interpolation = Interpolation8::convert(input, output, input_big, output_big, parent, index)
+        when -1, 0
+          interpolation = nil
+        else
+          raise "Unknown interpolation type: #{interpolation_type}, please report!"
+        end
+        interpolation
+      end
+
+      def self.load(input, input_big, parent, index)
+        interpolation_type = parent.records[index].interpolation_type
+        interpolation = nil
+        case interpolation_type
+        when 1
+          interpolation = Interpolation1::load(input, input_big, parent, index)
+        when 2
+          interpolation = Interpolation2::load(input, input_big, parent, index)
+        when 3
+          interpolation = Interpolation3::load(input, input_big, parent, index)
+        when 4
+          interpolation = Interpolation4::load(input, input_big, parent, index)
+        when 5
+          interpolation = Interpolation5::load(input, input_big, parent, index)
+        when 6
+          interpolation = Interpolation6::load(input, input_big, parent, index)
+        when 7
+          interpolation = Interpolation7::load(input, input_big, parent, index)
+        when 8
+          interpolation = Interpolation8::load(input, input_big, parent, index)
+        when -1, 0
+          interpolation = nil
+        else
+          raise "Unknown interpolation type: #{interpolation_type}, please report!"
+        end
+      end
+
+    end
+
+    class Record < DataConverter
+      int16 :bone_index
+      int8 :animation_track
+      int8 :interpolation_type
+      int16 :num_keys
+      int16 :u_a
+      uint32 :offset
+
+      def value
+        raise "Only animation track 1 have a value" unless @interpolation_type == 0 
+        [@offset].pack("L").unpack("F").first
+      end
+
+      def size
+        12
+      end
+    end
+
+    class Header < DataConverter
+      string :id, 4
+      uint32 :version
+      uint16 :flag
+      uint16 :frame_count
+      uint32 :offset_records
+      uint32 :num_records
+      int8 :u_a, count: 4
+      string :name, 16
+    end
+
+    register_field :header, Header
+    register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
+    register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true,
+      offset: 'records[__iterator]\offset + header\offset_records + 12*__iterator',
+      condition: 'records[__iterator]\interpolation_type != 0 && records[__iterator]\interpolation_type != -1'
+
+    def self.is_bayo2?(f)
+      f.rewind
+      id = f.read(4)
+      raise "Invalid id #{id.inspect}!" if id != "mot\0".b
+      uint = "L"
+      version = f.read(4).unpack(uint).first
+      f.rewind
+      return true if version == 0x20120405 || version == 0x05041220
+      return false
+    end
+
+    def self.is_big?(f)
+      f.rewind
+      block = lambda { |int|
+        id = f.read(4)
+        raise "Invalid id #{id.inspect}!" if id != "mot\0".b
+        f.read(4).unpack(int).first == 0x20120405
+      }
+      big = block.call("l>")
+      f.rewind
+      small = block.call("l<")
+      f.rewind
+      raise "Invalid data!" unless big ^ small
+      return big
+    end
+
+    def self.convert(input_name, output_name, input_big = true, output_big = false)
+      input = File.open(input_name, "rb")
+      id = input.read(4).unpack("a4").first
+      raise "Invalid file type #{id}!" unless id == "mot\0".b
+      output = File.open(output_name, "wb")
+      output.write("\x00"*input.size)
+      input.seek(0);
+      output.seek(0);
+
+      unless is_bayo2?(input)
+        mot = MOTFile::new
+      else
+        mot = self::new
+      end
+      mot.convert(input, output, input_big, output_big)
+
+      input.close
+      output.close
+    end
+
+    def self.load(input_name)
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        input = File.open(input_name, "rb")
+      end
+
+      unless is_bayo2?(input)
+        input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        return MOT2File::load(input_name)
+      end
+
+      input_big = is_big?(input)
+
+      mot = self::new
+      mot.instance_variable_set(:@__was_big, input_big)
+      mot.load(input, input_big)
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+
+      mot
+    end
+
+    def dump(output_name, output_big = false)
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = File.open(output_name, "wb")
+      end
+      output.rewind
+
+      set_dump_type(output, output_big, nil, nil)
+      dump_fields
+      unset_dump_type
+      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+      self
     end
 
   end
 
   class MOTFile < DataConverter
+    include MOTDecoder
 
     class Interpolation1 < DataConverter
       float :keys, count: '..\records[__index]\num_keys'
@@ -382,12 +681,12 @@ module Bayonetta
       end
 
       def size
-        2 + 1*2 + 2*2 + 4
+        12
       end
     end
 
     class Header < DataConverter
-      int8 :id, count: 4
+      string :id, 4
       uint16 :flag
       uint16 :frame_count
       uint32 :offset_records
@@ -398,51 +697,14 @@ module Bayonetta
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
     register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true, offset: 'records[__iterator]\offset', condition: 'records[__iterator]\interpolation_type != 0'
 
-    def decode_frame(frame_index)
-      raise "Invalid frame number #{frame_index} (#{0} - #{@header.frame_count}!" if frame_index < 0 || frame_index >= @header.frame_count
-      tracks = Hash::new { |h,k| h[k] = {} }
-      @records.each_with_index { |r, i|
-        if r.interpolation_type != -1
-          if r.interpolation_type == 0
-            tracks[r.bone_index][r.animation_track] = r.value
-          else
-            tracks[r.bone_index][r.animation_track] = @interpolations[i].value(frame_index)
-          end
-        end
-      }
-      tracks
-    end
-
-    def decode
-      tracks = Hash::new { |h,k| h[k] = {} }
-      motion = {}
-      motion[:flag] = @header.flag
-      motion[:frame_count] = frame_count = @header.frame_count
-      motion[:tracks] = tracks
-      @records.each_with_index { |r, i|
-        if r.interpolation_type != -1
-          if r.interpolation_type == 0
-            tracks[r.bone_index][r.animation_track] = [r.value] * frame_count
-          else
-            tracks[r.bone_index][r.animation_track] = @interpolations[i].values(frame_count)
-          end
-        end
-      }
-      motion
-    end
-
     def self.is_bayo2?(f)
       f.rewind
       id = f.read(4)
       raise "Invalid id #{id.inspect}!" if id != "mot\0".b
-      uint = "L<"
-      version_big = f.read(4).unpack(uint).first
+      uint = "L"
+      version = f.read(4).unpack(uint).first
       f.rewind
-      return true if version_big == 0x20120405
-      uint = "L>"
-      version_small = f.read(4).unpack(uint).first
-      f.rewind
-      return true if version_small == 0x20120405
+      return true if version == 0x20120405 || version == 0x05041220
       return false
     end
 
@@ -474,7 +736,7 @@ module Bayonetta
       output.seek(0);
 
       if is_bayo2?(input)
-        raise "Bayo 2 motions unsuported for now!"
+        mot = MOT2File::new
       else
         mot = self::new
       end
@@ -492,7 +754,8 @@ module Bayonetta
       end
 
       if is_bayo2?(input)
-        raise "Bayo 2 motions unsuported for now!"
+        input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        return MOT2File::load(input_name)
       end
 
       input_big = is_big?(input)
