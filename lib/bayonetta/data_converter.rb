@@ -50,6 +50,7 @@ module Bayonetta
       :Q => 8,
       :F => 4,
       :D => 8,
+      :"a*" => -1,
       :half => 2,
       :pghalf => 2
     } )
@@ -81,6 +82,7 @@ module Bayonetta
       :Q => l["Q>"],
       :F => l["g"],
       :D => l["G"],
+      :"a*" => l["a*"],
       :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
                  lambda { |value| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
       :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
@@ -97,6 +99,7 @@ module Bayonetta
       :Q => l["Q<"],
       :F => l["e"],
       :D => l["E"],
+      :"a*" => l["a*"],
       :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
                  lambda { |value| Flt::IEEE_binary16::new(v).to_bytes } ],
       :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
@@ -228,8 +231,12 @@ module Bayonetta
       register_field(field, :pghalf, count: count, offset: offset, sequence: sequence, condition: condition)
     end
 
-    def self.string( field, length, count: nil, offset: nil, sequence: false, condition: nil)
-      register_field(field, :"a#{length}", count: count, offset: offset, sequence: sequence, condition: condition)
+    def self.string( field, length = nil, count: nil, offset: nil, sequence: false, condition: nil)
+      if length
+        register_field(field, :"a#{length}", count: count, offset: offset, sequence: sequence, condition: condition)
+      else
+        register_field(field, :"a*", count: count, offset: offset, sequence: sequence, condition: condition)
+      end
     end
 
     def decode_symbol(sym)
@@ -369,16 +376,18 @@ module Bayonetta
           if off == false || !cond
             nil
           else
-            s = @input.read(DATA_SIZES[type])
+            sz = DATA_SIZES[type]
+            s = (sz < 0 ? @input.readline("\x00") : @input.read(sz) )
             v = rl[s]
-            s.reverse! if @input_big != @output_big
+            s.reverse! if @input_big != @output_big && type[0] != 'a'
             @output.write(s)
             v
           end
         else
-          s = @input.read(DATA_SIZES[type])
+          sz = DATA_SIZES[type]
+          s = (sz < 0 ? @input.readline("\x00") : @input.read(sz) )
           v = rl[s]
-          s.reverse! if @input_big != @output_big
+          s.reverse! if @input_big != @output_big && type[0] != 'a'
           @output.write(s)
           v
         end
@@ -406,11 +415,13 @@ module Bayonetta
           if off == false || !cond
             nil
           else
-            s = @input.read(DATA_SIZES[type])
+            sz = DATA_SIZES[type]
+            s = (sz < 0 ? @input.readline("\x00") : @input.read(sz) )
             rl[s]
           end
         else
-          s = @input.read(DATA_SIZES[type])
+          sz = DATA_SIZES[type]
+          s = (sz < 0 ? @input.readline("\x00") : @input.read(sz) )
           rl[s]
         end
       }

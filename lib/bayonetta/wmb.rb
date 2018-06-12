@@ -1,443 +1,666 @@
 require 'set'
 require 'digest'
 require 'yaml'
+
 module Bayonetta
+
+  class UByteList < DataConverter
+    register_field :data, :L
+
+    def self.is_bayo2?(parent)
+      if parent.__parent.respond_to?(:is_bayo2?)
+        return parent.__parent.is_bayo2?
+      elsif parent.__parent.__parent.respond_to?(:is_bayo2?)
+        return parent.__parent.__parent.is_bayo2?
+      end
+      raise "Cannot determine if Bayo2 or not!"
+    end
+
+    def self.inherited(subclass)
+      subclass.instance_variable_set(:@fields, @fields.dup)
+    end
+
+    def self.convert(input, output, input_big, output_big, parent, index)
+      h = self::new
+      if is_bayo2?(parent) && input_big
+        h.convert(input, output, false, output_big, parent, index)
+      else
+        h.convert(input, output, input_big, output_big, parent, index)
+      end
+      h
+    end
+
+    def self.load(input, input_big, parent, index)
+      h = self::new
+      if is_bayo2?(parent) && input_big
+        h.load(input, false, parent, index)
+      else
+        h.load(input, input_big, parent, index)
+      end
+      h
+    end
+
+    def dump(output, output_big, parent = nil, index = nil)
+      if self.class.is_bayo2?(parent) && output_big
+        set_dump_type(output, false, parent, index)
+      else
+        set_dump_type(output, output_big, parent, index)
+      end
+      dump_fields
+      unset_dump_type
+      self
+    end
+  end
+
+  class Color < UByteList
+
+    def r
+      @data & 0xff
+    end
+
+    def g
+      (@data >> 8) & 0xff
+    end
+
+    def b
+      (@data >> 16) & 0xff
+    end
+
+    def a
+      (@data >> 24) & 0xff
+    end
+
+    def r=(v)
+      @data = (@data & 0xffffff00) | (v & 0xff)
+      v & 0xff
+    end
+
+    def g=(v)
+      @data = (@data & 0xffff00ff) | ((v & 0xff)<<8)
+      v & 0xff
+    end
+
+    def b=(v)
+      @data = (@data & 0xff00ffff) | ((v & 0xff)<<16)
+      v & 0xff
+    end
+
+    def a=(v)
+      @data = (@data & 0x00ffffff) | ((v & 0xff)<<24)
+      v & 0xff
+    end
+
+  end
+
+  class Tangents < UByteList
+
+    def clamp(v, max, min)
+      if v > max
+        v = max
+      elsif v < min
+        v = min
+      end
+      v
+    end
+
+    def x
+      ((@data & 0xff) - 127.0)/127.0
+    end
+
+    def y
+(((@data >> 8) & 0xff) - 127.0)/127.0
+    end
+
+    def z
+      (((@data >> 16) & 0xff) -127.0)/127.0
+    end
+
+    def s
+      (((@data >> 24) & 0xff) -127.0)/127.0
+    end
+
+    def x=(v)
+      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      @data = (@data & 0xffffff00) | v2
+      v
+    end
+
+    def y=(v)
+      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      @data = (@data & 0xffff00ff) | (v2 << 8)
+      v
+    end
+
+    def z=(v)
+      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      @data = (@data & 0xff00ffff) | (v2 << 16)
+      v
+    end
+
+    def s=(v)
+      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      @data = (@data & 0x00ffffff) | (v2 << 24)
+      v
+    end
+
+    def normalize(fx, fy, fz)
+      nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
+      return [0.0, 0.0, 0.0] if nrm == 0.0
+      [fx/nrm, fy/nrm, fz/nrm]
+    end
+
+    def set(x, y, z, s = nil)
+      x, y, z = normalize(x, y, z)
+      self.x = x
+      self.y = y
+      self.z = z
+      self.s = s if s
+      self
+    end
+
+  end
+
+  class Mapping < DataConverter
+    register_field :data, :S, count: 2
+
+    def u
+      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
+    end
+
+    def v
+      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
+    end
+
+    def u=(val)
+      s = Flt::IEEE_binary16::new(val).to_bytes
+      @data[0] = s.unpack("s").first
+      val
+    end
+
+    def v=(val)
+      s = Flt::IEEE_binary16::new(val).to_bytes
+      @data[1] = s.unpack("s").first
+      val
+    end
+
+    def initialize
+      @data = [0, 0]
+    end
+
+  end
+
+  class FloatMapping < DataConverter
+    register_field :u, :F
+    register_field :v, :F
+  end
+
+  class FloatNormal < DataConverter
+    register_field :x, :F
+    register_field :y, :F
+    register_field :z, :F
+  end
+
+  class HalfNormal < DataConverter
+    register_field :data, :S, count: 4
+
+    def x
+      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
+    end
+
+    def y
+      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
+    end
+
+    def z
+      Flt::IEEE_binary16::from_bytes([@data[2]].pack("S")).to(Float)
+    end
+
+    def x=(v)
+      s = Flt::IEEE_binary16::new(v).to_bytes
+      @data[0] = s.unpack("s").first
+      v
+    end
+
+    def y=(v)
+      s = Flt::IEEE_binary16::new(v).to_bytes
+      @data[1] = s.unpack("s").first
+      v
+    end
+
+    def z=(v)
+      s = Flt::IEEE_binary16::new(v).to_bytes
+      @data[2] = s.unpack("s").first
+      v
+    end
+
+    def initialize
+      @data = [0, 0, 0, 0]
+    end
+
+  end
+
+  class Normal < DataConverter
+    attr_accessor :normal
+
+    def x
+      @normal[0]
+    end
+
+    def y
+      @normal[1]
+    end
+
+    def z
+      @normal[2]
+    end
+
+    def x=(v)
+      @normal_big_orig = nil
+      @normal_small_orig = nil
+      @normal[0] = v
+    end
+
+    def y=(v)
+      @normal_big_orig = nil
+      @normal_small_orig = nil
+      @normal[1] = v
+    end
+
+    def z=(v)
+      @normal_big_orig = nil
+      @normal_small_orig = nil
+      @normal[2] = v
+    end
+
+    def size(position, parent, index)
+      4
+    end
+
+    def normalize(fx, fy, fz)
+      nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
+      return [0.0, 0.0, 0.0] if nrm == 0.0
+      [fx/nrm, fy/nrm, fz/nrm]
+    end
+
+    def decode_big_normal(vs)
+      v = vs.unpack("L>").first
+      nx = v & ((1<<10)-1)
+      ny = (v >> 10) & ((1<<10)-1)
+      nz = (v >> 20) & ((1<<10)-1)
+      sx = nx & (1<<9)
+      sy = ny & (1<<9)
+      sz = nz & (1<<9)
+      if sx
+        nx ^= sx
+        nx = -(sx-nx)
+      end
+      if sy
+        ny ^= sy
+        ny = -(sy-ny)
+      end
+      if sz
+        nz ^= sz
+        nz = -(sz-nz)
+      end
+
+      mag = ((1<<9)-1).to_f
+      fx = nx.to_f/mag
+      fy = ny.to_f/mag
+      fz = nz.to_f/mag
+
+      normalize(fx, fy, fz)
+    end
+
+    def decode_small_normal(v)
+      n = v.unpack("c4")
+      nx = n[3]
+      ny = n[2]
+      nz = n[1]
+      mag = 127.0
+      fx = nx.to_f/mag
+      fy = ny.to_f/mag
+      fz = nz.to_f/mag
+
+      normalize(fx, fy, fz)
+    end
+
+    def clamp(v, max, min)
+      if v > max
+        v = max
+      elsif v < min
+        v = min
+      end
+      v
+    end
+
+    def encode_small_normal(normal)
+      fx = normal[0]
+      fy = normal[1]
+      fz = normal[2]
+      nx = (fx*127.0).to_i
+      ny = (fy*127.0).to_i
+      nz = (fz*127.0).to_i
+      nx = clamp(nx, 127, -128)
+      ny = clamp(ny, 127, -128)
+      nz = clamp(nz, 127, -128)
+      [0, nz, ny, nx].pack("c4")
+    end
+
+    def encode_big_normal(normal)
+      fx = normal[0]
+      fy = normal[1]
+      fz = normal[2]
+      mag = (1<<9)-1
+      nx = (fx*(mag).to_f).to_i
+      ny = (fy*(mag).to_f).to_i
+      nz = (fz*(mag).to_f).to_i
+      nx = clamp(nx, mag, -1-mag)
+      ny = clamp(ny, mag, -1-mag)
+      nz = clamp(nz, mag, -1-mag)
+      mask = (1<<10)-1
+      v = 0
+      v |= nz & mask
+      v <<= 10
+      v |= ny & mask
+      v <<= 10
+      v |= nx & mask
+      [v].pack("L>")
+    end
+
+    def load_normal
+      s = @input.read(4)
+      if @input_big
+        @normal_big_orig = s
+        @normal_small_orig = nil
+        @normal = decode_big_normal(s)
+      else
+        @normal_small_orig = s
+        @normal_big_orig = nil
+        @normal = decode_small_normal(s)
+      end
+    end
+
+    def dump_normal
+      if @output_big
+        s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
+      else
+        s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
+      end
+      @output.write(s2)
+    end
+
+    def convert_normal
+      load_normal
+      dump_normal
+    end
+
+    def convert_fields
+      convert_normal
+    end
+
+    def load_fields
+      load_normal
+    end
+
+    def dump_fields
+      dump_normal
+    end
+
+  end
+
+  class Position < DataConverter
+    register_field :x, :F
+    register_field :y, :F
+    register_field :z, :F
+
+    def -(other)
+      b = Position::new
+      b.x = @x - other.x
+      b.y = @y - other.y
+      b.z = @z - other.z
+      b
+    end
+
+    def +(other)
+      b = Position::new
+      b.x = @x + other.x
+      b.y = @y + other.y
+      b.z = @z + other.z
+      b
+    end
+
+    def *(scal)
+      b = Position::new
+      b.x = @x*scal
+      b.y = @y*scal
+      b.z = @z*scal
+    end
+
+    def to_yaml_properties
+      [:@x, :@y, :@z]
+    end
+
+    def to_s
+      "<#{@x}, #{@y}, #{@z}>"
+    end
+
+  end
+
+  class BoneInfos < DataConverter
+    register_field :indexes, UByteList
+    register_field :weights, UByteList
+
+    def get_indexes_and_weights
+      res = []
+      4.times { |i|
+        bi = (@indexes.data >> (i*8)) & 0xff
+        bw = (@weights.data >> (i*8)) & 0xff
+        res.push [bi, bw] if bw > 0
+      }
+      res
+    end
+
+    def get_indexes
+      get_indexes_and_weights.collect { |bi, _| bi }
+    end
+
+    def remap_indexes(map)
+      new_bone_info = get_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
+      set_indexes_and_weights(new_bone_info)
+      self
+    end
+
+    def set_indexes_and_weights(bone_info)
+      raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
+      @indexs.data = 0
+      @weights.data = 0
+      bone_info.each_with_index { |(bi, bw), i|
+        raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
+        @indexes.data |= ( bi << (i*8) )
+        bw = 0 if bw < 0
+        bw = 255 if bw > 255
+        @weights.data |= (bw << (i*8) )
+      }
+      self
+    end
+
+  end
+
+  class BoneIndexTranslateTable < DataConverter
+    register_field :offsets, :s, count: 16
+    #attr_accessor :second_levels
+    #attr_accessor :third_levels
+    attr_reader :table
+
+    def table=(t)
+      @table = t
+      encode
+      t
+    end
+
+    def size(position = 0, parent = nil, index = nil)
+      sz = super()
+      if @second_levels
+        @second_levels.each { |e|
+          sz += e.size(position, parent, index)
+        }
+      end
+      if @third_levels
+        @third_levels.each { |e|
+          sz += e.size(position, parent, index)
+        }
+      end
+      sz
+    end
+
+    def convert(input, output, input_big, output_big, parent, index, level = 1)
+      set_convert_type(input, output, input_big, output_big, parent, index)
+      convert_fields
+      if level == 1
+        @second_levels = []
+        @offsets.each { |o|
+          if o != -1
+            t = self.class::new
+            t.convert(input, output, input_big, output_big, self, nil, level+1)
+            @second_levels.push t
+          end
+        }
+        @third_levels = []
+        @second_levels.each { |l|
+          l.offsets.each { |o|
+            if o != -1
+              t = self.class::new
+              t.convert(input, output, input_big, output_big, self, nil, level+2)
+              @third_levels.push t
+            end
+          }
+        }
+        decode
+      else
+        @second_levels = nil
+        @third_levels = nil
+      end
+      unset_convert_type
+    end
+
+    def load(input, input_big, parent, index, level = 1)
+      set_load_type(input, input_big, parent, index)
+      load_fields
+      if level == 1
+        @second_levels = []
+        @offsets.each { |o|
+          if o != -1
+            t = self.class::new
+            t.load(input, input_big, self, nil, level+1)
+            @second_levels.push t
+          end
+        }
+        @third_levels = []
+        @second_levels.each { |l|
+          l.offsets.each { |o|
+            if o != -1
+              t = self.class::new
+              t.load(input, input_big, self, nil, level+2)
+              @third_levels.push t
+            end
+          }
+        }
+        decode
+      else
+        @second_levels = nil
+        @third_levels = nil
+      end
+      unset_load_type
+    end
+
+    def decode
+      t = (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
+      @table = (0x0..0xfff).each.collect { |i|
+        index = t[(i & 0xf00)>>8]
+        next if index == -1
+        index = t[index + ((i & 0xf0)>>4)]
+        next if index == -1
+        index = t[index + (i & 0xf)]
+        next if index == 0xfff
+        [i, index]
+      }.compact.to_h
+    end
+    private :decode
+
+    def encode
+      keys = @table.keys.sort
+      first_table = 16.times.collect { |i|
+        lower = i*0x100
+        upper = (i+1)*0x100
+        keys.select { |k|  k >= lower && k < upper }
+      }
+      off = 0x0
+      @offsets = first_table.collect { |e| e == [] ? -1 : (off += 0x10) }
+
+      second_table = first_table.select { |e| e != [] }.collect { |e|
+        16.times.collect { |i|
+          lower = i*0x10
+          upper = (i+1)*0x10
+          e.select { |k|  (k&0xff) >= lower && (k&0xff) < upper }
+        }
+      }
+      @second_levels = second_table.collect { |st|
+        tab = BoneIndexTranslateTable::new
+        tab.offsets = st.collect { |e| e == [] ? -1 : (off += 0x10) }
+        tab
+      }
+      @third_levels = []
+      second_table.each { |e|
+        e.select { |ee| ee != [] }.each { |ee|
+          tab = BoneIndexTranslateTable::new
+          tab.offsets = [0xfff]*16
+          ee.each { |k|
+            tab.offsets[k&0xf] = @table[k]
+          }
+          @third_levels.push tab
+        }
+      }
+      self
+    end
+    private :encode
+
+    def dump(output, output_big, parent, index, level = 1)
+      set_dump_type(output, output_big, parent, index)
+      encode if level == 1
+      dump_fields
+      if @second_levels
+        @second_levels.each { |e|
+          e.dump(output, output_big, self, nil, level+1)
+        }
+      end
+      if @third_levels
+        @third_levels.each { |e|
+          e.dump(output, output_big, self, nil, level+2)
+        }
+      end
+      unset_dump_type
+    end
+
+  end
+
+  VERTEX_FIELDS = {
+    position_t: [ Position, 12 ],
+    mapping_t: [ Mapping, 4 ],
+    normal_t: [ Normal, 4 ],
+    tangents_t: [ Tangents, 4 ],
+    bone_infos_t: [ BoneInfos, 8],
+    color_t: [ Color, 4],
+    fnormal_t: [ FloatNormal, 12 ],
+    hnormal_t: [ HalfNormal, 8 ],
+    fmapping_t: [ FloatMapping, 8]
+  }
+
   class WMBFile < DataConverter
     include Alignment
-
-    class UByteList < DataConverter
-      register_field :data, :L
-
-      def self.is_bayo2?(parent)
-        if parent.__parent.respond_to?(:is_bayo2?)
-          return parent.__parent.is_bayo2?
-        elsif parent.__parent.__parent.respond_to?(:is_bayo2?)
-          return parent.__parent.__parent.is_bayo2?
-        end
-        raise "Cannot determine if Bayo2 or not!"
-      end
-
-      def self.inherited(subclass)
-        subclass.instance_variable_set(:@fields, @fields.dup)
-      end
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.convert(input, output, false, output_big, parent, index)
-        else
-          h.convert(input, output, input_big, output_big, parent, index)
-        end
-        h
-      end
-
-      def self.load(input, input_big, parent, index)
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.load(input, false, parent, index)
-        else
-          h.load(input, input_big, parent, index)
-        end
-        h
-      end
-
-      def dump(output, output_big, parent = nil, index = nil)
-        if self.class.is_bayo2?(parent) && output_big
-          set_dump_type(output, false, parent, index)
-        else
-          set_dump_type(output, output_big, parent, index)
-        end
-        dump_fields
-        unset_dump_type
-        self
-      end
-    end
-
-    class Color < UByteList
-
-      def r
-        @data & 0xff
-      end
-
-      def g
-        (@data >> 8) & 0xff
-      end
-
-      def b
-        (@data >> 16) & 0xff
-      end
-
-      def a
-        (@data >> 24) & 0xff
-      end
-
-      def r=(v)
-        @data = (@data & 0xffffff00) | (v & 0xff)
-        v & 0xff
-      end
-
-      def g=(v)
-        @data = (@data & 0xffff00ff) | ((v & 0xff)<<8)
-        v & 0xff
-      end
-
-      def b=(v)
-        @data = (@data & 0xff00ffff) | ((v & 0xff)<<16)
-        v & 0xff
-      end
-
-      def a=(v)
-        @data = (@data & 0x00ffffff) | ((v & 0xff)<<24)
-        v & 0xff
-      end
-
-    end
-
-    class Tangents < UByteList
-
-      def clamp(v, max, min)
-        if v > max
-          v = max
-        elsif v < min
-          v = min
-        end
-        v
-      end
-
-      def x
-        ((@data & 0xff) - 127.0)/127.0
-      end
-
-      def y
-	(((@data >> 8) & 0xff) - 127.0)/127.0
-      end
-
-      def z
-        (((@data >> 16) & 0xff) -127.0)/127.0
-      end
-
-      def s
-        (((@data >> 24) & 0xff) -127.0)/127.0
-      end
-
-      def x=(v)
-        v2 = clamp((v*127.0+127.0).round, 0, 255)
-        @data = (@data & 0xffffff00) | v2
-        v
-      end
-
-      def y=(v)
-        v2 = clamp((v*127.0+127.0).round, 0, 255)
-        @data = (@data & 0xffff00ff) | (v2 << 8)
-        v
-      end
-
-      def z=(v)
-        v2 = clamp((v*127.0+127.0).round, 0, 255)
-        @data = (@data & 0xff00ffff) | (v2 << 16)
-        v
-      end
-
-      def s=(v)
-        v2 = clamp((v*127.0+127.0).round, 0, 255)
-        @data = (@data & 0x00ffffff) | (v2 << 24)
-        v
-      end
-
-      def normalize(fx, fy, fz)
-        nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
-        return [0.0, 0.0, 0.0] if nrm == 0.0
-        [fx/nrm, fy/nrm, fz/nrm]
-      end
-
-      def set(x, y, z, s = nil)
-        x, y, z = normalize(x, y, z)
-        self.x = x
-        self.y = y
-        self.z = z
-        self.s = s if s
-        self
-      end
-
-    end
-
-    class Mapping < DataConverter
-      register_field :u, :S
-      register_field :v, :S
-    end
-
-    class FloatMapping < DataConverter
-      register_field :u, :F
-      register_field :v, :F
-    end
-
-    class FloatNormal < DataConverter
-      register_field :nx, :F
-      register_field :ny, :F
-      register_field :nz, :F
-    end
-
-    class Normal < DataConverter
-      attr_accessor :normal
-
-      def x
-        @normal[0]
-      end
-
-      def y
-        @normal[1]
-      end
-
-      def z
-        @normal[2]
-      end
-
-      def x=(v)
-        @normal_big_orig = nil
-        @normal_small_orig = nil
-        @normal[0] = v
-      end
-
-      def y=(v)
-        @normal_big_orig = nil
-        @normal_small_orig = nil
-        @normal[1] = v
-      end
-
-      def z=(v)
-        @normal_big_orig = nil
-        @normal_small_orig = nil
-        @normal[2] = v
-      end
-
-      def size(position, parent, index)
-        4
-      end
-
-      def normalize(fx, fy, fz)
-        nrm = Math::sqrt(fx*fx+fy*fy+fz*fz)
-        return [0.0, 0.0, 0.0] if nrm == 0.0
-        [fx/nrm, fy/nrm, fz/nrm]
-      end
-
-      def decode_big_normal(vs)
-        v = vs.unpack("L>").first
-        nx = v & ((1<<10)-1)
-        ny = (v >> 10) & ((1<<10)-1)
-        nz = (v >> 20) & ((1<<10)-1)
-        sx = nx & (1<<9)
-        sy = ny & (1<<9)
-        sz = nz & (1<<9)
-        if sx
-          nx ^= sx
-          nx = -(sx-nx)
-        end
-        if sy
-          ny ^= sy
-          ny = -(sy-ny)
-        end
-        if sz
-          nz ^= sz
-          nz = -(sz-nz)
-        end
-
-        mag = ((1<<9)-1).to_f
-        fx = nx.to_f/mag
-        fy = ny.to_f/mag
-        fz = nz.to_f/mag
-
-        normalize(fx, fy, fz)
-      end
-
-      def decode_small_normal(v)
-        n = v.unpack("c4")
-        nx = n[3]
-        ny = n[2]
-        nz = n[1]
-        mag = 127.0
-        fx = nx.to_f/mag
-        fy = ny.to_f/mag
-        fz = nz.to_f/mag
-
-        normalize(fx, fy, fz)
-      end
-
-      def clamp(v, max, min)
-        if v > max
-          v = max
-        elsif v < min
-          v = min
-        end
-        v
-      end
-
-      def encode_small_normal(normal)
-        fx = normal[0]
-        fy = normal[1]
-        fz = normal[2]
-        nx = (fx*127.0).to_i
-        ny = (fy*127.0).to_i
-        nz = (fz*127.0).to_i
-        nx = clamp(nx, 127, -128)
-        ny = clamp(ny, 127, -128)
-        nz = clamp(nz, 127, -128)
-        [0, nz, ny, nx].pack("c4")
-      end
-
-      def encode_big_normal(normal)
-        fx = normal[0]
-        fy = normal[1]
-        fz = normal[2]
-        mag = (1<<9)-1
-        nx = (fx*(mag).to_f).to_i
-        ny = (fy*(mag).to_f).to_i
-        nz = (fz*(mag).to_f).to_i
-        nx = clamp(nx, mag, -1-mag)
-        ny = clamp(ny, mag, -1-mag)
-        nz = clamp(nz, mag, -1-mag)
-        mask = (1<<10)-1
-        v = 0
-        v |= nz & mask
-        v <<= 10
-        v |= ny & mask
-        v <<= 10
-        v |= nx & mask
-        [v].pack("L>")
-      end
-
-      def load_normal
-        s = @input.read(4)
-        if @input_big
-          @normal_big_orig = s
-          @normal_small_orig = nil
-          @normal = decode_big_normal(s)
-        else
-          @normal_small_orig = s
-          @normal_big_orig = nil
-          @normal = decode_small_normal(s)
-        end
-      end
-
-      def dump_normal
-        if @output_big
-          s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
-        else
-          s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
-        end
-        @output.write(s2)
-      end
-
-      def convert_normal
-        load_normal
-        dump_normal
-      end
-
-      def convert_fields
-        convert_normal
-      end
-
-      def load_fields
-        load_normal
-      end
-
-      def dump_fields
-        dump_normal
-      end
-
-    end
-
-    class Position < DataConverter
-      register_field :x, :F
-      register_field :y, :F
-      register_field :z, :F
-
-      def -(other)
-        b = Position::new
-        b.x = @x - other.x
-        b.y = @y - other.y
-        b.z = @z - other.z
-        b
-      end
-
-      def +(other)
-        b = Position::new
-        b.x = @x + other.x
-        b.y = @y + other.y
-        b.z = @z + other.z
-        b
-      end
-
-      def *(scal)
-        b = Position::new
-        b.x = @x*scal
-        b.y = @y*scal
-        b.z = @z*scal
-      end
-
-      def to_yaml_properties
-        [:@x, :@y, :@z]
-      end
-
-      def to_s
-        "<#{@x}, #{@y}, #{@z}>"
-      end
-
-    end
-
-    class BoneInfos < DataConverter
-      register_field :indexes, UByteList
-      register_field :weights, UByteList
-
-      def get_indexes_and_weights
-        res = []
-        4.times { |i|
-          bi = (@indexes.data >> (i*8)) & 0xff
-          bw = (@weights.data >> (i*8)) & 0xff
-          res.push [bi, bw] if bw > 0
-        }
-        res
-      end
-
-      def get_indexes
-        get_indexes_and_weights.collect { |bi, _| bi }
-      end
-
-      def remap_indexes(map)
-        new_bone_info = get_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
-        set_indexes_and_weights(new_bone_info)
-        self
-      end
-
-      def set_indexes_and_weights(bone_info)
-        raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
-        @indexs.data = 0
-        @weights.data = 0
-        bone_info.each_with_index { |(bi, bw), i|
-          raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
-          @indexes.data |= ( bi << (i*8) )
-          bw = 0 if bw < 0
-          bw = 255 if bw > 255
-          @weights.data |= (bw << (i*8) )
-        }
-        self
-      end
-
-    end
 
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
-
-    VERTEX_FIELDS = {
-      position_t: [ Position, 12 ],
-      mapping_t: [ Mapping, 4 ],
-      normal_t: [ Normal, 4 ],
-      tangents_t: [ Tangents, 4 ],
-      bone_infos_t: [ BoneInfos, 8],
-      color_t: [ Color, 4],
-      fnormal_t: [ FloatNormal, 12 ],
-      fmapping_t: [ FloatMapping, 8]
-    }
 
     class VertexExData < DataConverter
 
@@ -459,163 +682,6 @@ module Bayonetta
 
       def self.load(input, input_big, parent, index)
         return parent.get_vertex_types[0]::load(input, input_big, parent, index)
-      end
-
-    end
-
-    class BoneIndexTranslateTable < DataConverter
-      register_field :offsets, :s, count: 16
-      #attr_accessor :second_levels
-      #attr_accessor :third_levels
-      attr_reader :table
-
-      def table=(t)
-        @table = t
-        encode
-        t
-      end
-
-      def size(position = 0, parent = nil, index = nil)
-        sz = super()
-        if @second_levels
-          @second_levels.each { |e|
-            sz += e.size(position, parent, index)
-          }
-        end
-        if @third_levels
-          @third_levels.each { |e|
-            sz += e.size(position, parent, index)
-          }
-        end
-        sz
-      end
-
-      def convert(input, output, input_big, output_big, parent, index, level = 1)
-        set_convert_type(input, output, input_big, output_big, parent, index)
-        convert_fields
-        if level == 1
-          @second_levels = []
-          @offsets.each { |o|
-            if o != -1
-              t = self.class::new
-              t.convert(input, output, input_big, output_big, self, nil, level+1)
-              @second_levels.push t
-            end
-          }
-          @third_levels = []
-          @second_levels.each { |l|
-            l.offsets.each { |o|
-              if o != -1
-                t = self.class::new
-                t.convert(input, output, input_big, output_big, self, nil, level+2)
-                @third_levels.push t
-              end
-            }
-          }
-          decode
-        else
-          @second_levels = nil
-          @third_levels = nil
-        end
-        unset_convert_type
-      end
-
-      def load(input, input_big, parent, index, level = 1)
-        set_load_type(input, input_big, parent, index)
-        load_fields
-        if level == 1
-          @second_levels = []
-          @offsets.each { |o|
-            if o != -1
-              t = self.class::new
-              t.load(input, input_big, self, nil, level+1)
-              @second_levels.push t
-            end
-          }
-          @third_levels = []
-          @second_levels.each { |l|
-            l.offsets.each { |o|
-              if o != -1
-                t = self.class::new
-                t.load(input, input_big, self, nil, level+2)
-                @third_levels.push t
-              end
-            }
-          }
-          decode
-        else
-          @second_levels = nil
-          @third_levels = nil
-        end
-        unset_load_type
-      end
-
-      def decode
-        t = (@offsets+@second_levels.collect(&:offsets)+@third_levels.collect(&:offsets)).flatten
-        @table = (0x0..0xfff).each.collect { |i|
-          index = t[(i & 0xf00)>>8]
-          next if index == -1
-          index = t[index + ((i & 0xf0)>>4)]
-          next if index == -1
-          index = t[index + (i & 0xf)]
-          next if index == 0xfff
-          [i, index]
-        }.compact.to_h
-      end
-      private :decode
-
-      def encode
-        keys = @table.keys.sort
-        first_table = 16.times.collect { |i|
-          lower = i*0x100
-          upper = (i+1)*0x100
-          keys.select { |k|  k >= lower && k < upper }
-        }
-        off = 0x0
-        @offsets = first_table.collect { |e| e == [] ? -1 : (off += 0x10) }
-
-        second_table = first_table.select { |e| e != [] }.collect { |e|
-          16.times.collect { |i|
-            lower = i*0x10
-            upper = (i+1)*0x10
-            e.select { |k|  (k&0xff) >= lower && (k&0xff) < upper }
-          }
-        }
-        @second_levels = second_table.collect { |st|
-          tab = BoneIndexTranslateTable::new
-          tab.offsets = st.collect { |e| e == [] ? -1 : (off += 0x10) }
-          tab
-        }
-        @third_levels = []
-        second_table.each { |e|
-          e.select { |ee| ee != [] }.each { |ee|
-            tab = BoneIndexTranslateTable::new
-            tab.offsets = [0xfff]*16
-            ee.each { |k|
-              tab.offsets[k&0xf] = @table[k]
-            }
-            @third_levels.push tab
-          }
-        }
-        self
-      end
-      private :encode
-
-      def dump(output, output_big, parent, index, level = 1)
-        set_dump_type(output, output_big, parent, index)
-        encode if level == 1
-        dump_fields
-        if @second_levels
-          @second_levels.each { |e|
-            e.dump(output, output_big, self, nil, level+1)
-          }
-        end
-        if @third_levels
-          @third_levels.each { |e|
-            e.dump(output, output_big, self, nil, level+2)
-          }
-        end
-        unset_dump_type
       end
 
     end
@@ -980,6 +1046,10 @@ module Bayonetta
       else
         input = File.open(input_name, "rb")
       end
+      if is_wmb3?(input)
+        input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        return WMB3File::load(input_name)
+      end
       input_big = validate_endianness(input)
 
       wmb = self::new
@@ -996,6 +1066,13 @@ module Bayonetta
 
     def is_bayo2?
       @header.offset_shader_names != 0 || @header.offset_tex_infos != 0
+    end
+
+    def self.is_wmb3?(input)
+      input.rewind
+      id = input.read(4).unpack("a4").first
+      input.rewind
+      return id == "WMB3".b || id == "3BMW".b
     end
 
     def self.validate_endianness(input)
