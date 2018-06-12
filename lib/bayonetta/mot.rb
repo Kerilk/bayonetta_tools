@@ -1,15 +1,3 @@
-def silence_warnings(&block)
-  warn_level = $VERBOSE
-  $VERBOSE = nil
-  result = block.call
-  $VERBOSE = warn_level
-  result
-end
-
-silence_warnings { require 'float-formats' }
-
-Flt::IEEE.binary :IEEE_binary16_pg, significand: 9, exponent: 6, bias: 47
-
 module Bayonetta
 
   class PGHalf < DataConverter
@@ -23,6 +11,64 @@ module Bayonetta
       s = Flt::IEEE_binary16_pg::new(v).to_bytes
       @data = s.unpack("s").first
       v
+    end
+
+  end
+
+  class MOT2File < DataConverter
+
+    class Interpolation1 < DataConverter
+      float :keys, count: '..\records[__index]\num_keys'
+
+      def values(frame_count)
+        count = frame_count
+        @keys + [@keys.last] * (count - keys.length)
+      end
+
+      def value(frame_index)
+        v = @keys[frame_index]
+        v = @keys.last unless v
+        v
+      end
+
+    end
+
+    class Interpolation2 < DataConverter
+      float :p
+      float :dp
+      uint16 :keys, count: '..\records[__index]\num_keys'
+
+      def values(frame_count)
+        count = frame_count
+        res = @keys.collect { |k| @p + k*@cp }
+        res + [res.last] * (frame_count - keys.length)
+      end
+
+      def value(frame_index)
+        cp = @keys[frame_index]
+        cp = @keys.last unless cp
+        @p + cp*@dp
+      end
+
+    end
+
+    class Interpolation3 < DataConverter
+      pghalf :p
+      pghalf :dp
+      uint16 :keys, count: '..\records[__index]\num_keys'
+
+      def values(frame_count)
+        count = frame_count
+        res = @keys.collect { |k| @p + k*@cp }
+        res + [res.last] * (frame_count - keys.length)
+      end
+
+      def value(frame_index)
+        cp = @keys[frame_index]
+        cp = @keys.last unless cp
+        @p + cp*@dp
+      end
+
     end
 
   end
@@ -101,16 +147,16 @@ module Bayonetta
 
       def value(frame_index)
         if frame_index <= @keys.first.index
-          return @p.value + @keys.first.cp * @dp.value
+          return @p + @keys.first.cp * @dp
         elsif frame_index >= @keys.last.index
-          return @p.value + @keys.last.cp * @dp.value
+          return @p + @keys.last.cp * @dp
         else
           (@keys.length - 1).times { |i|
             if frame_index <= @keys[i+1].index && frame_index >= @keys[i].index
-              p_0 = @p.value + @keys[i].cp * @dp.value
-              p_1 = @p.value + @keys[i+1].cp * @dp.value
-              m_0 = @m1.value + @keys[i].cm1 * @dm1.value
-              m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+              p_0 = @p + @keys[i].cp * @dp
+              p_1 = @p + @keys[i+1].cp * @dp
+              m_0 = @m1 + @keys[i].cm1 * @dm1
+              m_1 = @m0 + @keys[i+1].cm0 * @dm0
               t = (frame_index - @keys[i].index).to_f / (@keys[i+1].index - @keys[i].index)
               return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
             end
@@ -140,12 +186,12 @@ module Bayonetta
     end
 
     class Interpolation6 < DataConverter
-      register_field :p, PGHalf
-      register_field :dp, PGHalf
-      register_field :m0, PGHalf
-      register_field :dm0, PGHalf
-      register_field :m1, PGHalf
-      register_field :dm1, PGHalf
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
       register_field :keys, Key6, count: '..\records[__index]\num_keys'
 
       def size
@@ -159,10 +205,10 @@ module Bayonetta
         (@keys.length - 1).times { |i|
           index2 = @keys[i+1].index + index1
           (index1..index2).each { |frame|
-            p_0 = @p.value + @keys[i].cp * @dp.value
-            p_1 = @p.value + @keys[i+1].cp * @dp.value
-            m_0 = @m1.value + @keys[i].cm1 * @dm1.value
-            m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+            p_0 = @p + @keys[i].cp * @dp
+            p_1 = @p + @keys[i+1].cp * @dp
+            m_0 = @m1 + @keys[i].cm1 * @dm1
+            m_1 = @m0 + @keys[i+1].cm0 * @dm0
             t = (frame - index1).to_f / (index2 - index1)
             vs[frame] = (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
           }
@@ -180,23 +226,23 @@ module Bayonetta
       def value(frame_index)
 
         if frame_index <= @keys.first.index
-          return @p.value + @keys.first.cp * @dp.value
+          return @p + @keys.first.cp * @dp
         end
         index1 = @keys.first.index
         (@keys.length - 1).times { |i|
           index2 = @keys[i+1].index + index1
           if frame_index <= index2 && frame_index >= index1
-            p_0 = @p.value + @keys[i].cp * @dp.value
-            p_1 = @p.value + @keys[i+1].cp * @dp.value
-            m_0 = @m1.value + @keys[i].cm1 * @dm1.value
-            m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+            p_0 = @p + @keys[i].cp * @dp
+            p_1 = @p + @keys[i+1].cp * @dp
+            m_0 = @m1 + @keys[i].cm1 * @dm1
+            m_1 = @m0 + @keys[i+1].cm0 * @dm0
             t = (frame_index - index1).to_f / (index2 - index1)
             return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
           end
           index1 = index2
         }
         if frame_index >= index1
-          return @p.value + @keys.last.cp * @dp.value
+          return @p + @keys.last.cp * @dp
         end
         raise "Error, please report!"
       end
@@ -225,12 +271,12 @@ module Bayonetta
     end
 
     class Interpolation7 < DataConverter
-      register_field :p, PGHalf
-      register_field :dp, PGHalf
-      register_field :m0, PGHalf
-      register_field :dm0, PGHalf
-      register_field :m1, PGHalf
-      register_field :dm1, PGHalf
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
       register_field :keys, Key7, count: '..\records[__index]\num_keys'
 
       def size
@@ -242,10 +288,10 @@ module Bayonetta
         vs = [0.0]*count
         (@keys.length - 1).times { |i|
           (@keys[i+1].index..@keys[i].index).each { |frame|
-            p_0 = @p.value + @keys[i].cp * @dp.value
-            p_1 = @p.value + @keys[i+1].cp * @dp.value
-            m_0 = @m1.value + @keys[i].cm1 * @dm1.value
-            m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+            p_0 = @p + @keys[i].cp * @dp
+            p_1 = @p + @keys[i+1].cp * @dp
+            m_0 = @m1 + @keys[i].cm1 * @dm1
+            m_1 = @m0 + @keys[i+1].cm0 * @dm0
             t = (frame - @keys[i].index).to_f / (@keys[i+1].index - @keys[i].index)
             vs[frame] = (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
           }
@@ -261,16 +307,16 @@ module Bayonetta
 
       def value(frame_index)
         if frame_index <= @keys.first.index
-          return @p.value + @keys.first.cp * @dp.value
+          return @p + @keys.first.cp * @dp
         elsif frame_index >= @keys.last.index
-          return @p.value + @keys.last.cp * @dp.value
+          return @p + @keys.last.cp * @dp
         else
           (@keys.length - 1).times { |i|
             if frame_index <= @keys[i+1].index && frame_index >= @keys[i].index
-              p_0 = @p.value + @keys[i].cp * @dp.value
-              p_1 = @p.value + @keys[i+1].cp * @dp.value
-              m_0 = @m1.value + @keys[i].cm1 * @dm1.value
-              m_1 = @m0.value + @keys[i+1].cm0 * @dm0.value
+              p_0 = @p + @keys[i].cp * @dp
+              p_1 = @p + @keys[i+1].cp * @dp
+              m_0 = @m1 + @keys[i].cm1 * @dm1
+              m_1 = @m0 + @keys[i+1].cm0 * @dm0
               t = (frame_index - @keys[i].index).to_f / (@keys[i+1].index - @keys[i].index)
               return (2 * t*t*t - 3 * t*t + 1)*p_0 + (t*t*t - 2 * t*t + t)*m_0 + (-2 * t*t*t + 3 * t*t)*p_1 + (t*t*t - t * t)*m_1
             end

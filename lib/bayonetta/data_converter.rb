@@ -1,3 +1,16 @@
+def silence_warnings(&block)
+  warn_level = $VERBOSE
+  $VERBOSE = nil
+  result = block.call
+  $VERBOSE = warn_level
+  result
+end
+
+silence_warnings { require 'float-formats' }
+
+Flt::IEEE.binary :IEEE_binary16_pg, significand: 9, exponent: 6, bias: 47
+Flt::IEEE.binary :IEEE_binary16_pg_BE, significand: 9, exponent: 6, bias: 47, endianness: :big_endian
+
 module Bayonetta
 
   class DataConverter
@@ -7,6 +20,18 @@ module Bayonetta
       to_s
     end
 
+    rl = lambda { |type, str|
+      str.unpack(type).first
+    }
+
+    sl = lambda { |type, value|
+      [value].pack(type)
+    }
+
+    l = lambda { |type|
+      [rl.curry[type], sl.curry[type]]
+    }
+
     DATA_SIZES = {
       :c => 1,
       :C => 1,
@@ -14,26 +39,45 @@ module Bayonetta
       :S => 2,
       :l => 4,
       :L => 4,
-      :F => 4
+      :q => 8,
+      :Q => 8,
+      :F => 4,
+      :D => 8,
+      :half => 2,
+      :pghalf => 2
     }
     DATA_ENDIAN = {
       true => {
-        :c => "c",
-        :C => "C",
-        :s => "s>",
-        :S => "S>",
-        :l => "l>",
-        :L => "L>",
-        :F => "g"
+        :c => l["c"],
+        :C => l["C"],
+        :s => l["s>"],
+        :S => l["S>"],
+        :l => l["l>"],
+        :L => l["L>"],
+        :q => l["q>"],
+        :Q => l["Q>"],
+        :F => l["g"],
+        :D => l["G"],
+        :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
+                   lambda { |value| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
+        :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
+                     lambda { |value| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
       },
       false => {
-        :c => "c",
-        :C => "C",
-        :s => "s<",
-        :S => "S<",
-        :l => "l<",
-        :L => "L<",
-        :F => "e"
+        :c => l["c"],
+        :C => l["C"],
+        :s => l["s<"],
+        :S => l["S<"],
+        :l => l["l<"],
+        :L => l["L<"],
+        :q => l["q<"],
+        :Q => l["Q<"],
+        :F => l["e"],
+        :D => l["E"],
+        :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
+                   lambda { |value| Flt::IEEE_binary16::new(v).to_bytes } ],
+        :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
+                     lambda { |value| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
       }
     }
     attr_reader :__parent
@@ -147,6 +191,18 @@ module Bayonetta
 
     def self.float( field, count: nil, offset: nil, sequence: false, condition: nil)
       register_field(field, :F, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.double( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :D, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.half( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :half, count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
+    def self.pghalf( field, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :pghalf, count: count, offset: offset, sequence: sequence, condition: condition)
     end
 
     def decode_symbol(sym)
@@ -277,7 +333,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{DATA_ENDIAN[@input_big][type]}"
+      rl, sl = DATA_ENDIAN[@input_big][type]
       vs = c.times.collect { |it|
         @__iterator = it
         if sequence
@@ -287,14 +343,14 @@ module Bayonetta
             nil
           else
             s = @input.read(DATA_SIZES[type])
-            v = s.unpack(t).first
+            v = rl[s]
             s.reverse! if @input_big != @output_big
             @output.write(s)
             v
           end
         else
           s = @input.read(DATA_SIZES[type])
-          v = s.unpack(t).first
+          v = rl[s]
           s.reverse! if @input_big != @output_big
           @output.write(s)
           v
@@ -314,7 +370,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{DATA_ENDIAN[@input_big][type]}"
+      rl, sl = DATA_ENDIAN[@input_big][type]
       vs = c.times.collect { |it|
         @__iterator = it
         if sequence
@@ -324,11 +380,11 @@ module Bayonetta
             nil
           else
             s = @input.read(DATA_SIZES[type])
-            s.unpack(t).first
+            rl[s]
           end
         else
           s = @input.read(DATA_SIZES[type])
-          s.unpack(t).first
+          rl[s]
         end
       }
       @__iterator = nil
@@ -345,7 +401,7 @@ module Bayonetta
       end
 
       c = decode_count(count)
-      t = "#{DATA_ENDIAN[@output_big][type]}"
+      rl, sl = DATA_ENDIAN[@output_big][type]
       vs = [vs] unless count
       vs.each_with_index { |v, it|
         @__iterator = it
@@ -355,10 +411,10 @@ module Bayonetta
           if off == false || !cond
             nil
           else
-            @output.write([v].pack(t))
+            @output.write(sl[v])
           end
         else
-          @output.write([v].pack(t))
+          @output.write(sl[v])
         end
       }
       @__iterator = nil
