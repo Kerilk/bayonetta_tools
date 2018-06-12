@@ -21,18 +21,25 @@ module Bayonetta
     end
 
     rl = lambda { |type, str|
-      str.unpack(type).first
+      str.unpack(type.to_s).first
     }
 
     sl = lambda { |type, value|
-      [value].pack(type)
+      [value].pack(type.to_s)
     }
 
     l = lambda { |type|
       [rl.curry[type], sl.curry[type]]
     }
 
-    DATA_SIZES = {
+    DATA_SIZES = Hash::new { |h,k|
+      if k.kind_of?(Symbol) && m = k.match(/a(\d+)/)
+        m[1].to_i
+      else
+        nil
+      end
+    }
+    DATA_SIZES.merge!( {
       :c => 1,
       :C => 1,
       :s => 2,
@@ -45,41 +52,57 @@ module Bayonetta
       :D => 8,
       :half => 2,
       :pghalf => 2
-    }
+    } )
     DATA_ENDIAN = {
-      true => {
-        :c => l["c"],
-        :C => l["C"],
-        :s => l["s>"],
-        :S => l["S>"],
-        :l => l["l>"],
-        :L => l["L>"],
-        :q => l["q>"],
-        :Q => l["Q>"],
-        :F => l["g"],
-        :D => l["G"],
-        :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
-                   lambda { |value| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
-        :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
-                     lambda { |value| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
+      true => Hash::new { |h,k|
+        if k.kind_of?(Symbol) && m = k.match(/a(\d+)/)
+          l[k]
+        else
+          nil
+        end
       },
-      false => {
-        :c => l["c"],
-        :C => l["C"],
-        :s => l["s<"],
-        :S => l["S<"],
-        :l => l["l<"],
-        :L => l["L<"],
-        :q => l["q<"],
-        :Q => l["Q<"],
-        :F => l["e"],
-        :D => l["E"],
-        :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
-                   lambda { |value| Flt::IEEE_binary16::new(v).to_bytes } ],
-        :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
-                     lambda { |value| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
+      false => Hash::new { |h,k|
+        if k.kind_of?(Symbol) && m = k.match(/a(\d+)/)
+          l[k]
+        else
+          nil
+        end
       }
     }
+
+    DATA_ENDIAN[true].merge!( {
+      :c => l["c"],
+      :C => l["C"],
+      :s => l["s>"],
+      :S => l["S>"],
+      :l => l["l>"],
+      :L => l["L>"],
+      :q => l["q>"],
+      :Q => l["Q>"],
+      :F => l["g"],
+      :D => l["G"],
+      :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
+                 lambda { |value| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
+      :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
+                   lambda { |value| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
+    } )
+    DATA_ENDIAN[false].merge!( {
+      :c => l["c"],
+      :C => l["C"],
+      :s => l["s<"],
+      :S => l["S<"],
+      :l => l["l<"],
+      :L => l["L<"],
+      :q => l["q<"],
+      :Q => l["Q<"],
+      :F => l["e"],
+      :D => l["E"],
+      :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
+                 lambda { |value| Flt::IEEE_binary16::new(v).to_bytes } ],
+      :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
+                   lambda { |value| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
+    } )
+
     attr_reader :__parent
     attr_reader :__index
     attr_reader :__iterator
@@ -205,6 +228,10 @@ module Bayonetta
       register_field(field, :pghalf, count: count, offset: offset, sequence: sequence, condition: condition)
     end
 
+    def self.string( field, length, count: nil, offset: nil, sequence: false, condition: nil)
+      register_field(field, :"a#{length}", count: count, offset: offset, sequence: sequence, condition: condition)
+    end
+
     def decode_symbol(sym)
       exp = sym.gsub("..","__parent").gsub("\\",".")
       res = eval(exp)
@@ -324,7 +351,7 @@ module Bayonetta
       @__iterator = nil
     end
 
-    def convert_sacalar_field(field, type, count, offset, sequence, condition)
+    def convert_scalar_field(field, type, count, offset, sequence, condition)
       unless sequence
         off = decode_seek_offset(offset)
         return nil if off == false
@@ -361,7 +388,7 @@ module Bayonetta
       vs
     end
 
-    def load_sacalar_field(field, type, count, offset, sequence, condition)
+    def load_scalar_field(field, type, count, offset, sequence, condition)
       unless sequence
         off = decode_seek_offset(offset)
         return nil if off == false
@@ -392,7 +419,7 @@ module Bayonetta
       vs
     end
 
-    def dump_sacalar_field(vs, field, type, count, offset, sequence, condition)
+    def dump_scalar_field(vs, field, type, count, offset, sequence, condition)
       unless sequence
         off = decode_seek_offset(offset)
         return nil if off == false
@@ -515,7 +542,7 @@ module Bayonetta
       if type.kind_of?(Class) && type < DataConverter
         vs = convert_data_field(*args)
       elsif type.kind_of?(Symbol)
-        vs = convert_sacalar_field(*args)
+        vs = convert_scalar_field(*args)
       else
         raise "Unsupported type: #{type.inspect}!"
       end
@@ -528,7 +555,7 @@ module Bayonetta
       if type.kind_of?(Class) && type < DataConverter
         vs = load_data_field(*args)
       elsif type.kind_of?(Symbol)
-        vs = load_sacalar_field(*args)
+        vs = load_scalar_field(*args)
       else
         raise "Unsupported type: #{type.inspect}!"
       end
@@ -542,7 +569,7 @@ module Bayonetta
       if type.kind_of?(Class) && type < DataConverter
         s = dump_data_field(vs, *args)
       elsif type.kind_of?(Symbol)
-        s = dump_sacalar_field(vs, *args)
+        s = dump_scalar_field(vs, *args)
       else
         raise "Unsupported type: #{type.inspect}!"
       end
