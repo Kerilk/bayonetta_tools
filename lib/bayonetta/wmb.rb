@@ -92,7 +92,37 @@ module Bayonetta
 
   end
 
+  module VectorAccessor
+    def [](i)
+      case i
+      when 0
+        self.x
+      when 1
+        self.y
+      when 2
+        self.z
+      else
+        "Invalid index #{i} for a vector access!"
+      end
+    end
+
+    def []=(i,v)
+      case i
+      when 0
+        self.x = v
+      when 1
+        self.y = v
+      when 2
+        self.z = v
+      else
+        "Invalid index #{i} for a vector access!"
+      end
+    end
+
+  end
+
   class Tangents < UByteList
+    include VectorAccessor
 
     def clamp(v, max, min)
       if v > max
@@ -195,12 +225,14 @@ module Bayonetta
   end
 
   class FloatNormal < DataConverter
+    include VectorAccessor
     register_field :x, :F
     register_field :y, :F
     register_field :z, :F
   end
 
   class HalfNormal < DataConverter
+    include VectorAccessor
     register_field :data, :S, count: 4
 
     def x
@@ -240,6 +272,7 @@ module Bayonetta
   end
 
   class Normal < DataConverter
+    include VectorAccessor
     attr_accessor :normal
 
     def x
@@ -409,6 +442,7 @@ module Bayonetta
   end
 
   class Position < DataConverter
+    include VectorAccessor
     register_field :x, :F
     register_field :y, :F
     register_field :z, :F

@@ -187,6 +187,26 @@ module Bayonetta
         end
       end
 
+      def get_vertex_field(field, vi)
+        if @vertexes[vi].respond_to?(field)
+          return @vertexes[vi].send(field)
+        elsif @vertexes_ex_data && @vertexes_ex_data[vi].respond_to?(field)
+          return @vertexes_ex_data[vi].send(field)
+        else
+          return nil
+        end
+      end
+
+      def set_vertex_field(field, vi, val)
+        if @vertexes[vi].respond_to?(field)
+          return @vertexes[vi].send(:"#{field}=", val)
+        elsif @vertexes_ex_data && @vertexes_ex_data[vi].respond_to?(field)
+          return @vertexes_ex_data[vi].send(:"#{field}=", val)
+        else
+          raise "Couldn't find field: #{field}!"
+        end
+      end
+
       class IIndices < DataConverter
         uint32 :values, count: '..\header\num_indices', offset: '..\header\offset_indices'
       end
@@ -308,6 +328,123 @@ module Bayonetta
     register_field :mesh_material_pairs, MeshMaterialPair,
                    count: 'header\info_mesh_material_pairs\number',
                    offset: 'header\info_mesh_material_pairs\offset'
+
+    def was_big?
+      @__was_big
+    end
+
+    def get_vertex_field(field, vg, vi)
+      @vertex_groups[vg].get_vertex_field(field, vi)
+    end
+
+    def set_vertex_field(field, vg, vi, val)
+      @vertex_groups[vg].set_vertex_field(field, vi, val)
+    end
+
+    def scale(s)
+      @vertex_groups.each { |vg|
+        if vg.vertexes && vg.vertexes.first.respond_to?(:position)
+          vg.vertexes.each { |v|
+            v.position.x = v.position.x * s
+            v.position.y = v.position.y * s
+            v.position.z = v.position.z * s
+          }
+        end
+      }
+      @bones.each { |b|
+        b.position.x = b.position.x * s
+        b.position.y = b.position.y * s
+        b.position.z = b.position.z * s
+        b.local_position.x = b.local_position.x * s
+        b.local_position.y = b.local_position.y * s
+        b.local_position.z = b.local_position.z * s
+        b.t_position.x = b.t_position.x * s
+        b.t_position.y = b.t_position.y * s
+        b.t_position.z = b.t_position.z * s
+      }
+      self
+    end
+
+    def get_vertex_usage
+      vertex_usage = Hash::new { |h, k| h[k] = [] }
+      @batches.each { |b|
+        @vertex_groups[b.vertex_group_index].indices.values[b.index_start...(b.index_start+b.num_indices)].each { |i|
+          vertex_usage[[b.vertex_group_index, i]].push( b )
+        }
+      }
+      vertex_usage.each { |k,v| v.uniq! }
+      vertex_usage
+    end
+
+    def recompute_relative_positions
+      @bones.each { |b|
+        if b.parent_index != -1
+          b.local_position = b.position - @bones[b.parent_index].position
+        else
+          b.local_position = b.position
+        end
+      }
+      self
+    end
+
+    def set_tpose
+      inverse_bind_pose = @bones.collect { |b|
+        Linalg::get_inverse_transformation_matrix(b.position, b.rotation, b.scale)
+      }
+      target_pose = @bones.collect { |b|
+        Linalg::get_translation_matrix(b.t_position)
+      }
+      bones.each { |b|
+        b.position = b.t_position
+        b.rotation.x = 0.0
+        b.rotation.y = 0.0
+        b.rotation.z = 0.0
+        b.scale.x = 1.0
+        b.scale.y = 1.0
+        b.scale.z = 1.0
+        b.local_rotation.x = 0.0
+        b.local_rotation.y = 0.0
+        b.local_rotation.z = 0.0
+        b.local_scale.x = 1.0
+        b.local_scale.y = 1.0
+        b.local_scale.z = 1.0
+      }
+      multiplied_matrices = target_pose.each_with_index.collect { |m, i|
+        m * inverse_bind_pose[i]
+      }
+      vertex_usage = get_vertex_usage
+      vertex_usage.each { |(vgi, vi), bs|
+        if bs.first.bone_set_index >= 0
+          bone_set = bone_sets[bs.first.bone_set_index].bone_indices
+          bone_refs = bone_set.collect { |bi| @bone_map[bi] }
+        else
+          bone_refs = @bone_map
+        end
+        bone_infos = get_vertex_field(:bone_infos, vgi, vi)
+        indexes_and_weights = bone_infos.get_indexes_and_weights
+        vertex_matrix = Linalg::get_zero_matrix
+        indexes_and_weights.each { |bi, bw|
+          i = bone_refs[bi]
+          vertex_matrix = vertex_matrix + multiplied_matrices[i] * (bw.to_f/255.to_f)
+        }
+        vp = get_vertex_field(:position, vgi, vi)
+        new_vp = vertex_matrix * Linalg::Vector::new(vp.x, vp.y, vp.z)
+        vp.x = new_vp.x
+        vp.y = new_vp.y
+        vp.z = new_vp.z
+        n = get_vertex_field(:normal, vgi, vi)
+        new_n = vertex_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)
+        n.x = new_n.x
+        n.y = new_n.y
+        n.z = new_n.z
+        t = get_vertex_field(:tangents, vgi, vi)
+        new_t = vertex_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)
+        t.x = new_t.x
+        t.y = new_t.y
+        t.z = new_t.z
+      }
+      self
+    end
 
     def self.load(input_name)
       if input_name.respond_to?(:read) && input_name.respond_to?(:seek)

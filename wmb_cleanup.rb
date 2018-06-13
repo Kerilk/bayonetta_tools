@@ -112,6 +112,10 @@ OptionParser.new do |opts|
     $options[:set_pose] = YAML::load_file(pose)
   end
 
+  opts.on("--[no-]set-t-pose", "Set the model to a t pose (WMB3)") do |tpose|
+    $options[:set_tpose] = tpose
+  end
+
   opts.on("--rotate=ROTATE_INFO", "Rotates the model.",
                                   "  ROTATE_INFO is either:",
                                   "    [rx, ry, rz] rotation (in radian) respectively around the x, y and z axis (in this order)",
@@ -156,13 +160,18 @@ if $options[:set_pose]
   end
   wmb.set_pose($options[:set_pose], exp)
 end
+if $options[:set_tpose]
+  wmb.set_tpose
+end
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.cleanup_textures(input_file, $options[:overwrite]) if $options[:textures]
-wmb.renumber_batches
-wmb.recompute_layout
+unless wmb.class == WMB3File
+  wmb.renumber_batches
+  wmb.recompute_layout
+end
 if $options[:overwrite]
   wmb.dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
 else
