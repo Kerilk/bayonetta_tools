@@ -27,7 +27,7 @@ module Bayonetta
     end
 
     def to_s
-      "<#{@index}#{@parent ? " (#{@parent.index})" : ""}: #{@x}, #{@y}, #{@z}, d: #{depth}>"
+      "<#{@index}#{@parent ? " (#{@parent.index})" : ""}: #{@position.x}, #{@position.y}, #{@position.z}, d: #{depth}>"
     end
 
     def inspect
@@ -35,9 +35,9 @@ module Bayonetta
     end
 
     def distance(other)
-      d = (@position.xf - other.position.xf)**2 +
-          (@position.yf - other.position.yf)**2 +
-          (@position.zf - other.position.zf)**2
+      d = (@position.x - other.position.x)**2 +
+          (@position.y - other.position.y)**2 +
+          (@position.z - other.position.z)**2
       d = Math::sqrt(d)
       dd = (depth - other.depth).abs
       [d, dd]

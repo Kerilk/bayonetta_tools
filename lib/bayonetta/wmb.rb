@@ -50,6 +50,11 @@ module Bayonetta
       unset_dump_type
       self
     end
+
+    def initialize
+      @data = 0
+    end
+
   end
 
   class Color < UByteList
@@ -274,6 +279,12 @@ module Bayonetta
   class Normal < DataConverter
     include VectorAccessor
     attr_accessor :normal
+
+    def initialize
+      @normal = [0.0, 0.0, 0.0]
+      @normal_big_orig = nil
+      @normal_small_orig = nil
+    end
 
     def x
       @normal[0]
@@ -758,6 +769,24 @@ module Bayonetta
       register_field :num_indices, :l
       register_field :vertex_offset, :l
       register_field :u_f, :l, count: 7
+
+      def initialize
+        @batch_id = 0
+        @mesh_id = 0
+        @u_b = 0x8001
+        @ex_mat_id = 0
+        @material_id = 0
+        @u_d = 1
+        @u_e1 = 0
+        @u_e2 = 0
+        @vertex_start = 0
+        @vertex_end = 0
+        @primitive_type = 4
+        @offset_indices = 0x100
+        @num_indices = 0
+        @vertex_offset = 0
+        @u_f = [0]*7
+      end
     end
 
     class Batch < DataConverter
@@ -766,6 +795,13 @@ module Bayonetta
       register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || (header\u_b & 0x80)'
       register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0 && (header\u_b & 0x80) == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
+
+      def initialize
+        @header = BatchHeader::new
+        @num_bone_ref = 0
+        @bone_refs = []
+        @indices = []
+      end
 
       def duplicate(positions, vertexes, vertexes_ex)
         b = Batch::new
@@ -867,8 +903,21 @@ module Bayonetta
       register_field :offset_batch_offsets, :L
       register_field :u_b, :L
       register_field :u_c, :l, count: 4
-      register_field :name, :c, count: 32
-      register_field :mat, :L, count: 12
+      string         :name, 32
+      register_field :mat, :F, count: 12
+
+      def initialize
+        @id = 0
+        @num_batch = 0
+        @u_a1 = 0
+        @u_a2 = 1
+        @offset_batch_offsets = 128
+        @u_b = 0x80000000
+        @u_c = [0]*4
+        @name = [0]*32
+        @mat = [0.0, 0.98, -0.42, 1.64, 1.10, 2.08,
+                0.1, -1.10, -0.12, -0.95, 0.0, 0.0]
+      end
     end
 
     class Mesh < DataConverter
@@ -877,6 +926,12 @@ module Bayonetta
                      offset: '__position + header\offset_batch_offsets'
       register_field :batches, Batch, count: 'header\num_batch', sequence: true,
                      offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
+
+      def initialize
+        @header = MeshHeader::new
+        @batch_offsets = []
+        @batches = []
+      end
 
       def size(position = 0, parent = nil, index = nil)
         sz = @header.offset_batch_offsets

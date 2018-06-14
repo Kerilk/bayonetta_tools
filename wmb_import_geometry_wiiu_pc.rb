@@ -176,7 +176,7 @@ def merge_vertexes(wmb1, wmb2)
       warn "Couldn't find vertex field #{field} in model 2"
       if field == :color
         warn "Using default value 0xc0 0xc0 0xc0 0xff"
-        c = WMBFile::Color::new
+        c = Color::new
         c.r = 0xc0
         c.g = 0xc0
         c.b = 0xc0
