@@ -365,6 +365,15 @@ module Bayonetta
       self
     end
 
+    def dump_bones(list = nil)
+      bone_struct = Struct::new(:index, :parent, :relative_position, :position, :global_index, :symmetric, :flag)
+      list = (0...@header.num_bones) unless list
+      list.collect { |bi|
+        bone_struct::new(bi, @bones[bi].parent_index, @bones[bi].local_position, @bones[bi].position,
+                         @bones[bi].id, -1, 5)
+      }
+    end
+
     def get_vertex_usage
       vertex_usage = Hash::new { |h, k| h[k] = [] }
       @batches.each { |b|

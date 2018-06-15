@@ -155,25 +155,25 @@ module Bayonetta
     end
 
     def x=(v)
-      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      v2 = clamp((v*127.0+127.0).round, 255, 0)
       @data = (@data & 0xffffff00) | v2
       v
     end
 
     def y=(v)
-      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      v2 = clamp((v*127.0+127.0).round, 255, 0)
       @data = (@data & 0xffff00ff) | (v2 << 8)
       v
     end
 
     def z=(v)
-      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      v2 = clamp((v*127.0+127.0).round, 255, 0)
       @data = (@data & 0xff00ffff) | (v2 << 16)
       v
     end
 
     def s=(v)
-      v2 = clamp((v*127.0+127.0).round, 0, 255)
+      v2 = clamp((v*127.0+127.0).round, 255, 0)
       @data = (@data & 0x00ffffff) | (v2 << 24)
       v
     end
