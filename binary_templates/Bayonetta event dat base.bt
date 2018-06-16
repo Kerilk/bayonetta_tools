@@ -1,0 +1,274 @@
+struct {
+    float version;
+    if (version == 1.3f) {
+        uint32 u_a <format=hex>;
+        uint32 offsetCams <format=hex>;
+        uint32 offsetMotions <format=hex>;
+        uint32 u_b <format=hex>;
+        uint32 offsetEff <format=hex>;
+        uint32 offsetEF2 <format=hex>;
+        uint32 offsetCos <format=hex>;
+        uint32 u_c <format=hex>;
+        uint32 u_d <format=hex>;
+        uint32 offsetEVL <format=hex>;
+        uint32 offsetFil <format=hex>;
+        uint32 offsetFLS <format=hex>;
+        uint32 offsetFad <format=hex>;
+        uint32 offsetClo <format=hex>;
+        uint32 offsetEtc <format=hex>;
+        uint32 offsetSe <format=hex>;
+        uint32 offsetSeJP <format=hex>;
+        uint32 offsetSDX <format=hex>;
+        uint32 offsetSDXJP <format=hex>;
+        uint32 offsetBgm <format=hex>;
+        uint32 offsetAct <format=hex>;
+        uint32 offsetVib <format=hex>;
+        uint32 offsetFun <format=hex>;
+        uint32 offsetCT2 <format=hex>;
+        uint32 offsetScr <format=hex>;
+        uint32 offsetScr2 <format=hex>;
+        uint32 offsetCon <format=hex>;
+        uint32 offsetLoo <format=hex>;
+    } else if (version == 1.2f) {
+        uint32 u_a <format=hex>;
+        uint32 offsetCams <format=hex>;
+        uint32 offsetMotions <format=hex>;
+        uint32 u_b <format=hex>;
+        uint32 offsetEff <format=hex>;
+        uint32 offsetEF2 <format=hex>;
+        uint32 offsetCos <format=hex>;
+        uint32 u_c <format=hex>;
+        uint32 u_d <format=hex>;
+        uint32 offsetEVL <format=hex>;
+        uint32 offsetFil <format=hex>;
+        uint32 offsetFLS <format=hex>;
+        uint32 offsetFad <format=hex>;
+        uint32 offsetClo <format=hex>;
+        uint32 offsetEtc <format=hex>;
+        uint32 offsetSe <format=hex>;
+        uint32 offsetSDX <format=hex>;
+        uint32 u_e[6] <format=hex>;
+    } else if (version == 1.1f) {
+        uint32 u_a <format=hex>;
+        uint32 offsetCams <format=hex>;
+        uint32 offsetMotions <format=hex>;
+        uint32 u_b <format=hex>;
+        uint32 offsetEff <format=hex>;
+        uint32 offsetEF2 <format=hex>;
+        uint32 offsetCos <format=hex>;
+        uint32 u_c <format=hex>;
+        uint32 u_d <format=hex>;
+        uint32 offsetEVL <format=hex>;
+        uint32 offsetFil <format=hex>;
+        uint32 offsetFLS <format=hex>;
+        uint32 offsetFad <format=hex>;
+        uint32 offsetClo <format=hex>;
+        uint32 offsetEtc <format=hex>;
+        uint32 offsetSe <format=hex>;
+        uint32 offsetSDX <format=hex>;
+        uint32 u_e[2] <format=hex>;
+    }
+} header<open=true>;
+
+typedef struct {
+    char    id[4];
+    uint32  numEntries;
+    float   unknwon;
+    uint32  sizeEntries;
+} commonHeader;
+
+typedef struct {
+    char    id[4];
+    uint32  numEntries;
+    uint32  offsetEntries[numEntries];
+} pseudoDirectoryHeader;
+
+typedef struct {
+    char    id[4];
+    uint32  numEntries;
+    struct {
+        uint32 id;
+        uint32 offset;
+    } Entries[numEntries];
+} directoryHeader;
+
+if (header.offsetEff) {
+FSeek(header.offsetEff);
+struct {
+    commonHeader effHeader;
+    struct {
+        byte data[effHeader.sizeEntries];
+    } effEntries[effHeader.numEntries]<optimize=true>;
+} eff;
+}
+
+if (header.offsetEF2) {
+FSeek(header.offsetEF2);
+struct {
+    directoryHeader EF2Header;
+} EF2;
+}
+
+if (header.offsetCos) {
+FSeek(header.offsetCos);
+struct {
+    commonHeader cosHeader;
+    struct {
+        byte data[cosHeader.sizeEntries];
+    } cosEntries[cosHeader.numEntries]<optimize=true>;
+} cos;
+}
+
+if (header.offsetFil) {
+FSeek(header.offsetFil);
+struct {
+    commonHeader filHeader;
+    struct {
+        byte data[filHeader.sizeEntries];
+    } filEntries[filHeader.numEntries]<optimize=true>;
+} fil;
+}
+
+if (header.offsetFLS) {
+FSeek(header.offsetFLS);
+struct {
+    directoryHeader FLSHeader;
+} FLS;
+}
+
+if (header.offsetFad) {
+FSeek(header.offsetFad);
+struct {
+    commonHeader fadHeader;
+    struct {
+        byte data[fadHeader.sizeEntries];
+    } fadEntries[fadHeader.numEntries]<optimize=true>;
+} fad;
+}
+
+if (header.offsetClo) {
+FSeek(header.offsetClo);
+struct {
+    commonHeader cloHeader;
+    struct {
+        byte data[cloHeader.sizeEntries];
+    } cloEntries[cloHeader.numEntries]<optimize=true>;
+} clo;
+}
+
+if (header.offsetEtc) {
+FSeek(header.offsetEtc);
+struct {
+    commonHeader etcHeader;
+    struct {
+        byte data[etcHeader.sizeEntries];
+    } etcEntries[etcHeader.numEntries]<optimize=true>;
+} etc;
+}
+
+if (header.offsetSe) {
+FSeek(header.offsetSe);
+struct {
+    commonHeader seHeader;
+    struct {
+        byte data[seHeader.sizeEntries];
+    } seEntries[seHeader.numEntries]<optimize=true>;
+} se;
+}
+
+if (header.offsetSeJP) {
+FSeek(header.offsetSeJP);
+struct {
+    commonHeader seJPHeader;
+    struct {
+        byte data[seJPHeader.sizeEntries];
+    } seJPEntries[seJPHeader.numEntries]<optimize=true>;
+} seJP;
+}
+
+if (header.offsetBgm) {
+FSeek(header.offsetBgm);
+struct {
+    commonHeader bgmHeader;
+    struct {
+        byte data[bgmHeader.sizeEntries];
+    } bgmEntries[bgmHeader.numEntries]<optimize=true>;
+} bgm;
+}
+
+if (header.offsetAct) {
+FSeek(header.offsetAct);
+struct {
+    commonHeader actHeader;
+    struct {
+        byte data[actHeader.sizeEntries];
+    } actEntries[actHeader.numEntries]<optimize=true>;
+} act;
+}
+
+if (header.offsetVib) {
+FSeek(header.offsetVib);
+struct {
+    commonHeader vibHeader;
+    struct {
+        byte data[vibHeader.sizeEntries];
+    } vibEntries[vibHeader.numEntries]<optimize=true>;
+} vib;
+}
+
+if (header.offsetFun) {
+FSeek(header.offsetFun);
+struct {
+    commonHeader funHeader;
+    struct {
+        byte data[funHeader.sizeEntries];
+    } funEntries[funHeader.numEntries]<optimize=true>;
+} fun;
+}
+
+if (header.offsetCT2) {
+FSeek(header.offsetCT2);
+struct {
+    pseudoDirectoryHeader CT2Header;
+} CT2;
+}
+
+if (header.offsetScr) {
+FSeek(header.offsetScr);
+struct {
+    commonHeader scrHeader;
+    struct {
+        byte data[scrHeader.sizeEntries];
+    } scrEntries[scrHeader.numEntries]<optimize=true>;
+} scr;
+}
+
+if (header.offsetScr2) {
+FSeek(header.offsetScr2);
+struct {
+    commonHeader scr2Header;
+    struct {
+        byte data[scr2Header.sizeEntries];
+    } scr2Entries[scr2Header.numEntries]<optimize=true>;
+} scr2;
+}
+
+if (header.offsetCon) {
+FSeek(header.offsetCon);
+struct {
+    commonHeader conHeader;
+    struct {
+        byte data[conHeader.sizeEntries];
+    } conEntries[conHeader.numEntries]<optimize=true>;
+} con;
+}
+
+if (header.offsetLoo) {
+FSeek(header.offsetLoo);
+struct {
+    commonHeader looHeader;
+    struct {
+        byte data[looHeader.sizeEntries];
+    } looEntries[looHeader.numEntries]<optimize=true>;
+} loo;
+}
