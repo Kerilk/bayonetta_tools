@@ -509,6 +509,10 @@ module Bayonetta
       get_indexes_and_weights.collect { |bi, _| bi }
     end
 
+    def get_weights
+      get_indexes_and_weights.collect { |_, bw| bw }
+    end
+
     def remap_indexes(map)
       new_bone_info = get_indexes_and_weights.collect { |bi, bw| [map[bi], bw] }
       set_indexes_and_weights(new_bone_info)
@@ -947,9 +951,10 @@ module Bayonetta
       def recompute_layout
         @header.num_batch = @batches.length
         off = @header.num_batch * 4
+        @batch_offsets = []
         @header.num_batch.times { |j|
           off = align(off, 0x20)
-          @batch_offsets[j] = off
+          @batch_offsets.push off
           off += @batches[j].size
         }
       end
@@ -2007,8 +2012,9 @@ module Bayonetta
 
       last_offset = @header.offset_materials_offsets = align(last_offset, 0x20)
       off = 0
+      @materials_offsets = []
       @header.num_materials.times { |i|
-        @materials_offsets[i] = off
+        @materials_offsets.push off
         off += @materials[i].size
         off =  align(off, 0x4)
       }
@@ -2020,9 +2026,10 @@ module Bayonetta
       last_offset = @header.offset_meshes_offsets = align(last_offset, 0x20)
 
       off = 0
+      @meshes_offsets = []
       @header.num_meshes.times { |i|
         @meshes[i].recompute_layout
-        @meshes_offsets[i] = off
+        @meshes_offsets.push off
         off += @meshes[i].size
         off = align(off, 0x20)
       }
