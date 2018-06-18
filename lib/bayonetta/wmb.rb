@@ -521,7 +521,7 @@ module Bayonetta
 
     def set_indexes_and_weights(bone_info)
       raise "Too many bone information #{bone_info.inspect}!" if bone_info.length > 4
-      @indexs.data = 0
+      @indexes.data = 0
       @weights.data = 0
       bone_info.each_with_index { |(bi, bw), i|
         raise "Invalid bone index #{bi}!" if bi > 255 || bi < 0
@@ -867,6 +867,7 @@ module Bayonetta
         @header.primitive_type = 4
         @indices = trs.flatten
         recompute_from_absolute_indices
+        @header.num_indices = @indices.length
         self
       end
 
