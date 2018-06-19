@@ -48,6 +48,10 @@ OptionParser.new do |opts|
     $options[:fix] = fix
   end
 
+  opts.on("--[no-]remove-triangle-strips", "Remove triangle strips and replace by triangles") do |strips|
+    $options[:strips] = strips
+  end
+
   opts.on("-e", "--swap-endianness", "Swap endianness") do |swap|
     $options[:swap] = swap
   end
@@ -149,6 +153,7 @@ wmb.cleanup_bones if $options[:bones]
 wmb.recompute_relative_positions if $options[:recompute_relative_positions]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.cleanup_vertexes if $options[:vertexes]
+wmb.remove_triangle_strips if $options[:strips]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
 wmb.reverse_tangents_byte_order($options[:reverse_tangents]) if $options[:reverse_tangents]

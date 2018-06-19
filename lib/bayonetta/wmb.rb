@@ -1762,6 +1762,14 @@ module Bayonetta
       self
     end
 
+    def remove_triangle_strips
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.set_triangles(b.triangles)
+        }
+      }
+    end
+
     def cleanup_vertexes
       used_vertex_indexes = []
       @meshes.each { |m|
