@@ -796,7 +796,7 @@ module Bayonetta
     class Batch < DataConverter
       register_field :header, BatchHeader
       register_field :num_bone_ref, :l, condition: '(header\u_b & 0x8000) != 0 || (header\u_b & 0x80)'
-      register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || (header\u_b & 0x80)'
+      register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || (header\u_b & 0x80) != 0'
       register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0 && (header\u_b & 0x80) == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
