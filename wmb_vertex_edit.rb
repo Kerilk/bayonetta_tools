@@ -13,6 +13,7 @@ $options = {
   :reject => false,
   :cut => 0,
   :positions => false,
+  :size => 0.5,
   :order => 2
 }
 
@@ -50,6 +51,10 @@ OptionParser.new do |opts|
 
   opts.on("--positions-order=INDEX", "Sort vertexes by index when using vertex indexes and positions (default 2)") do |order|
     $options[:order] = order
+  end
+
+  opts.on("--size=VALUE", "Change the size of the points in the scatter plot (default 0.5)") do |size|
+    $options[:size] = size.to_f
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -129,7 +134,7 @@ vs.each_with_index { |v, i|
                           v[2].collect { |z| z-$options[:point][2] }
                )
   sc.shape(shapes[i])
-  sc.size(0.5)
+  sc.size($options[:size])
 }
 
 plot.export_html("3dscatter.html")
