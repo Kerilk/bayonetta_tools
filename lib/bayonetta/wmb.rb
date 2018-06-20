@@ -1686,7 +1686,7 @@ module Bayonetta
 
     def cleanup_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      material_db = YAML::load_file('material_database.yaml')
+      material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_database.yaml'))
       @materials.each { |m|
          type = m.type
          if material_db.key?(type)
@@ -1703,7 +1703,7 @@ module Bayonetta
 
     def maximize_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      material_db = YAML::load_file('material_database.yaml')
+      material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_database.yaml'))
       max_size_mat = material_db.max_by { |k, v|
         v[:size]
       }
