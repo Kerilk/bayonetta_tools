@@ -179,8 +179,10 @@
   :size: 120
 67:
   :size: 312
+  :shader: modelshaderpls00_bxnxx
 182:
   :size: 228
+  :shader: modelshaderpls01_bxxma
 119:
   :size: 176
 188:
