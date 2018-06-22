@@ -91,6 +91,7 @@
   :shader: modelshaderbgs11_bxxxx
 122:
   :size: 356
+  :shader: modelshaderbgs07_bxxxx
 131:
   :size: 172
 0:
@@ -171,8 +172,10 @@
   :size: 208
 118:
   :size: 212
+  :shader: modelshaderbos02_bxnxx
 121:
   :size: 212
+  :shader: modelshaderbos02_bxnmx
 61:
   :size: 120
 164:
@@ -224,6 +227,7 @@
   :size: 172
 142:
   :size: 212
+  :shader: modelshaderbgs12_xxxxx
 112:
   :size: 104
 69:
