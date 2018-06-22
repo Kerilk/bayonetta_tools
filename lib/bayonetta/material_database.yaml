@@ -48,6 +48,7 @@
   :size: 156
 51:
   :size: 212
+  :shader: modelshaderbgs04_xxxxx
 49:
   :size: 192
   :shader: modelshaderbgs01_xxxxx
@@ -60,6 +61,7 @@
   :size: 104
 52:
   :size: 248
+  :shader: modelshaderbgs05_xxxxx
 116:
   :size: 228
 158:
@@ -178,6 +180,7 @@
   :size: 188
 136:
   :size: 192
+  :shader: modelshaderbgs03_xxxxx
 79:
   :size: 120
 152:
@@ -207,6 +210,7 @@
   :size: 152
 53:
   :size: 232
+  :shader: modelshaderbgs06_xxxxx
 90:
   :size: 120
 130:
