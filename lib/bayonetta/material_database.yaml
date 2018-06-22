@@ -130,6 +130,7 @@
   :size: 212
 163:
   :size: 228
+  :shader: modelshaderefs02_bxxxx
 62:
   :size: 272
 125:
@@ -150,6 +151,7 @@
   :size: 124
 108:
   :size: 176
+  :shader: modelshaderefs05_bxxxx
 68:
   :size: 228
 114:
@@ -223,6 +225,7 @@
   :shader: modelshaderbgs06_xxxxx
 90:
   :size: 120
+  :shader: modelshaderefs00_xxxxx
 130:
   :size: 172
 142:
