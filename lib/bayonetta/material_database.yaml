@@ -3,16 +3,20 @@
   :size: 212
 73:
   :size: 228
+  :shader: modelshaderbgs02_bxxxx
 72:
   :size: 192
+  :shader: modelshaderbgs01_bxxxx
 83:
   :size: 104
+  :shader: modelshaderbgs00_bxxxx
 84:
   :size: 212
 66:
   :size: 172
 74:
   :size: 212
+  :shader: modelshaderbgs04_bxxxx
 85:
   :size: 208
 145:
@@ -31,6 +35,7 @@
   :size: 176
 137:
   :size: 192
+  :shader: modelshaderbgs03_bxxxx
 89:
   :size: 212
 92:
@@ -45,10 +50,12 @@
   :size: 212
 49:
   :size: 192
+  :shader: modelshaderbgs01_xxxxx
 147:
   :size: 156
 50:
   :size: 228
+  :shader: modelshaderbgs02_xxxxx
 71:
   :size: 104
 52:
@@ -195,6 +202,7 @@
   :size: 88
 48:
   :size: 104
+  :shader: modelshaderbgs00_xxxxx
 105:
   :size: 152
 53:
