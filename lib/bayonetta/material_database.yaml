@@ -12,8 +12,10 @@
   :shader: modelshaderbgs00_bxxxx
 84:
   :size: 212
+  :shader: modelshaderobs01_bxxxx
 66:
   :size: 172
+  :shader: modelshaderobs04_bxxxx
 74:
   :size: 212
   :shader: modelshaderbgs04_bxxxx
@@ -34,11 +36,13 @@
   :size: 172
 77:
   :size: 176
+  :shader: modelshaderobs05_bxxxx
 137:
   :size: 192
   :shader: modelshaderbgs03_bxxxx
 89:
   :size: 212
+  :shader: modelshaderobs01_bxxmx
 92:
   :size: 212
 143:
@@ -73,6 +77,7 @@
   :size: 156
 58:
   :size: 212
+  :shader: modelshaderobs01_bunxx
 126:
   :size: 152
 124:
@@ -84,11 +89,12 @@
   :size: 208
 64:
   :size: 196
+  :shader: modelshaderobs02_bxxxx
 117:
   :size: 172
 57:
   :size: 212
-  :shader: modelshaderbgs11_bxxxx
+  :shader: modelshaderobs01_bxnxx
 122:
   :size: 356
   :shader: modelshaderbgs07_bxxxx
@@ -108,24 +114,30 @@
   :size: 8
 56:
   :size: 212
+  :shader: modelshaderobs00_bxnxx
 75:
   :size: 212
 161:
   :size: 176
 106:
   :size: 212
+  :shader: modelshaderefs04_bxnxx
 76:
   :size: 172
+  :shader: modelshaderobs04_bxxmx
 78:
   :size: 176
+  :shader: modelshaderobs05_bxxmx
 59:
   :size: 172
 65:
   :size: 196
+  :shader: modelshaderobs03_bxxxx
 129:
   :size: 288
 93:
   :size: 196
+  :shader: modelshaderobs03_bxxmx
 110:
   :size: 212
 163:
@@ -133,6 +145,7 @@
   :shader: modelshaderefs02_bxxxx
 62:
   :size: 272
+  :shader: modelshaderefs01_bxxxx
 125:
   :size: 108
 104:
