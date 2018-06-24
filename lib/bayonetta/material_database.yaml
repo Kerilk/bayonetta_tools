@@ -149,6 +149,7 @@
   :shader: modelshaderobs03_bxxxx
 129:
   :size: 288
+  :shader: modelshadergls03_bxxxx
 93:
   :size: 196
   :shader: modelshaderobs03_bxxmx
@@ -264,6 +265,7 @@
   :shader: modelshaderefs00_xxxxx
 130:
   :size: 172
+  :shader: modelshadergls02_xxxxx
 142:
   :size: 212
   :shader: modelshaderbgs12_xxxxx
