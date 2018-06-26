@@ -218,6 +218,7 @@
   :shader: modelshaderetc06_bxxmx
 159:
   :size: 88
+  :shader: modelshaderetc05_bxxxx
 150:
   :size: 104
   :shader: modelshaderetc03_bxxxx
@@ -252,6 +253,7 @@
   :size: 372
 87:
   :size: 88
+  :shader: modelshadergrs00_xxxxx
 48:
   :size: 104
   :shader: modelshaderbgs00_xxxxx
@@ -295,7 +297,11 @@
   :shader: modelshaderetc04_xxxxx
 157:
   :size: 88
+  :shader: modelshaderetc05_xxxxx
 169:
   :size: 288
 103:
   :size: 88
+170:
+  :size: 196
+  :shader: modelshaderetc07_bxxxx
