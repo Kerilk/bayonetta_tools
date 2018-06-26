@@ -1,6 +1,1649 @@
 #define BAYONETTA  0
 #define BAYONETTA2 1
 
+typedef struct {
+  float dummy;
+  float dummy;
+  float dummy;
+  float dummy;
+} f4_ignored_t;
+
+typedef struct {
+  float x;
+  float dummy;
+  float dummy;
+  float dummy;
+} f4_float_t;
+
+typedef struct {
+  float x;
+  float y;
+  float dummy;
+  float dummy;
+} f4_float2_t;
+
+typedef struct {
+  float x;
+  float y;
+  float z;
+  float dummy;
+} f4_float3_t;
+
+typedef struct {
+  float x;
+  float y;
+  float z;
+  float w;
+} f4_float4_t;
+
+typedef uint32 sampler2D_t <format=hex>;
+typedef uint32 samplerCUBE_t <format=hex>;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_30_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_31_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_32_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_33_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_34_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  sampler2D_t Color_3;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float2_t Color_3_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_35_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t dist;
+  f4_float_t refract_distortion;
+  f4_float_t env_distortion;
+  f4_float_t shadow_distortion;
+  f4_float_t blend_func;
+  f4_float_t test_func;
+  f4_float3_t test_color;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored2;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_36_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_38_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_39_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_3a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+} mat_3b_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_3c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t refractmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t refract_blend;
+  f4_float_t refract_distortion;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float_t env_distortion;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+} mat_3e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t env_factor;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_40_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_41_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_42_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t dot_min;
+  f4_float_t dot_max;
+  f4_float3_t dot_color;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_43_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_44_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t dist;
+  f4_float_t refract_distortion;
+  f4_float_t blend_func;
+  f4_float_t test_func;
+  f4_float3_t test_color;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored2;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_45_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t dist;
+  f4_float_t refract_distortion;
+  f4_float_t blend_func;
+  f4_float_t test_func;
+  f4_float3_t test_color;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored2;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_46_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_48_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_49_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_4a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_4b_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_4c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_4d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_4e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_53_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_54_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_55_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_56_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_57_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_58_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_59_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_5a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_5b_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_5c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_5d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_61_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_62_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_68_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_6a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_6b_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_6c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_6d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_6e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_71_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_72_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_74_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float_t fresnel_max;
+  f4_float_t b_down;
+  f4_float2_t Color_1_Tile;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_75_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t depth;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_76_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t depth;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_79_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t dist;
+  f4_float_t refract_distortion;
+  f4_float_t env_distortion;
+  f4_float_t shadow_distortion;
+  f4_float_t blend_func;
+  f4_float_t test_func;
+  f4_float3_t test_color;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored2;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_7a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_7c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_7d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Pow;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float4_t spelightpos;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_7f_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored0;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_80_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t refractmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t refract_blend;
+  f4_float_t refract_distortion;
+  f4_float_t eSSS_blend;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float_t env_distortion;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+} mat_81_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float_t fresnel_max;
+  f4_float_t b_down;
+  f4_float2_t Color_1_Tile;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_82_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float_t fresnel_max;
+  f4_float_t b_down;
+  f4_float2_t Color_1_Tile;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_83_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_84_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_87_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t ref_blend;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_88_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t ref_blend;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_89_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_8d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_8e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_8f_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_91_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_92_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_93_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_94_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_96_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Pow;
+  samplerCUBE_t env_amb;
+  f4_float_t blend;
+  f4_float_t env_factor;
+  f4_float3_t specular;
+  f4_float4_t spelightpos;
+  f4_ignored_t ingored0;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_97_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  f4_float2_t Color_1_Tile;
+  f4_float3_t diffuse;
+  f4_float3_t l_diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_9c_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t l_diffuse;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_9d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  f4_float2_t Color_1_Tile;
+  f4_float3_t diffuse;
+  f4_float3_t l_diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_9e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t l_diffuse;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_9f_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a1_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t env_factor;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a3_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a4_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t env_factor;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_aa_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_ac_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_ae_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t blend;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored3;
+  f4_ignored_t ingored4;
+} mat_b1_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_b2_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Pow;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float4_t spelightpos;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_b3_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_b6_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_b7_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Pow;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float4_t spelightpos;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_bb_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t Spec_Mask;
+  sampler2D_t Spec_Pow;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float_t Env_Amb_Param;
+  f4_float_t shine;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_bc_values_t;
+
 struct {
 	char    id[4]; //WMB
     int32   unknownA;
@@ -281,34 +1924,312 @@ uint32 materialOffsets[header.numMaterials];
 
 local int i;
 local int dataSize;
-for ( i = 0; i < header.numMaterials - 1; i++ ) {
+for ( i = 0; i < header.numMaterials; i++ ) {
     FSeek( header.offsetMaterials + materialOffsets[i] );
     struct {
         int16 matID <format=hex>;
         int16 matFlags <format=hex>;
-        union {
-            uint32  texture <format=hex>;
-            float   val;
-        } texture[5];
-        dataSize = materialOffsets[i+1] - materialOffsets[i] - 24;
-        if (dataSize > 0) {
-            float   data[dataSize/4];
+        if(header.exMatInfo[0]) { //Bayo2
+            union {
+                uint32  texture <format=hex>;
+                float   val;
+            } texture[5];
+            if ( i == header.numMaterials - 1 ) {
+                dataSize =  header.offsetMeshesOffsets - (header.offsetMaterials + materialOffsets[header.numMaterials - 1]) - 24;
+            } else {
+                dataSize = materialOffsets[i+1] - materialOffsets[i] - 24;
+            }
+            if (dataSize > 0) {
+                float   data[dataSize/4];
+            }
+        } else switch(matID) {
+        case 0x30:
+            mat_30_values_t data;
+            break;
+        case 0x31:
+            mat_31_values_t data;
+            break;
+        case 0x32:
+            mat_32_values_t data;
+            break;
+        case 0x33:
+            mat_33_values_t data;
+            break;
+        case 0x34:
+            mat_34_values_t data;
+            break;
+        case 0x35:
+            mat_35_values_t data;
+            break;
+        case 0x36:
+            mat_36_values_t data;
+            break;
+        case 0x38:
+            mat_38_values_t data;
+            break;
+        case 0x39:
+            mat_39_values_t data;
+            break;
+        case 0x3a:
+            mat_3a_values_t data;
+            break;
+        case 0x3b:
+            mat_3b_values_t data;
+            break;
+        case 0x3c:
+            mat_3c_values_t data;
+            break;
+        case 0x3e:
+            mat_3e_values_t data;
+            break;
+        case 0x40:
+            mat_40_values_t data;
+            break;
+        case 0x41:
+            mat_41_values_t data;
+            break;
+        case 0x42:
+            mat_42_values_t data;
+            break;
+        case 0x43:
+            mat_43_values_t data;
+            break;
+        case 0x44:
+            mat_44_values_t data;
+            break;
+        case 0x45:
+            mat_45_values_t data;
+            break;
+        case 0x46:
+            mat_46_values_t data;
+            break;
+        case 0x48:
+            mat_48_values_t data;
+            break;
+        case 0x49:
+            mat_49_values_t data;
+            break;
+        case 0x4a:
+            mat_4a_values_t data;
+            break;
+        case 0x4b:
+            mat_4b_values_t data;
+            break;
+        case 0x4c:
+            mat_4c_values_t data;
+            break;
+        case 0x4d:
+            mat_4d_values_t data;
+            break;
+        case 0x4e:
+            mat_4e_values_t data;
+            break;
+        case 0x53:
+            mat_53_values_t data;
+            break;
+        case 0x54:
+            mat_54_values_t data;
+            break;
+        case 0x55:
+            mat_55_values_t data;
+            break;
+        case 0x56:
+            mat_56_values_t data;
+            break;
+        case 0x57:
+            mat_57_values_t data;
+            break;
+        case 0x58:
+            mat_58_values_t data;
+            break;
+        case 0x59:
+            mat_59_values_t data;
+            break;
+        case 0x5a:
+            mat_5a_values_t data;
+            break;
+        case 0x5b:
+            mat_5b_values_t data;
+            break;
+        case 0x5c:
+            mat_5c_values_t data;
+            break;
+        case 0x5d:
+            mat_5d_values_t data;
+            break;
+        case 0x61:
+            mat_61_values_t data;
+            break;
+        case 0x62:
+            mat_62_values_t data;
+            break;
+        case 0x68:
+            mat_68_values_t data;
+            break;
+        case 0x6a:
+            mat_6a_values_t data;
+            break;
+        case 0x6b:
+            mat_6b_values_t data;
+            break;
+        case 0x6c:
+            mat_6c_values_t data;
+            break;
+        case 0x6d:
+            mat_6d_values_t data;
+            break;
+        case 0x6e:
+            mat_6e_values_t data;
+            break;
+        case 0x71:
+            mat_71_values_t data;
+            break;
+        case 0x72:
+            mat_72_values_t data;
+            break;
+        case 0x74:
+            mat_74_values_t data;
+            break;
+        case 0x75:
+            mat_75_values_t data;
+            break;
+        case 0x76:
+            mat_76_values_t data;
+            break;
+        case 0x79:
+            mat_79_values_t data;
+            break;
+        case 0x7a:
+            mat_7a_values_t data;
+            break;
+        case 0x7c:
+            mat_7c_values_t data;
+            break;
+        case 0x7d:
+            mat_7d_values_t data;
+            break;
+        case 0x7f:
+            mat_7f_values_t data;
+            break;
+        case 0x80:
+            mat_80_values_t data;
+            break;
+        case 0x81:
+            mat_81_values_t data;
+            break;
+        case 0x82:
+            mat_82_values_t data;
+            break;
+        case 0x83:
+            mat_83_values_t data;
+            break;
+        case 0x84:
+            mat_84_values_t data;
+            break;
+        case 0x87:
+            mat_87_values_t data;
+            break;
+        case 0x88:
+            mat_88_values_t data;
+            break;
+        case 0x89:
+            mat_89_values_t data;
+            break;
+        case 0x8d:
+            mat_8d_values_t data;
+            break;
+        case 0x8e:
+            mat_8e_values_t data;
+            break;
+        case 0x8f:
+            mat_8f_values_t data;
+            break;
+        case 0x91:
+            mat_91_values_t data;
+            break;
+        case 0x92:
+            mat_92_values_t data;
+            break;
+        case 0x93:
+            mat_93_values_t data;
+            break;
+        case 0x94:
+            mat_94_values_t data;
+            break;
+        case 0x96:
+            mat_96_values_t data;
+            break;
+        case 0x97:
+            mat_97_values_t data;
+            break;
+        case 0x9c:
+            mat_9c_values_t data;
+            break;
+        case 0x9d:
+            mat_9d_values_t data;
+            break;
+        case 0x9e:
+            mat_9e_values_t data;
+            break;
+        case 0x9f:
+            mat_9f_values_t data;
+            break;
+        case 0xa1:
+            mat_a1_values_t data;
+            break;
+        case 0xa3:
+            mat_a3_values_t data;
+            break;
+        case 0xa4:
+            mat_a4_values_t data;
+            break;
+        case 0xaa:
+            mat_aa_values_t data;
+            break;
+        case 0xac:
+            mat_ac_values_t data;
+            break;
+        case 0xae:
+            mat_ae_values_t data;
+            break;
+        case 0xb1:
+            mat_b1_values_t data;
+            break;
+        case 0xb2:
+            mat_b2_values_t data;
+            break;
+        case 0xb3:
+            mat_b3_values_t data;
+            break;
+        case 0xb6:
+            mat_b6_values_t data;
+            break;
+        case 0xb7:
+            mat_b7_values_t data;
+            break;
+        case 0xbb:
+            mat_bb_values_t data;
+            break;
+        case 0xbc:
+            mat_bc_values_t data;
+            break;
+        default:
+            union {
+                uint32  texture <format=hex>;
+                float   val;
+            } texture[5];
+            if ( i == header.numMaterials - 1 ) {
+                dataSize =  header.offsetMeshesOffsets - (header.offsetMaterials + materialOffsets[header.numMaterials - 1]) - 24;
+            } else {
+                dataSize = materialOffsets[i+1] - materialOffsets[i] - 24;
+            }
+            if (dataSize > 0) {
+                float   data[dataSize/4];
+            }
+            break;
         }
     } material;
 }
-FSeek( header.offsetMaterials + materialOffsets[header.numMaterials - 1] );
-struct {
-    int16 matID <format=hex>;
-    int16 matFlags <format=hex>;
-    union {
-        uint32  texture <format=hex>;
-        float   val;
-    } texture[5];
-    dataSize = header.offsetMeshesOffsets - (header.offsetMaterials + materialOffsets[header.numMaterials - 1]) - 24;
-    if (dataSize > 0) {
-        float   data[dataSize/4];
-    }
-} material;
 
 FSeek( header.offsetMeshesOffsets );
 uint32 meshesOffsets[header.numMeshes];
