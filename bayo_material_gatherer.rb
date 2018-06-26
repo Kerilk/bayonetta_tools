@@ -17,27 +17,33 @@ wmb_block = lambda { |path, f|
     warn "could not open #{path}!"
     next
   end
-  w.materials[0..-2].each { |m|
+  used_materials = []
+  w.meshes.each { |m|
+    m.batches.each { |b|
+      used_materials.push b.header.material_id
+    }
+  }
+  used_materials.uniq!
+  used_materials.each { |id|
+    m = w.materials[id]
     if materials.key?(m.type)
-      if materials[m.type][:size] == :unknown
-        materials[m.type][:size] = m.size
-      else
-        warn "Incoherent material size #{m.size} != #{materials[m.type][:size]} for #{m.type} in #{path}!" if m.size != materials[m.type][:size]
+      if m != w.materials.last
+        if materials[m.type][:size] == :unknown
+          materials[m.type][:size] = m.size
+        else
+          warn "Incoherent material size #{m.size} != #{materials[m.type][:size]} for #{m.type} in #{path}!" if m.size != materials[m.type][:size]
+        end
       end
       materials[m.type][:files].push path
     else
       materials[m.type][:files] = [path]
-      materials[m.type][:size] = m.size
-
+      if m != w.materials.last
+        materials[m.type][:size] = m.size
+      else
+        materials[m.type][:size] = :unknown
+      end
     end
   }
-  m = w.materials.last
-  if materials.key?(m.type)
-    materials[m.type][:files].push path
-  else
-    materials[m.type][:files] = [path]
-    materials[m.type][:size] = :unknown
-  end
 }
 
 dat_block = lambda { |path, f|
