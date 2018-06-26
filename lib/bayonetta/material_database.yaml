@@ -52,6 +52,7 @@
   :shader: modelshaderobs01_bunmx
 143:
   :size: 212
+  :shader: modelshaderbgs11_bxxxx
 97:
   :size: 248
   :shader: modelshaderbgs05_bxxxx
@@ -180,6 +181,7 @@
   :shader: modelshaderpls01_bxxmx
 151:
   :size: 276
+  :shader: modelshaderpls09_bxxmx
 172:
   :size: 208
   :shader: modelshaderobs07_bxnxa
