@@ -8,20 +8,82 @@ if File.exist?("material_database.yaml")
 else
 end
 
-wmb_block = lambda { |name, f, fname|
+wmb_block = lambda { |path, f|
+  puts path
   begin
     f.rewind
     w = Bayonetta::WMBFile::load(f)
   rescue
-    warn "could not open #{name} in #{fname}!"
+    warn "could not open #{path}!"
     next
   end
   w.materials[0..-2].each { |m|
     if materials.key?(m.type)
-      warn "Incoherent material size #{m.size} != #{materials[m.type][:size]} for #{m.type} in #{name}!" if m.size != materials[m.type][:size]
+      if materials[m.type][:size] == :unknown
+        materials[m.type][:size] = m.size
+      else
+        warn "Incoherent material size #{m.size} != #{materials[m.type][:size]} for #{m.type} in #{path}!" if m.size != materials[m.type][:size]
+      end
+      materials[m.type][:files].push path
     else
+      materials[m.type][:files] = [path]
       materials[m.type][:size] = m.size
+
     end
+  }
+  m = w.materials.last
+  if materials.key?(m.type)
+    materials[m.type][:files].push path
+  else
+    materials[m.type][:files] = [path]
+    materials[m.type][:size] = :unknown
+  end
+}
+
+dat_block = lambda { |path, f|
+  begin
+    d = Bayonetta::DATFile::new(f)
+  rescue
+    warn "could not open #{path}!"
+    next
+  end
+  wmbs = d.each.collect.select { |n, df|
+    File.extname(n) == ".wmb" && df.size > 0
+  }
+  scrs = d.each.collect.select { |n, df|
+    File.extname(n) == ".scr" && df.size > 0
+  }
+  effs = d.each.collect.select { |n, df|
+    (File.extname(n) == ".eff" || File.extname(n) == ".idd") && df.size > 0
+  }
+  wmbs.each { |n, wf|
+    wmb_block.call("#{path}/#{n}", wf)
+  }
+  scrs.each { |n, sf|
+    begin
+      scr = Bayonetta::SCRFile::new(sf)
+    rescue
+      warn "could not open #{path}/#{n}!"
+      next
+    end
+    scr.each_model.each_with_index { |wf, i|
+      wmb_block.call("#{path}/#{n}/#{i}.wmb", wf)
+    }
+  }
+  effs.each { |n, ef|
+    begin
+      eff = Bayonetta::EFFFile::new(ef)
+    rescue
+      warn "could not open #{path}/#{n}!"
+      next
+    end
+    eff.each_directory { |_, d|
+      if d.name == "MOD"
+        d.each { |dfn, df|
+          dat_block.call("#{path}/#{n}/#{d.name}/#{dfn}", df)
+        }
+      end
+    }
   }
 }
 
@@ -29,37 +91,14 @@ if File::directory?(ARGV[0])
   dats = Dir.glob("#{ARGV[0]}/**/*.dat")
   dats.each { |path|
     File::open(path, "rb") { |f|
-      begin
-        d = Bayonetta::DATFile::new(f)
-      rescue
-        warn "could not open #{path}!"
-        next
-      end
-      wmbs = d.each.collect.select { |name, df|
-        File.extname(name) == ".wmb"
-      }
-      scrs = d.each.collect.select { |name, df|
-        File.extname(name) == ".scr"
-      }
-      wmbs.each { |name, f|
-        wmb_block.call(name, f, path)
-      }
-      scrs.each { |name, sf|
-        begin
-          scr = Bayonetta::SCRFile::new(sf)
-        rescue
-          warn "could not open #{name}!"
-          next
-        end
-        scr.each_model.each_with_index { |f, i|
-          wmb_block.call(i, f, "#{path}/#{name}")
-        }
-      }
+      dat_block.call(path, f)
     }
   }
 else
   raise "Invalid directory #{ARGV[0]}!"
 end
+
+materials.each { |k, v| v[:files].uniq! }
 
 File::open("material_database.yaml", "w") { |f|
   f.write YAML::dump( materials )
