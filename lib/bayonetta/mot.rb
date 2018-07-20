@@ -1,5 +1,17 @@
 module Bayonetta
 
+  module MOTRemaper
+
+    def remap_bones(map)
+      @records.each { |r|
+        if map[r.bone_index]
+          r.bone_index = map[r.bone_index]
+        end
+      }
+    end
+
+  end
+
   module MOTDecoder
 
     def decode_frame(frame_index)
@@ -129,6 +141,7 @@ module Bayonetta
 
   class MOT2File < DataConverter
     include MOTDecoder
+    include MOTRemaper
 
     class Interpolation1 < DataConverter
       float :keys, count: '..\records[__index]\num_keys'
@@ -494,10 +507,15 @@ module Bayonetta
       self
     end
 
+    def was_big?
+      @__was_big
+    end
+
   end
 
   class MOTFile < DataConverter
     include MOTDecoder
+    include MOTRemaper
 
     class Interpolation1 < DataConverter
       float :keys, count: '..\records[__index]\num_keys'
@@ -766,6 +784,10 @@ module Bayonetta
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       mot
+    end
+
+    def was_big?
+      @__was_big
     end
 
     def dump(output_name, output_big = false)

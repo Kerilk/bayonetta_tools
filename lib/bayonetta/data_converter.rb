@@ -84,9 +84,9 @@ module Bayonetta
       :D => l["G"],
       :"a*" => l["a*"],
       :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
-                 lambda { |value| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
+                 lambda { |v| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
       :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
-                   lambda { |value| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
+                   lambda { |v| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
     } )
     DATA_ENDIAN[false].merge!( {
       :c => l["c"],
@@ -101,9 +101,9 @@ module Bayonetta
       :D => l["E"],
       :"a*" => l["a*"],
       :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
-                 lambda { |value| Flt::IEEE_binary16::new(v).to_bytes } ],
+                 lambda { |v| Flt::IEEE_binary16::new(v).to_bytes } ],
       :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
-                   lambda { |value| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
+                   lambda { |v| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
     } )
 
     attr_reader :__parent

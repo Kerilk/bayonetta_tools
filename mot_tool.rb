@@ -11,12 +11,21 @@ $options = {
 
 OptionParser.new do |opts|
   opts.banner = "Usage: mot_tool.rb target_file [options]"
+
+  opts.on("--remap-bones=HASH", "Remap bones in the motion file") { |remap_bones|
+    $options[:remap_bones] = YAML::load_file(remap_bones)
+  }
+
   opts.on("--[no-]decode", "Decode motion file") { |decode|
     $options[:decode] = decode
   }
 
   opts.on("--decode-frame=FRAME_INDEX", "Decode a motion frame") { |decode_frame|
     $options[:decode_frame] = decode_frame.to_i
+  }
+
+  opts.on("--[no-]overwrite", "Overwrite source file") { |overwrite|
+    $options[:overwrite] = overwrite
   }
 
   opts.on("-h", "--help", "Prints this help") do
@@ -32,5 +41,16 @@ raise "Invalid file #{input_file}" unless File::file?(input_file)
 
 mot = MOTFile::load(input_file)
 
-puts YAML::dump(mot.decode) if $options[:decode]
-puts YAML::dump(mot.decode_frame($options[:decode_frame])) if $options[:decode_frame]
+mot.remap_bones($options[:remap_bones]) if $options[:remap_bones]
+
+if $options[:decode] || $options[:decode_frame]
+  puts YAML::dump(mot.decode) if $options[:decode]
+  puts YAML::dump(mot.decode_frame($options[:decode_frame])) if $options[:decode_frame]
+  exit
+end
+
+if $options[:overwrite]
+  mot.dump(input_file)
+else
+  mot.dump("mot_output/"+File.basename(input_file))
+end
