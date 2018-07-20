@@ -70,7 +70,12 @@ mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
     samplers = []
     register_hash.each { |name, (reg, size)|
       if reg.match("s")
-        samplers.push(name)
+        if name == "Color_3_sampler"
+          ind = samplers.index("Color_2_sampler")
+          samplers.insert(ind+1, name)
+        else
+          samplers.push(name)
+        end
       else
         reg_number = reg.match(/c(\d*)/)[1]
         parameters[reg_number.to_i] = name

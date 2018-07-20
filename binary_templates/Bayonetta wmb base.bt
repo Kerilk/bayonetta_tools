@@ -130,9 +130,9 @@ typedef struct {
 typedef struct {
   sampler2D_t Color_1;
   sampler2D_t Color_2;
+  sampler2D_t Color_3;
   sampler2D_t lightmap;
   sampler2D_t reliefmap;
-  sampler2D_t Color_3;
   f4_float2_t Color_1_Tile;
   f4_float2_t Color_2_Tile;
   f4_float2_t Color_3_Tile;
