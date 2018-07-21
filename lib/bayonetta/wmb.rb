@@ -711,30 +711,6 @@ module Bayonetta
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
-    class VertexExData < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        return parent.get_vertex_types[1]::convert(input, output, input_big, output_big, parent, index)
-      end
-
-      def self.load(input, input_big, parent, index)
-        return parent.get_vertex_types[1]::load(input, input_big, parent, index)
-      end
-
-    end
-
-    class Vertex < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        return parent.get_vertex_types[0]::convert(input, output, input_big, output_big, parent, index)
-      end
-
-      def self.load(input, input_big, parent, index)
-        return parent.get_vertex_types[0]::load(input, input_big, parent, index)
-      end
-
-    end
-
     class UnknownStruct < DataConverter
       register_field :u_a1, :C, count: 4
       register_field :u_b1, :L
@@ -1020,8 +996,8 @@ module Bayonetta
 
     register_field :header, WMBFileHeader
     register_field :positions, Position, count: 'header\num_vertexes', offset: 'header\offset_positions'
-    register_field :vertexes, Vertex, count: 'header\num_vertexes', offset: 'header\offset_vertexes'
-    register_field :vertexes_ex_data, VertexExData, count: 'header\num_vertexes',
+    register_field :vertexes, 'get_vertex_types[0]', count: 'header\num_vertexes', offset: 'header\offset_vertexes'
+    register_field :vertexes_ex_data, 'get_vertex_types[1]', count: 'header\num_vertexes',
                    offset: 'header\offset_vertexes_ex_data'
     register_field :bone_hierarchy, :s, count: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
     register_field :bone_relative_positions, Position, count: 'header\num_bones',
