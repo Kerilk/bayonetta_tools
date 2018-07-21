@@ -110,30 +110,6 @@ module Bayonetta
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types_nier.yaml')) )
 
-    class VertexExData < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        return parent.get_vertex_types[1]::convert(input, output, input_big, output_big, parent, index)
-      end
-
-      def self.load(input, input_big, parent, index)
-        return parent.get_vertex_types[1]::load(input, input_big, parent, index)
-      end
-
-    end
-
-    class Vertex < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        return parent.get_vertex_types[0]::convert(input, output, input_big, output_big, parent, index)
-      end
-
-      def self.load(input, input_big, parent, index)
-        return parent.get_vertex_types[0]::load(input, input_big, parent, index)
-      end
-
-    end
-
     class VertexGroup < DataConverter
 
       def is_bayo2? #UByteList are arrays of char really
@@ -258,8 +234,8 @@ module Bayonetta
         uint32 :num_indices
       end
       register_field :header, Header
-      register_field :vertexes, Vertex, count: 'header\num_vertexes', offset: 'header\offset_vertexes'
-      register_field :vertexes_ex_data, VertexExData, count: 'header\num_vertexes',
+      register_field :vertexes, 'get_vertex_types[0]', count: 'header\num_vertexes', offset: 'header\offset_vertexes'
+      register_field :vertexes_ex_data, 'get_vertex_types[1]', count: 'header\num_vertexes',
                      offset: 'header\offset_vertexes_ex_data'
       register_field :indices, Indices
     end
