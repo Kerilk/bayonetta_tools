@@ -278,12 +278,28 @@ module Bayonetta
       c
     end
 
+    def decode_type(type)
+      if type.kind_of?(String)
+        typ = decode_symbol(type) if type.kind_of?(String)
+      else
+        typ = type
+      end
+      if typ.kind_of?(Class) && typ < DataConverter
+        return typ
+      elsif typ.kind_of?(Symbol)
+        raise "Type expression #{type.inspect} evaluated to a scalar type: #{typ.inspect}!"
+      else
+        raise "Type expression #{type.inspect} didn't evaluate to a valid type: #{typ.inspect}!"
+      end
+    end
+
     def convert_data_field(field, type, count, offset, sequence, condition)
       unless sequence
         off = decode_seek_offset(offset)
         return nil if off == false
         cond = decode_condition(condition)
         return nil unless cond
+        typ = decode_type(type)
       end
       c = decode_count(count)
       vs = c.times.collect { |it|
@@ -294,10 +310,11 @@ module Bayonetta
           if off == false || !cond
             nil
           else
-            type::convert(@input, @output, @input_big, @output_big, self, it)
+            typ = decode_type(type)
+            typ::convert(@input, @output, @input_big, @output_big, self, it)
           end
         else
-          type::convert(@input, @output, @input_big, @output_big, self, it)
+          typ::convert(@input, @output, @input_big, @output_big, self, it)
         end
       }
       @__iterator = nil
@@ -311,6 +328,7 @@ module Bayonetta
         return nil if off == false
         cond = decode_condition(condition)
         return nil unless cond
+        typ = decode_type(type)
       end
       c = decode_count(count)
       vs = c.times.collect { |it|
@@ -321,10 +339,11 @@ module Bayonetta
           if off == false || !cond
             nil
           else
-            type::load(@input, @input_big, self, it)
+            typ = decode_type(type)
+            typ::load(@input, @input_big, self, it)
           end
         else
-          type::load(@input, @input_big, self, it)
+          typ::load(@input, @input_big, self, it)
         end
       }
       @__iterator = nil
@@ -337,7 +356,6 @@ module Bayonetta
         off = decode_seek_offset(offset)
         return nil if off == false
         cond = decode_condition(condition)
-        return nil unless cond
       end
       c = decode_count(count)
       vs = [vs] unless count
@@ -550,7 +568,7 @@ module Bayonetta
     def convert_field(*args)
       field = args[0]
       type = args[1]
-      if type.kind_of?(Class) && type < DataConverter
+      if ( type.kind_of?(Class) && type < DataConverter ) || type.kind_of?(String)
         vs = convert_data_field(*args)
       elsif type.kind_of?(Symbol)
         vs = convert_scalar_field(*args)
@@ -563,7 +581,7 @@ module Bayonetta
     def load_field(*args)
       field = args[0]
       type = args[1]
-      if type.kind_of?(Class) && type < DataConverter
+      if ( type.kind_of?(Class) && type < DataConverter ) || type.kind_of?(String)
         vs = load_data_field(*args)
       elsif type.kind_of?(Symbol)
         vs = load_scalar_field(*args)
@@ -577,7 +595,7 @@ module Bayonetta
       field = args[0]
       type = args[1]
       vs = send("#{field}")
-      if type.kind_of?(Class) && type < DataConverter
+      if ( type.kind_of?(Class) && type < DataConverter ) || type.kind_of?(String)
         s = dump_data_field(vs, *args)
       elsif type.kind_of?(Symbol)
         s = dump_scalar_field(vs, *args)
@@ -590,7 +608,7 @@ module Bayonetta
       field = args[0]
       type = args[1]
       vs = send("#{field}")
-      if type.kind_of?(Class) && type < DataConverter
+      if ( type.kind_of?(Class) && type < DataConverter ) || type.kind_of?(String)
         range_data_field(previous_offset, vs, *args)
       elsif type.kind_of?(Symbol)
         range_scalar_field(previous_offset, *args)

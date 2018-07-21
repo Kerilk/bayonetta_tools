@@ -330,65 +330,6 @@ module Bayonetta
 
     end
 
-    class Interpolation < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
-        when 1
-          interpolation = Interpolation1::convert(input, output, input_big, output_big, parent, index)
-        when 2
-          interpolation = Interpolation2::convert(input, output, input_big, output_big, parent, index)
-        when 3
-          interpolation = Interpolation3::convert(input, output, input_big, output_big, parent, index)
-        when 4
-          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index)
-        when 5
-          interpolation = Interpolation5::convert(input, output, input_big, output_big, parent, index)
-        when 6
-          interpolation = Interpolation6::convert(input, output, input_big, output_big, parent, index)
-        when 7
-          interpolation = Interpolation7::convert(input, output, input_big, output_big, parent, index)
-        when 8
-          interpolation = Interpolation8::convert(input, output, input_big, output_big, parent, index)
-        when -1, 0
-          interpolation = nil
-        else
-          raise "Unknown interpolation type: #{interpolation_type}, please report!"
-        end
-        interpolation
-      end
-
-      def self.load(input, input_big, parent, index)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
-        when 1
-          interpolation = Interpolation1::load(input, input_big, parent, index)
-        when 2
-          interpolation = Interpolation2::load(input, input_big, parent, index)
-        when 3
-          interpolation = Interpolation3::load(input, input_big, parent, index)
-        when 4
-          interpolation = Interpolation4::load(input, input_big, parent, index)
-        when 5
-          interpolation = Interpolation5::load(input, input_big, parent, index)
-        when 6
-          interpolation = Interpolation6::load(input, input_big, parent, index)
-        when 7
-          interpolation = Interpolation7::load(input, input_big, parent, index)
-        when 8
-          interpolation = Interpolation8::load(input, input_big, parent, index)
-        when -1, 0
-          interpolation = nil
-        else
-          raise "Unknown interpolation type: #{interpolation_type}, please report!"
-        end
-      end
-
-    end
-
     class Record < DataConverter
       int16 :bone_index
       int8 :animation_track
@@ -420,9 +361,38 @@ module Bayonetta
 
     register_field :header, Header
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
-    register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true,
+    register_field :interpolations,
+      'interpolation_type_selector(records[__iterator]\interpolation_type)',
+      count: 'header\num_records', sequence: true,
       offset: 'records[__iterator]\offset + header\offset_records + 12*__iterator',
       condition: 'records[__iterator]\interpolation_type != 0 && records[__iterator]\interpolation_type != -1'
+
+    def interpolation_type_selector(interpolation_type)
+      interpolation = nil
+      case interpolation_type
+      when 1
+        interpolation = Interpolation1
+      when 2
+        interpolation = Interpolation2
+      when 3
+        interpolation = Interpolation3
+      when 4
+        interpolation = Interpolation4
+      when 5
+        interpolation = Interpolation5
+      when 6
+        interpolation = Interpolation6
+      when 7
+        interpolation = Interpolation7
+      when 8
+        interpolation = Interpolation8
+      when -1, 0
+        interpolation = nil
+      else
+        raise "Unknown interpolation type: #{interpolation_type}, please report!"
+      end
+      interpolation
+    end
 
     def self.is_bayo2?(f)
       f.rewind
@@ -642,49 +612,6 @@ module Bayonetta
 
     end
 
-    class Interpolation < DataConverter
-
-      def self.convert(input, output, input_big, output_big, parent, index)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
-        when 1
-          interpolation = Interpolation1::convert(input, output, input_big, output_big, parent, index)
-        when 4
-          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index)
-        when 6
-          interpolation = Interpolation6::convert(input, output, input_big, output_big, parent, index)
-        when 7
-          interpolation = Interpolation7::convert(input, output, input_big, output_big, parent, index)
-        when -1, 0
-          interpolation = nil
-        else
-          raise "Unknown interpolation type: #{interpolation_type}, please report!"
-        end
-        interpolation
-      end
-
-      def self.load(input, input_big, parent, index)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
-        when 1
-          interpolation = Interpolation1::load(input, input_big, parent, index)
-        when 4
-          interpolation = Interpolation4::load(input, input_big, parent, index)
-        when 6
-          interpolation = Interpolation6::load(input, input_big, parent, index)
-        when 7
-          interpolation = Interpolation7::load(input, input_big, parent, index)
-        when -1, 0
-          interpolation = nil
-        else
-          raise "Unknown interpolation type: #{interpolation_type}, please report!"
-        end
-      end
-
-    end
-
     class Record < DataConverter
       int16 :bone_index
       int8 :animation_track
@@ -713,7 +640,30 @@ module Bayonetta
 
     register_field :header, Header
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
-    register_field :interpolations, Interpolation, count: 'header\num_records', sequence: true, offset: 'records[__iterator]\offset', condition: 'records[__iterator]\interpolation_type != 0'
+    register_field :interpolations,
+      'interpolation_type_selector(records[__iterator]\interpolation_type)',
+      count: 'header\num_records',
+      sequence: true,
+      offset: 'records[__iterator]\offset',
+      condition: 'records[__iterator]\interpolation_type != 0'
+
+    def interpolation_type_selector(interpolation_type)
+      interpolation = nil
+      case interpolation_type
+      when 1
+        interpolation = Interpolation1
+      when 4
+        interpolation = Interpolation4
+      when 6
+        interpolation = Interpolation6
+      when 7
+        interpolation = Interpolation7
+      when -1, 0
+        interpolation = nil
+      else
+        raise "Unknown interpolation type: #{interpolation_type}, please report!"
+      end
+    end
 
     def self.is_bayo2?(f)
       f.rewind
