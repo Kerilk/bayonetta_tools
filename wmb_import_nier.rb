@@ -216,6 +216,8 @@ def merge_materials(wmb1, wmb2, tex_map)
     normal = e.textures.find { |t| t.name.match("g_NormalMap") }
     m.material_data[0] = (albedo ? tex_map[albedo.texture_id] : 0x80000000)
     m.material_data[1] = (normal ? tex_map[normal.texture_id] : 0x80000000)
+    m.material_data[0] = (m.material_data[0] ? m.material_data[0] : 0x80000000)
+    m.material_data[1] = (m.material_data[1] ? m.material_data[1] : 0x80000000)
     new_materials.push(m)
   }
 
