@@ -40,9 +40,36 @@ string heightBits_read(uint16 &value) {
     SPrintf(res, "%d", v);
     return res;
 }
+string textureFormatread(int &value) {
+    string res;
+    switch(value) {
+    case 82:
+        res = "DXT1";
+        break;
+    case 83:
+        res = "DXT3";
+        break;
+    case 84:
+        res = "DXT5";
+        break;
+    case 134:
+        res = "RGBA32";
+        break;
+    default:
+        res = "Unknown Format";
+    }
+    return res;
+}
+
+struct textureInfo;
+string textureInfo_read(struct textureInfo &infos){
+    string res;
+    SPrintf(res, "%s: %s x %s", textureFormatread(infos.texFmt), heightBits_read(infos.height), widthBits_read(infos.width));
+    return res;
+}
 
 FSeek( header.offsetTextureInfo );
-struct {
+struct textureInfo{
     int     unknownA;
     int     unknownB;
     int     unknownC;
@@ -61,7 +88,7 @@ struct {
     int     unknown0;
     int     unknownP;
     int     unknownQ;
-} textureInfos[header.numTex];
+} textureInfos[header.numTex] <read=textureInfo_read>;
 
 typedef struct ddsPixelFormat_s
 {

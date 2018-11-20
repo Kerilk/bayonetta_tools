@@ -11,6 +11,7 @@ module Bayonetta
     attr_accessor :texture_idx
     attr_accessor :texture_infos
     attr_reader :big
+    attr_reader :game
     ALIGNMENTS = {
       '.dds' => 0x1000,
       '.gtx' => 0x2000,
@@ -18,7 +19,8 @@ module Bayonetta
     ALIGNMENTS.default = 0x20
 
   
-    def initialize(f = nil, big = false, wtp = nil)
+    def initialize(f = nil, big = false, wtp = nil, game: nil, platform: nil)
+      @game = nil
       if f
         f.rewind
         @wtp = wtp
