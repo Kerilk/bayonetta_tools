@@ -18,4 +18,42 @@ require_relative 'bayonetta/mot'
 
 module Bayonetta
   include Alignment
+
+  #Platforms
+  PC = 1
+  WIIU = 2
+  XBOX360 = 3
+  PS3 = 4
+  SWITCH = 5
+  PLATFORMS = {
+    pc: PC,
+    wiiu: WIIU,
+    xbox360: XBOX360,
+    ps3: PS3,
+    switch: SWITCH
+  }
+
+  #Games
+  BAYONETTA = 1
+  BAYONETTA2 = 2
+  NIERAUTOMATA = 3
+  VANQUISH = 4
+  ANARCHY = 5
+  GAMES = {
+    bayo: BAYONETTA,
+    bayo2: BAYONETTA2,
+    nier: NIERAUTOMATA,
+    vanquish: VANQUISH,
+    anarchy: ANARCHY
+  }
+
+  #Supported
+  SUPPORTED = {
+    [BAYONETTA, PC] => true,
+    [BAYONETTA, WIIU] => true,
+    [BAYONETTA2, WIIU] => true,
+    [NIERAUTOMATA, PC] => true,
+    [VANQUISH, PC] => true,
+    [ANARCHY, XBOX360] => true
+  }
 end
