@@ -1,0 +1,62 @@
+#define game 1;
+
+typedef struct {
+  uint32 value <format=binary>;
+} normals_t<read=normals_tRead>;
+
+string normals_tRead( normals_t &value ) {
+    string s;
+    int nx = value.value & ((1<<11)-1);
+    int ny = (value.value>>11) & ((1<<11)-1);
+    int nz = (value.value>>22) & ((1<<10)-1);
+    int sign = nx & (1<<10);
+    if (sign) {
+      nx ^= sign;
+      nx = -(sign-nx);
+    }
+    sign = ny & (1<<10);
+    if (sign) {
+      ny ^= sign;
+      ny = -(sign-ny);
+    }
+    sign = nz & (1<<9);
+    if (sign) {
+      nz ^= sign;
+      nz = -(sign-nz);
+    }
+    float fx = (float)nx/(float)((1<<10)-1);
+    float fy = (float)ny/(float)((1<<10)-1);
+    float fz = (float)nz/(float)((1<<9)-1);
+    float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
+    return s;
+}
+
+typedef struct  {
+    ubyte val[4];
+} ubyteList<read=ubyteListRead>;
+
+string ubyteListRead( ubyteList &value ) {
+    string s;
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val[0], value.val[1], value.val[2], value.val[3]);
+    return s;
+}
+
+typedef ubyteList tangents_t<read=tangents_tRead>;
+
+string tangents_tRead(tangents_t &value) {
+    string s;
+    float tx = tangentRead(value.val[3]);
+    float ty = tangentRead(value.val[2]);
+    float tz = tangentRead(value.val[1]);
+    float d = tangentRead(value.val[0]);
+    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
+    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f, nrm: %f", tx, ty, tz, d, nrm);
+    return s;
+}
+
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BMW", id, 4) == 0, "Wrong file type");
+FSeek(0);
+#include "Bayonetta wmb base.bt"
