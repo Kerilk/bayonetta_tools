@@ -7,6 +7,7 @@ include Bayonetta
 $options = {
   :vertexes => false,
   :bones => false,
+  :remap_bones => false,
   :textures => false,
   :cleanup_mat => false,
   :cleanup_mat_sizes => false,
@@ -16,6 +17,7 @@ $options = {
   :fix => false,
   :swap => nil,
   :swap_meshes => nil,
+  :move_meshes => nil,
   :delete_meshes => nil,
   :merge_meshes => nil,
   :overwrite => nil
@@ -30,6 +32,14 @@ OptionParser.new do |opts|
 
   opts.on("-b", "--[no-]bones", "Cleanup bones") do |bones|
     $options[:bones] = bones
+  end
+
+  opts.on("--remap-bones=BONEMAP", "Remaps specified local bones to global bone indexes") do |bone_map|
+    if File.exist?(bone_map)
+      $options[:remap_bones] = YAML::load(bone_map)
+    else
+      $options[:remap_bones] = eval(bone_map).to_h
+    end
   end
 
   opts.on("-v", "--[no-]vertexes", "Cleanup vertexes") do |vertexes|
@@ -174,6 +184,7 @@ if $options[:set_tpose]
   wmb.set_tpose
 end
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
+wmb.remap_bones($options[:remap_bones]) if $options[:remap_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]

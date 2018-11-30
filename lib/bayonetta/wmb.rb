@@ -1508,6 +1508,24 @@ module Bayonetta
     end
     private :restrict_bones
 
+    def remap_bones(bone_map)
+      raise "Global index specified multiple times!" unless bone_map.values.uniq.size == bone_map.size
+      local_to_global = @bone_index_translate_table.table.invert
+      unknown_bones = bone_map.keys - local_to_global.keys
+      raise "Unknown bones: #{unknown_bones}!" unless unknown_bones.size == 0
+      bone_map.each { |k, v|
+        local_to_global.delete(k)
+      }
+      table = local_to_global.invert
+      new_global_indexes = bone_map.values - table.keys
+      raise "Global indexes: #{bone_map.values - new_global_indexes} still in use!" unless new_global_indexes.size == bone_map.size
+      bone_map.each { |k, v|
+        table[v] = k
+      }
+      @bone_index_translate_table.table = table
+      self
+    end
+
     def delete_meshes(list)
       kept_meshes = @meshes.size.times.to_a - list
       @meshes = kept_meshes.collect { |i|
