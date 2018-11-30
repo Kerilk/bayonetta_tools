@@ -1537,6 +1537,24 @@ module Bayonetta
       self
     end
 
+    def move_meshes(positions)
+      raise "Invalid positions!" unless positions.size > 0
+      positions.each { |k, v|
+        raise "Mesh #{k} was not found in the model!" unless @meshes[k]
+        raise "Invalid target position #{v}!" unless v >= 0 && v < @meshes.length
+      }
+      raise "Duplicate mesh found!" unless positions.keys.uniq.size == positions.size
+      raise "Duplicate target position found!" unless positions.values.uniq.size == positions.size
+      m_p = positions.to_a.sort { |(m1, _), (m2, _)| m2 <=> m1 }
+      m_a = m_p.collect { |m, p|
+        [@meshes.delete_at(m), p]
+      }.sort { |(_, p1), (_, p2)| p1 <=> p2 }
+      m_a.each { |m, p|
+        @meshes.insert(p, m)
+      }
+      self
+    end
+
     def merge_meshes(hash)
       hash.each { |k, vs|
         raise "Mesh #{k} was not found in the model!" unless @meshes[k]
@@ -1547,6 +1565,7 @@ module Bayonetta
         }
         @meshes[k].header.num_batch = @meshes[k].batches.length
       }
+      self
     end
 
     def delete_bones(list)

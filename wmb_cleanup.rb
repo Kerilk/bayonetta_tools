@@ -68,6 +68,10 @@ OptionParser.new do |opts|
     $options[:merge_meshes] = eval(mesh_hash).to_h
   end
 
+  opts.on("--move-meshes=MESHHASH", "Move the specified meshes to the specified positions") do |mesh_positions|
+    $options[:move_meshes] = eval(mesh_positions).to_h
+  end
+
   opts.on("-m", "--delete-meshes=MESHLIST", "Delete specified meshes") do |mesh_list|
     $options[:delete_meshes] = eval(mesh_list).to_a
   end
@@ -145,6 +149,7 @@ wmb.scale($options[:scale]) if $options[:scale]
 wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
+wmb.move_meshes($options[:move_meshes]) if $options[:move_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
