@@ -1513,15 +1513,20 @@ module Bayonetta
       local_to_global = @bone_index_translate_table.table.invert
       unknown_bones = bone_map.keys - local_to_global.keys
       raise "Unknown bones: #{unknown_bones}!" unless unknown_bones.size == 0
+      global_tt = {}
       bone_map.each { |k, v|
-        local_to_global.delete(k)
+        global_tt[local_to_global.delete(k)] = v
       }
+      puts global_tt
       table = local_to_global.invert
       new_global_indexes = bone_map.values - table.keys
       raise "Global indexes: #{bone_map.values - new_global_indexes} still in use!" unless new_global_indexes.size == bone_map.size
       bone_map.each { |k, v|
         table[v] = k
       }
+      @bone_symmetries.collect! { |k|
+        global_tt[k] ? global_tt[k] : k
+      } if @bone_symmetries
       @bone_index_translate_table.table = table
       self
     end
