@@ -25,7 +25,7 @@ module Bayonetta
           }
           return m
         else
-          raise "Invalid argument for matrix miltiply: #{other.inspect}!"
+          raise "Invalid argument for matrix add: #{other.inspect}!"
         end
       end
 
