@@ -192,9 +192,7 @@ $scene.materials = $wmb.materials.each_with_index.collect { |m, i|
   properties = []
 
   name_prop = Assimp::MaterialProperty::new
-  name_prop.key = Assimp::MATKEY_NAME
-  name_prop.type = :String
-  name_prop.data = ("mat_%02d" % i)
+  name_prop.set_property(Assimp::MATKEY_NAME, "mat_%02d" % i)
 
   mat.properties = [name_prop]
   mat.num_allocated = 1
