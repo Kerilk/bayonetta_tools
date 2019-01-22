@@ -63,105 +63,75 @@ def create_vertex_properties(mesh, vertices)
   fields.each { |field|
     case field
     when :position
-      ptr = FFI::MemoryPointer::new(Assimp::Vector3D, num_vertices)
-      $objects[:pointers].push ptr
-      mesh[:vertices] = ptr
-      positions = mesh.vertices
-      vertex_map.each { |orig_index, index|
+      mesh.vertices = vertex_map.collect { |orig_index, index|
+        p = Assimp::Vector3D::new
         o_p = $wmb.get_vertex_field(field, orig_index)
-        p = positions[index]
         p.x = o_p.x
         p.y = o_p.y
         p.z = o_p.z
+        p
       }
-      res[:vertices] = ptr
     when :normal
-      ptr = FFI::MemoryPointer::new(Assimp::Vector3D, num_vertices)
-      $objects[:pointers].push ptr
-      mesh[:normals] = ptr
-      normals = mesh.normals
-      vertex_map.each { |orig_index, index|
+      mesh.normals = vertex_map.collect { |orig_index, index|
+        n = Assimp::Vector3D::new
         o_n = $wmb.get_vertex_field(field, orig_index)
-        n = normals[index]
         n.x = o_n.x
         n.y = o_n.y
         n.z = o_n.z
+        n
       }
-      res[:normals] = ptr
     when :tangents
-      ptr_t = FFI::MemoryPointer::new(Assimp::Vector3D, num_vertices)
-      $objects[:pointers].push ptr_t
-      mesh[:tangents] = ptr_t
-      tangents = mesh.tangents
-      normals = mesh.normals
-      vertex_map.each { |orig_index, index|
+      mesh.tangents = vertex_map.collect { |orig_index, index|
+        t = Assimp::Vector3D::new
         o_t = $wmb.get_vertex_field(field, orig_index)
-        t = tangents[index]
         t.x = o_t.x
         t.y = o_t.y
         t.z = o_t.z
+        t
       }
-      res[:tangents] = ptr_t
     when :mapping, :mapping2, :mapping3, :mapping4, :mapping5
-      ptr = FFI::MemoryPointer::new(Assimp::Vector3D, num_vertices)
-      $objects[:pointers].push ptr
-      mesh[:texture_coords][num_texture_coords] = ptr
-      mesh[:num_uv_components][num_texture_coords] = 2
-      sz = Assimp::Vector3D.size
-      texture_coords = num_vertices.times.collect { |i|
-        Assimp::Vector3D::new(ptr + i*sz)
-      }
-      vertex_map.each { |orig_index, index|
+      coords = vertex_map.collect { |orig_index, index|
+        m = Assimp::Vector3D::new
         m_o = $wmb.get_vertex_field(field, orig_index)
-        m = texture_coords[index]
         m.x = m_o.u
         m.y = m_o.v
+        m
       }
-      res[:"texture_coords#{num_texture_coords}"] = ptr
+      mesh.num_uv_components[num_texture_coords] = 2
+      mesh.set_texture_coords(num_texture_coords, coords)
       num_texture_coords += 1
     when :color, :color2
-      ptr = FFI::MemoryPointer::new(Assimp::Color4D, num_vertices)
-      $objects[:pointers].push ptr
-      mesh[:colors][num_colors] = ptr
-      sz = Assimp::Color4D.size
-      colors = num_vertices.times.collect { |i|
-        Assimp::Color4D::new(ptr + i*sz)
-      }
-      vertex_map.each { |orig_index, index|
+      colors = vertex_map.collect { |orig_index, index|
+        c = Assimp::Color4D::new
         c_o = $wmb.get_vertex_field(field, orig_index)
-        c = colors[index]
         c.r = c_o.r.to_f / 255.0
         c.g = c_o.g.to_f / 255.0
         c.b = c_o.b.to_f / 255.0
         c.a = c_o.a.to_f / 255.0
+        c
       }
-      res[:"colors#{num_colors}"] = ptr
+      mesh.set_colors(num_colors, colors)
       num_colors += 1
     else
       puts "skipping #{field}" unless :bone_infos
     end
   }
-  if res[:normals] && res[:tangents]
-    ptr_bt = FFI::MemoryPointer::new(Assimp::Vector3D, num_vertices)
-    $objects[:pointers].push ptr_bt
-    mesh[:bitangents] = ptr_bt
+  if mesh.normals? && mesh.tangents?
     tangents = mesh.tangents
-    bitangents = mesh.bitangents
     normals = mesh.normals
-    vertex_map.each { |orig_index, index|
+    mesh.bitangents = vertex_map.collect { |orig_index, index|
+      b_t = Assimp::Vector3D::new
       o_t = $wmb.get_vertex_field(:tangents, orig_index)
       t = tangents[index]
       n = normals[index]
       n_b_t = (n ^ t)
       n_b_t = ( o_t.s > 0 ? n_b_t * -1.0 : n_b_t )
-      b_t = bitangents[index]
       b_t.x = n_b_t.x
       b_t.y = n_b_t.y
       b_t.z = n_b_t.z
+      b_t
     }
-    res[:bitangents] = ptr_bt
   end
-  res
 end
 
 $wmb.materials.each_with_index { |m, i|
@@ -212,34 +182,22 @@ def create_mesh( m, i, b, j)
       mesh.material_index = b.header.material_id
     end
 
-    mesh.num_faces = num_triangles
-    ptr = FFI::MemoryPointer::new(Assimp::Face, num_triangles)
-    $objects[:pointers].push ptr
-    mesh[:faces] = ptr
-    faces = mesh.faces
-    faces.each_with_index { |f, i|
-      f.num_indices = 3
-      ptr = FFI::MemoryPointer::new(:uint, 3)
-      $objects[:pointers].push ptr
-      t = triangles[i].collect{ |v| vertex_map[v] }
-      #Bayonetta Triangles are winded backward
+    mesh.faces = triangles.collect { |tri|
+      f = Assimp::Face::new
+      t = tri.collect{ |v| vertex_map[v] }
       t[1], t[2] = t[2], t[1]
-      ptr.write_array_of_uint(t)
-      f[:indices] = ptr
+      f.indices = t
+      $objects[:faces].push f
+      f
     }
 
     $meshes.push mesh
-    mesh
+
     n = Assimp::Node::new
     n.transformation.identity!
     n.name = mesh.name
-    n.num_meshes = 1
-    ptr = FFI::MemoryPointer::new(:uint)
-    $objects[:pointers].push ptr
-    ptr.write_uint($num_meshes)
+    n.meshes = [$num_meshes]
     $num_meshes += 1
-    n[:meshes] = ptr
-#    n[:parent] = $root_node.pointer
     n
 end
 
