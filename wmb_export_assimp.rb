@@ -13,9 +13,9 @@ raise "Invalid file #{source}" unless File::file?(source)
 
 Dir.mkdir("assimp_output") unless Dir.exist?("assimp_output")
 
-log = Assimp::LogStream::stderr
-log.attach
-Assimp::LogStream::verbose(1)
+#log = Assimp::LogStream::stderr
+#log.attach
+#Assimp::LogStream::verbose(1)
 
 module Assimp
   class SceneCreated < Scene
@@ -38,8 +38,9 @@ ptr = FFI::MemoryPointer::new(Assimp::SceneCreated)
 $objects[:pointers].push ptr
 p = FFI::Pointer::new(ptr)
 $scene = Assimp::SceneCreated::new(p)
+$scene.flags = [:NON_VERBOSE_FORMAT, :FLAGS_ALLOW_SHARED]
 $root_node = Assimp::Node::new
-$root_node.name.data = File::basename(source, ".wmb")
+$root_node.name = File::basename(source, ".wmb")
 $root_node.transformation.identity!
 $scene[:root_node] = $root_node
 
@@ -163,6 +164,36 @@ def create_vertex_properties(mesh, vertices)
   res
 end
 
+$wmb.materials.each_with_index { |m, i|
+  mat = Assimp::Material::new
+  properties = []
+  ptr = FFI::MemoryPointer::new(Assimp::MaterialProperty)
+  $objects[:pointers].push ptr
+  properties.push ptr
+
+  ptr = FFI::MemoryPointer::new(:pointer, properties.length)
+  $objects[:pointers].push ptr
+  ptr.write_array_of_pointer(properties)
+  mat[:properties] = ptr
+  mat.num_properties = 1
+  mat.num_allocated = 1
+  props = mat.properties
+  name_prop = props.first
+  name_prop.key = Assimp::MATKEY_NAME
+  name_prop.type = :String
+
+  name = "mat_#{"%02d" % i}"
+  ptr = FFI::MemoryPointer::from_string(name)
+  str = FFI::MemoryPointer::new(ptr.size+4)
+  str.write_uint(ptr.size - 1)
+  str.put_array_of_char(4, ptr.read_array_of_char(ptr.size))
+  $objects[:strings].push str
+  
+  name_prop.data_length = str.size
+  name_prop[:data] = str
+  $materials.push mat
+}
+ 
 def create_mesh( m, i, b, j)
     uniq_vertices = b.vertex_indices.uniq.sort
     vertex_map = uniq_vertices.each_with_index.collect.to_h
@@ -173,7 +204,7 @@ def create_mesh( m, i, b, j)
 
     mesh = Assimp::Mesh::new
     mesh.primitive_types = :TRIANGLE
-    mesh.name = "_#{"%02d" % i}_#{m.header.name}_#{"%02d" % j}_"
+    mesh.name = ("%02d_" % i) + m.header.name.delete("\000")+("_%02d" % j)
     res = create_vertex_properties(mesh, uniq_vertices)
     if $wmb.tex_infos then
       mesh.material_index = b.header.ex_mat_id
@@ -199,54 +230,37 @@ def create_mesh( m, i, b, j)
 
     $meshes.push mesh
     mesh
+    n = Assimp::Node::new
+    n.transformation.identity!
+    n.name = mesh.name
+    n.num_meshes = 1
+    ptr = FFI::MemoryPointer::new(:uint)
+    $objects[:pointers].push ptr
+    ptr.write_uint($num_meshes)
+    $num_meshes += 1
+    n[:meshes] = ptr
+#    n[:parent] = $root_node.pointer
+    n
 end
 
-$wmb.materials.each_with_index { |m, i|
-  mat = Assimp::Material::new
-  properties = []
-  ptr = FFI::MemoryPointer::new(Assimp::MaterialProperty)
-  $objects[:pointers].push ptr
-  properties.push ptr
-
-  ptr = FFI::MemoryPointer::new(:pointer, properties.length)
-  $objects[:pointers].push ptr
-  ptr.write_array_of_pointer(properties)
-  mat[:properties] = ptr
-  mat.num_properties = 1
-  mat.num_allocated = 1
-  props = mat.properties
-  name_prop = props.first
-  name_prop.key.data = Assimp::MATKEY_NAME
-  name_prop.type = :String
-
-  name = "mat_#{"%02d" % i}"
-  ptr = FFI::MemoryPointer::from_string(name)
-  str = FFI::MemoryPointer::new(ptr.size+4)
-  str.write_uint(ptr.size - 1)
-  str.put_array_of_char(4, ptr.read_array_of_char(ptr.size))
-  $objects[:strings].push str
-  
-  name_prop.data_length = str.size
-  name_prop[:data] = str
-  $materials.push mat
-}
- 
 $wmb.meshes.each_with_index { |m, i|
   batches = []
   $objects[:meshes].push batches
-  m.batches.each_with_index { |b, j|
-    batches.push create_mesh(m, i, b, j)
-  }
   n = Assimp::Node::new
+  m.batches.each_with_index { |b, j|
+    b = create_mesh(m, i, b, j)
+    b[:parent] = n.pointer
+    batches.push b
+#    $mesh_nodes.push b
+  }
   n.transformation.identity!
-  n.name.data = m.header.name
-  n.num_meshes = batches.length
-  ptr = FFI::MemoryPointer::new(:uint, batches.length)
+  n.name = ("%02d_"%i) + m.header.name
+  n.num_children = batches.length
+  ptr = FFI::MemoryPointer::new(:pointer, batches.length)
   $objects[:pointers].push ptr
-  ptr.write_array_of_uint(($num_meshes...($num_meshes+batches.length)).to_a)
-  n[:meshes] = ptr
+  ptr.write_array_of_pointer(batches.collect(&:pointer))
+  n[:children] = ptr
   n[:parent] = $root_node.pointer
-  $num_meshes += batches.length
   $mesh_nodes.push n
 }
 
