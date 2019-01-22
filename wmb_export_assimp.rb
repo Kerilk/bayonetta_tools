@@ -19,6 +19,12 @@ Dir.mkdir("assimp_output") unless Dir.exist?("assimp_output")
 
 module Assimp
   class SceneCreated < Scene
+
+    def initialize
+      @ref_ptr = FFI::MemoryPointer::new(Assimp::SceneCreated)
+      super(FFI::Pointer::new(@ref_ptr))
+    end
+
     def self.release
     end
   end
@@ -32,12 +38,7 @@ Assimp::export_format_descriptions.each { |d|
 }
 raise "Unsupported format: #{format}!" unless extension
 
-#Let's keep references here to avoid garbage collection.
-$objects = Hash::new { |h,k| h[k] = [] }
-ptr = FFI::MemoryPointer::new(Assimp::SceneCreated)
-$objects[:pointers].push ptr
-p = FFI::Pointer::new(ptr)
-$scene = Assimp::SceneCreated::new(p)
+$scene = Assimp::SceneCreated::new
 $scene.flags = [:NON_VERBOSE_FORMAT, :FLAGS_ALLOW_SHARED]
 $root_node = Assimp::Node::new
 $root_node.name = File::basename(source, ".wmb")
@@ -45,8 +46,6 @@ $root_node.transformation.identity!
 $scene[:root_node] = $root_node
 
 $meshes = []
-$materials = []
-$mesh_nodes = []
 $num_meshes = 0
 
 $wmb = WMBFile::load(source)
@@ -134,35 +133,7 @@ def create_vertex_properties(mesh, vertices)
   end
 end
 
-$wmb.materials.each_with_index { |m, i|
-  mat = Assimp::Material::new
-  properties = []
-  ptr = FFI::MemoryPointer::new(Assimp::MaterialProperty)
-  $objects[:pointers].push ptr
-  properties.push ptr
 
-  ptr = FFI::MemoryPointer::new(:pointer, properties.length)
-  $objects[:pointers].push ptr
-  ptr.write_array_of_pointer(properties)
-  mat[:properties] = ptr
-  mat.num_properties = 1
-  mat.num_allocated = 1
-  props = mat.properties
-  name_prop = props.first
-  name_prop.key = Assimp::MATKEY_NAME
-  name_prop.type = :String
-
-  name = "mat_#{"%02d" % i}"
-  ptr = FFI::MemoryPointer::from_string(name)
-  str = FFI::MemoryPointer::new(ptr.size+4)
-  str.write_uint(ptr.size - 1)
-  str.put_array_of_char(4, ptr.read_array_of_char(ptr.size))
-  $objects[:strings].push str
-  
-  name_prop.data_length = str.size
-  name_prop[:data] = str
-  $materials.push mat
-}
  
 def create_mesh( m, i, b, j)
     uniq_vertices = b.vertex_indices.uniq.sort
@@ -187,7 +158,6 @@ def create_mesh( m, i, b, j)
       t = tri.collect{ |v| vertex_map[v] }
       t[1], t[2] = t[2], t[1]
       f.indices = t
-      $objects[:faces].push f
       f
     }
 
@@ -201,46 +171,41 @@ def create_mesh( m, i, b, j)
     n
 end
 
-$wmb.meshes.each_with_index { |m, i|
-  batches = []
-  $objects[:meshes].push batches
+$root_node.children = $wmb.meshes.each_with_index.collect { |m, i|
   n = Assimp::Node::new
-  m.batches.each_with_index { |b, j|
-    b = create_mesh(m, i, b, j)
-    b[:parent] = n.pointer
-    batches.push b
-#    $mesh_nodes.push b
-  }
   n.transformation.identity!
   n.name = ("%02d_"%i) + m.header.name
-  n.num_children = batches.length
-  ptr = FFI::MemoryPointer::new(:pointer, batches.length)
-  $objects[:pointers].push ptr
-  ptr.write_array_of_pointer(batches.collect(&:pointer))
-  n[:children] = ptr
-  n[:parent] = $root_node.pointer
-  $mesh_nodes.push n
+  n.children = m.batches.each_with_index.collect { |b, j|
+    b = create_mesh(m, i, b, j)
+    b.parent = n
+    b
+  }
+  n.parent = $root_node
+  n
 }
 
-$root_node.num_children = $mesh_nodes.length
-ptr = FFI::MemoryPointer::new(:pointer, $mesh_nodes.length)
-$objects[:pointers].push ptr
-ptr.write_array_of_pointer($mesh_nodes.collect(&:pointer))
-$root_node[:children] = ptr
+$scene.meshes = $meshes
 
-$scene.num_meshes = $meshes.length
-ptr = FFI::MemoryPointer::new(:pointer, $meshes.length)
-$objects[:pointers].push ptr
-ptr.write_array_of_pointer($meshes.collect(&:pointer))
-$scene[:meshes] = ptr
+$scene.materials = $wmb.materials.each_with_index.collect { |m, i|
+  mat = Assimp::Material::new
 
-$scene.num_materials = $materials.length
-ptr = FFI::MemoryPointer::new(:pointer, $materials.length)
-$objects[:pointers].push ptr
-ptr.write_array_of_pointer($materials.collect(&:pointer))
-$scene[:materials] = ptr
+  properties = []
+
+  name_prop = Assimp::MaterialProperty::new
+  name_prop.key = Assimp::MATKEY_NAME
+  name_prop.type = :String
+  name_prop.data = ("mat_%02d" % i)
+
+  mat.properties = [name_prop]
+  mat.num_allocated = 1
+
+  mat
+}
+
 
 
 output_dir = "assimp_output/#{$root_node.name.to_s}_#{format}"
 Dir.mkdir(output_dir) unless Dir.exist?(output_dir)
+
+GC.start
 $scene.export(format, output_dir+"/#{$root_node.name.to_s}.#{extension}")
