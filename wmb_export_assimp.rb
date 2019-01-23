@@ -1,5 +1,5 @@
 #!ruby
-require 'assimp'
+require 'assimp-ffi'
 require 'optparse'
 require 'set'
 require_relative 'lib/bayonetta.rb'
