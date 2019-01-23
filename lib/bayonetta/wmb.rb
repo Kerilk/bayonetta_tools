@@ -1,6 +1,7 @@
 require 'set'
 require 'digest'
 require 'yaml'
+$material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_database.yaml'))
 
 module Bayonetta
 
@@ -731,6 +732,32 @@ module Bayonetta
       def size(position = 0, parent = nil, index = nil)
         return 2 + 2 + @material_data.length * 4
       end
+    end
+
+    class Bayo1Material
+      attr_reader :type
+      attr_reader :flag
+      attr_reader :samplers
+      attr_reader :parameters
+
+      def initialize(m)
+        @type = m.type
+        @flag = m.flag
+        @layout = $material_db[@type][:layout]
+        @samplers = {}
+        @parameters = {}
+        field_count = 0
+        @layout.each { |name, t|
+          if t == "sampler2D_t" || t == "samplerCUBE_t"
+            @samplers[name] = m.material_data[field_count]
+            field_count += 1
+          else
+            @parameters[name] = m.material_data[field_count...(field_count+4)].pack("L4").unpack("F4")
+            field_count += 4
+          end
+        }
+      end
+
     end
 
     class BatchHeader < DataConverter
@@ -1671,6 +1698,20 @@ module Bayonetta
       }
     end
 
+    def advanced_materials
+      if is_bayo2?
+        materials
+      else
+        materials.collect { |m|
+          if $material_db[m.type][:layout]
+            Bayo1Material::new(m)
+          else
+            m
+          end
+        }
+      end
+    end
+
     def cleanup_materials
       used_materials = Set[]
       @meshes.each { |m|
@@ -1704,11 +1745,10 @@ module Bayonetta
 
     def cleanup_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_database.yaml'))
       @materials.each { |m|
          type = m.type
-         if material_db.key?(type)
-           size = material_db[type][:size]
+         if $material_db.key?(type)
+           size = $material_db[type][:size]
          else
            warn "Unknown material type #{m.type}!"
            next
@@ -1721,8 +1761,7 @@ module Bayonetta
 
     def maximize_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_database.yaml'))
-      max_size_mat = material_db.max_by { |k, v|
+      max_size_mat = $material_db.max_by { |k, v|
         v[:size]
       }
       max_data_number = (max_size_mat[1][:size] - 4)/4

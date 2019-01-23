@@ -49,6 +49,8 @@ $meshes = []
 $num_meshes = 0
 
 $wmb = WMBFile::load(source)
+tex_file_name = source.gsub(/wmb\z/,"wtb")
+$wtb = WTBFile::new(File::new(tex_file_name, "rb"))
 #Meshes
 
 def create_vertex_properties(mesh, vertices)
@@ -99,18 +101,18 @@ def create_vertex_properties(mesh, vertices)
       mesh.num_uv_components[num_texture_coords] = 2
       mesh.set_texture_coords(num_texture_coords, coords)
       num_texture_coords += 1
-    when :color, :color2
-      colors = vertex_map.collect { |orig_index, index|
-        c = Assimp::Color4D::new
-        c_o = $wmb.get_vertex_field(field, orig_index)
-        c.r = c_o.r.to_f / 255.0
-        c.g = c_o.g.to_f / 255.0
-        c.b = c_o.b.to_f / 255.0
-        c.a = c_o.a.to_f / 255.0
-        c
-      }
-      mesh.set_colors(num_colors, colors)
-      num_colors += 1
+#    when :color, :color2
+#      colors = vertex_map.collect { |orig_index, index|
+#        c = Assimp::Color4D::new
+#        c_o = $wmb.get_vertex_field(field, orig_index)
+#        c.r = c_o.r.to_f / 255.0
+#        c.g = c_o.g.to_f / 255.0
+#        c.b = c_o.b.to_f / 255.0
+#        c.a = c_o.a.to_f / 255.0
+#        c
+#      }
+#      mesh.set_colors(num_colors, colors)
+#      num_colors += 1
     else
       puts "skipping #{field}" unless :bone_infos
     end
@@ -186,24 +188,164 @@ $root_node.children = $wmb.meshes.each_with_index.collect { |m, i|
 
 $scene.meshes = $meshes
 
-$scene.materials = $wmb.materials.each_with_index.collect { |m, i|
+$texture_names = $wtb.each.each_with_index.collect { |info_f, i|
+  info, f = info_f
+  ext, _, _ = info
+  "./#{$root_node.name}_#{"%02d"%i}#{ext}"
+}
+$texture_count = $texture_names.count
+$scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
   mat = Assimp::Material::new
 
   properties = []
 
   name_prop = Assimp::MaterialProperty::new
   name_prop.set_property(Assimp::MATKEY_NAME, "mat_%02d" % i)
+  properties.push name_prop
 
-  mat.properties = [name_prop]
-  mat.num_allocated = 1
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_SHADING_MODEL, :Phong)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_TWOSIDED, false)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_ENABLE_WIREFRAME, false)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
+  p.set_property(Assimp::MATKEY_COLOR_DIFFUSE, c)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
+  p.set_property(Assimp::MATKEY_COLOR_AMBIENT, c)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
+  p.set_property(Assimp::MATKEY_COLOR_SPECULAR, c)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 1.0)
+  p.set_property(Assimp::MATKEY_COLOR_EMISSIVE, c)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 0.0)
+  p.set_property(Assimp::MATKEY_COLOR_REFLECTIVE, c)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_SHININESS, 0.0)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_REFLECTIVITY, 0.0)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_REFRACTI, 1.55)
+  properties.push p
+
+  p = Assimp::MaterialProperty::new
+  p.set_property(Assimp::MATKEY_OPACITY, 1.0)
+  properties.push p
+
+  if m.kind_of?(WMBFile::Bayo1Material)
+    sampler_count = 0
+    m.samplers.each { |name, value|
+      case name
+      when "Color_1", "Color_2", "Color_3"
+        next if value >= $texture_count
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_UVWSRC, 0, semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        tr = Assimp::UVTransform::new
+        tr.translation.x = 0
+        tr.translation.y = 0
+        tr.scaling.x = 1.0
+        tr.scaling.y = 1.0
+        tr.rotation = 0.0
+        p.set_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :DIFFUSE, index: sampler_count)
+        properties.push p
+      when "effectmap"
+      when "env_amb"
+      when "envmap"
+      when "lightmap"
+      when "refractmap"
+      when "reliefmap"
+      when "Spec_Mask"
+      when "Spec_Pow"
+      end
+      sampler_count += 1
+    }
+  else
+    4.times { |j|
+      if m.material_data[j] < $texture_count
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_TEXTURE, $texture_names[m.material_data[j]], semantic: :DIFFUSE)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :DIFFUSE)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        p.set_property(Assimp::MATKEY_UVWSRC, 0, semantic: :DIFFUSE)
+        properties.push p
+        p = Assimp::MaterialProperty::new
+        tr = Assimp::UVTransform::new
+        tr.translation.x = 0
+        tr.translation.y = 0
+        tr.scaling.x = 1.0
+        tr.scaling.y = 1.0
+        tr.rotation = 0.0
+        p.set_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :DIFFUSE)
+        properties.push p
+        break
+      end
+    }
+  end
+
+  mat.properties = properties
+  mat.num_allocated = properties.length
 
   mat
 }
 
 
-
-output_dir = "assimp_output/#{$root_node.name.to_s}_#{format}"
+output_dir = "assimp_output/#{$root_node.name}_#{format}"
 Dir.mkdir(output_dir) unless Dir.exist?(output_dir)
-
+$wtb.each.each_with_index { |info_f, i|
+  info, f = info_f
+  ext, _, _ = info
+  File::open("#{output_dir}/#{$root_node.name}_#{"%02d"%i}#{ext}", "wb") { |f2|
+    f.rewind
+    f2.write(f.read)
+  }
+}
 GC.start
-$scene.export(format, output_dir+"/#{$root_node.name.to_s}.#{extension}")
+$scene.export(format, output_dir+"/#{$root_node.name}.#{extension}")
