@@ -102,17 +102,17 @@ def create_vertex_properties(mesh, vertices)
       mesh.set_texture_coords(num_texture_coords, coords)
       num_texture_coords += 1
     when :color, :color2
-      colors = vertex_map.collect { |orig_index, index|
-        c = Assimp::Color4D::new
-        c_o = $wmb.get_vertex_field(field, orig_index)
-        c.r = c_o.r.to_f / 255.0
-        c.g = c_o.g.to_f / 255.0
-        c.b = c_o.b.to_f / 255.0
-        c.a = c_o.a.to_f / 255.0
-        c
-      }
-      mesh.set_colors(num_colors, colors)
-      num_colors += 1
+#      colors = vertex_map.collect { |orig_index, index|
+#        c = Assimp::Color4D::new
+#        c_o = $wmb.get_vertex_field(field, orig_index)
+#        c.r = c_o.r.to_f / 255.0
+#        c.g = c_o.g.to_f / 255.0
+#        c.b = c_o.b.to_f / 255.0
+#        c.a = c_o.a.to_f / 255.0
+#        c
+#      }
+#      mesh.set_colors(num_colors, colors)
+#      num_colors += 1
     else
       puts "skipping #{field}" unless field == :bone_infos
     end
@@ -223,6 +223,8 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
       when "Color_1", "Color_2", "Color_3"
         next if value >= $texture_count
         mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :DIFFUSE, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :DIFFUSE, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :DIFFUSE, index: sampler_count)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE, index: sampler_count)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE, index: sampler_count)
         mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :DIFFUSE, index: sampler_count)
@@ -243,6 +245,8 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
       when "reliefmap"
         next if value >= $texture_count
         mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :NORMALS, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :NORMALS, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :NORMALS, index: sampler_count)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :NORMALS, index: sampler_count)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :NORMALS, index: sampler_count)
         mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :NORMALS, index: sampler_count)
