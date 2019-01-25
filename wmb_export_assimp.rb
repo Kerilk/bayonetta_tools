@@ -222,20 +222,23 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
       case name
       when "Color_1", "Color_2", "Color_3"
         next if value >= $texture_count
-        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :DIFFUSE, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :DIFFUSE, index: sampler_count)
+        index = 0 if name == "Color_1"
+        index = 1 if name == "Color_2"
+        index = 2 if name == "Color_3"
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :DIFFUSE, index: index)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :DIFFUSE, index: index)
         tr = Assimp::UVTransform::new
         tr.translation.x = 0
         tr.translation.y = 0
         tr.scaling.x = 1.0
         tr.scaling.y = 1.0
         tr.rotation = 0.0
-        mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :DIFFUSE, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :DIFFUSE, index: index)
         sampler_count += 1
       when "effectmap"
       when "env_amb"
@@ -244,23 +247,22 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
       when "refractmap"
       when "reliefmap"
         next if value >= $texture_count
-        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :NORMALS, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :NORMALS, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :NORMALS, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :NORMALS, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :NORMALS, index: sampler_count)
-        mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :NORMALS, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :NORMALS, index: sampler_count - 1)
+    #    mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :NORMALS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :NORMALS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :NORMALS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :NORMALS, index: sampler_count - 1)
+    #    mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :NORMALS, index: sampler_count - 1)
         uvsrc = 0
         uvsrc = 1 if fields.include?(:mapping2)
-        mat.add_property(Assimp::MATKEY_UVWSRC, uvsrc, semantic: :NORMALS, index: sampler_count)
+        mat.add_property(Assimp::MATKEY_UVWSRC, uvsrc, semantic: :NORMALS, index: sampler_count - 1)
         tr = Assimp::UVTransform::new
         tr.translation.x = 0
         tr.translation.y = 0
         tr.scaling.x = 1.0
         tr.scaling.y = 1.0
         tr.rotation = 0.0
-        mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :NORMALS, index: sampler_count)
-        sampler_count += 1
+        mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :NORMALS, index: sampler_count - 1)
       when "Spec_Mask"
       when "Spec_Pow"
       end
