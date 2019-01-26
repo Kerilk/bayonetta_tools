@@ -467,6 +467,14 @@ module Bayonetta
       b
     end
 
+    def -@
+      b = Position::new
+      b.x = -@x
+      b.y = -@y
+      b.z = -@z
+      b
+    end
+
     def +(other)
       b = Position::new
       b.x = @x + other.x

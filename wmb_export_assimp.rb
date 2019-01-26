@@ -4,6 +4,7 @@ require 'optparse'
 require 'set'
 require_relative 'lib/bayonetta.rb'
 require 'yaml'
+require 'nokogiri'
 include Bayonetta
 
 source = ARGV[0]
@@ -39,7 +40,7 @@ Assimp::export_format_descriptions.each { |d|
 raise "Unsupported format: #{format}!" unless extension
 
 $scene = Assimp::SceneCreated::new
-$scene.flags = [:NON_VERBOSE_FORMAT, :FLAGS_ALLOW_SHARED]
+$scene.flags = [:FLAGS_ALLOW_SHARED]
 $root_node = Assimp::Node::new
 $root_node.name = File::basename(source, ".wmb")
 $scene[:root_node] = $root_node
@@ -56,11 +57,11 @@ def create_bone_hierarchy
   skeleton = Assimp::Node::new
   skeleton.name = "skeleton"
 
-  bones = $wmb.get_bone_structure
+  $wmb_bones = bones = $wmb.get_bone_structure
   table = $wmb.bone_index_translate_table.table.invert
   $bone_nodes = bones.collect { |b|
     n = Assimp::Node::new
-    n.name = "bone_%03d" % b.index
+    n.name = "bone_%03d" % table[b.index]
     n.transformation = Assimp::Matrix4x4.translation(b.relative_position)
     n
   }
@@ -78,7 +79,7 @@ def create_bone_hierarchy
   skeleton
 end
 
-def create_vertex_properties(mesh, vertices)
+def create_vertex_properties(mesh, vertices, bone_refs)
   vertex_map = vertices.each_with_index.collect.to_h
   num_vertices = vertices.size
   mesh.num_vertices = num_vertices
@@ -86,6 +87,12 @@ def create_vertex_properties(mesh, vertices)
   res = {}
   num_colors = 0
   num_texture_coords = 0
+  bones = $bone_nodes.each_with_index.collect { |n, i|
+      bone = Assimp::Bone::new
+      bone.name = n.name
+      bone.offset_matrix = Assimp::Matrix4x4.translation( -$wmb_bones[i].position )
+      bone
+  }
   fields.each { |field|
     case field
     when :position
@@ -138,10 +145,21 @@ def create_vertex_properties(mesh, vertices)
 #      }
 #      mesh.set_colors(num_colors, colors)
 #      num_colors += 1
+    when :bone_infos
+      vertex_map.each { |orig_index, index|
+        b_i = $wmb.get_vertex_field(field, orig_index).get_indexes_and_weights
+        b_i.each { |ind, wgt|
+          bone_index = bone_refs[ind]
+          bones[bone_index].add_weight(index, wgt/255.0)
+        }
+      }
     else
       puts "skipping #{field}" unless field == :bone_infos
     end
   }
+  bones.select! { |b| b.num_weights > 0 }
+#  p bones.collect { |b| b.name }
+  mesh.bones = bones
   if mesh.normals? && mesh.tangents?
     tangents = mesh.tangents
     normals = mesh.normals
@@ -173,7 +191,7 @@ def create_mesh( m, i, b, j)
     mesh = Assimp::Mesh::new
     mesh.primitive_types = :TRIANGLE
     mesh.name = ("batch_%02d_" % i) + m.header.name.delete("\000")+("_%02d" % j)
-    res = create_vertex_properties(mesh, uniq_vertices)
+    res = create_vertex_properties(mesh, uniq_vertices, b.bone_refs)
     if $wmb.tex_infos then
       mesh.material_index = b.header.ex_mat_id
     else
@@ -388,5 +406,12 @@ postprocess = [:FlipWindingOrder]
 #if format == "obj"
   postprocess.push :FlipUVs
 #end
-$scene.root_node.each_node { |n| puts n.name }
 $scene.export(format, output_dir+"/#{$root_node.name}.#{extension}", preprocessing: postprocess)
+
+if format == "collada"
+  doc = Nokogiri::XML(File.read(output_dir+"/#{$root_node.name}.#{extension}"))
+
+  doc.search("node").select { |n| n["id"].match("bone") && n["type"] == "NODE" }.each { |n| n["sid"] = n["id"]; n["type"] = "JOINT" }
+
+  File.open(output_dir+"/#{$root_node.name}.#{extension}", "w") { |f| f.write doc.to_xml }
+end
