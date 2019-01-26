@@ -42,7 +42,6 @@ $scene = Assimp::SceneCreated::new
 $scene.flags = [:NON_VERBOSE_FORMAT, :FLAGS_ALLOW_SHARED]
 $root_node = Assimp::Node::new
 $root_node.name = File::basename(source, ".wmb")
-$root_node.transformation.identity!
 $scene[:root_node] = $root_node
 
 $meshes = []
@@ -52,6 +51,32 @@ $wmb = WMBFile::load(source)
 tex_file_name = source.gsub(/wmb\z/,"wtb")
 $wtb = WTBFile::new(File::new(tex_file_name, "rb"))
 #Meshes
+
+def create_bone_hierarchy
+  skeleton = Assimp::Node::new
+  skeleton.name = "skeleton"
+
+  bones = $wmb.get_bone_structure
+  table = $wmb.bone_index_translate_table.table.invert
+  $bone_nodes = bones.collect { |b|
+    n = Assimp::Node::new
+    n.name = "bone_%03d" % b.index
+    n.transformation = Assimp::Matrix4x4.translation(b.relative_position)
+    n
+  }
+  sekeleton_children = []
+  bones.zip($bone_nodes).each_with_index { |(b, n), i|
+    if b.parent
+      n.parent = $bone_nodes[b.parent.index]
+    else
+      n.parent = skeleton
+      sekeleton_children.push(n)
+    end
+    n.children = b.children.collect { |c| $bone_nodes[c.index] }
+  }
+  skeleton.children = sekeleton_children
+  skeleton
+end
 
 def create_vertex_properties(mesh, vertices)
   vertex_map = vertices.each_with_index.collect.to_h
@@ -147,7 +172,7 @@ def create_mesh( m, i, b, j)
 
     mesh = Assimp::Mesh::new
     mesh.primitive_types = :TRIANGLE
-    mesh.name = ("%02d_" % i) + m.header.name.delete("\000")+("_%02d" % j)
+    mesh.name = ("batch_%02d_" % i) + m.header.name.delete("\000")+("_%02d" % j)
     res = create_vertex_properties(mesh, uniq_vertices)
     if $wmb.tex_infos then
       mesh.material_index = b.header.ex_mat_id
@@ -165,17 +190,15 @@ def create_mesh( m, i, b, j)
     $meshes.push mesh
 
     n = Assimp::Node::new
-    n.transformation.identity!
     n.name = mesh.name
     n.meshes = [$num_meshes]
     $num_meshes += 1
     n
 end
 
-$root_node.children = $wmb.meshes.each_with_index.collect { |m, i|
+$root_node.children =[create_bone_hierarchy] + $wmb.meshes.each_with_index.collect { |m, i|
   n = Assimp::Node::new
-  n.transformation.identity!
-  n.name = ("%02d_"%i) + m.header.name
+  n.name = ("mesh_%02d_"%i) + m.header.name
   n.children = m.batches.each_with_index.collect { |b, j|
     b = create_mesh(m, i, b, j)
     b.parent = n
@@ -365,4 +388,5 @@ postprocess = [:FlipWindingOrder]
 #if format == "obj"
   postprocess.push :FlipUVs
 #end
+$scene.root_node.each_node { |n| puts n.name }
 $scene.export(format, output_dir+"/#{$root_node.name}.#{extension}", preprocessing: postprocess)
