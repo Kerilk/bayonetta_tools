@@ -134,17 +134,17 @@ def create_vertex_properties(mesh, vertices, bone_refs)
       mesh.set_texture_coords(num_texture_coords, coords)
       num_texture_coords += 1
     when :color, :color2
-#      colors = vertex_map.collect { |orig_index, index|
-#        c = Assimp::Color4D::new
-#        c_o = $wmb.get_vertex_field(field, orig_index)
-#        c.r = c_o.r.to_f / 255.0
-#        c.g = c_o.g.to_f / 255.0
-#        c.b = c_o.b.to_f / 255.0
-#        c.a = c_o.a.to_f / 255.0
-#        c
-#      }
-#      mesh.set_colors(num_colors, colors)
-#      num_colors += 1
+      colors = vertex_map.collect { |orig_index, index|
+        c = Assimp::Color4D::new
+        c_o = $wmb.get_vertex_field(field, orig_index)
+        c.r = c_o.r.to_f / 255.0
+        c.g = c_o.g.to_f / 255.0
+        c.b = c_o.b.to_f / 255.0
+        c.a = c_o.a.to_f / 255.0
+        c
+      }
+      mesh.set_colors(num_colors, colors)
+      num_colors += 1
     when :bone_infos
       vertex_map.each { |orig_index, index|
         b_i = $wmb.get_vertex_field(field, orig_index).get_indexes_and_weights
@@ -412,6 +412,28 @@ if format == "collada"
   doc = Nokogiri::XML(File.read(output_dir+"/#{$root_node.name}.#{extension}"))
 
   doc.search("node").select { |n| n["id"].match("bone") && n["type"] == "NODE" }.each { |n| n["sid"] = n["id"]; n["type"] = "JOINT" }
+  doc.search("skeleton").each { |s| s.child.replace( "#skeleton") }
+
+  # rest is for Noesis
+
+  mat_map = {}
+  batch_map = {}
+  doc.search("instance_material").each { |im|
+    ansc = im.ancestors("instance_controller").first
+    im["symbol"] = im["target"].tr("#","")
+    str = ansc["url"].to_s
+    str = str.tr("#","").gsub("-skin","")
+    ansc = im.ancestors("node").first
+    batch_map[str] = ansc["name"]
+    mat_map[ str ]= im["symbol"]
+  }
+
+  doc.search("polylist").each { |p|
+    ansc = p.ancestors("geometry").first
+    batch = ansc["id"].to_s
+    ansc["name"] = batch_map[batch]
+    p["material"] = mat_map[batch]
+  }
 
   File.open(output_dir+"/#{$root_node.name}.#{extension}", "w") { |f| f.write doc.to_xml }
 end
