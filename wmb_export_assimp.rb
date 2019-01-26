@@ -201,22 +201,34 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
   mat.add_property(Assimp::MATKEY_SHADING_MODEL, :Phong)
   mat.add_property(Assimp::MATKEY_TWOSIDED, false)
   mat.add_property(Assimp::MATKEY_ENABLE_WIREFRAME, false)
-  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
-  mat.add_property(Assimp::MATKEY_COLOR_DIFFUSE, c)
-  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
-  mat.add_property(Assimp::MATKEY_COLOR_AMBIENT, c)
-  c = Assimp::Color4D::new.set(1.0, 1.0, 1.0, 1.0)
-  mat.add_property(Assimp::MATKEY_COLOR_SPECULAR, c)
-  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 1.0)
-  mat.add_property(Assimp::MATKEY_COLOR_EMISSIVE, c)
-  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 0.0)
-  mat.add_property(Assimp::MATKEY_COLOR_REFLECTIVE, c)
-  mat.add_property(Assimp::MATKEY_SHININESS, 0.0)
-  mat.add_property(Assimp::MATKEY_REFLECTIVITY, 0.0)
-  mat.add_property(Assimp::MATKEY_REFRACTI, 1.55)
-  mat.add_property(Assimp::MATKEY_OPACITY, 1.0)
+#  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 1.0)
+#  mat.add_property(Assimp::MATKEY_COLOR_EMISSIVE, c)
+#  c = Assimp::Color4D::new.set(0.0, 0.0, 0.0, 0.0)
+#  mat.add_property(Assimp::MATKEY_COLOR_REFLECTIVE, c)
+#  mat.add_property(Assimp::MATKEY_REFLECTIVITY, 0.0)
+#  mat.add_property(Assimp::MATKEY_REFRACTI, 1.55)
+#  mat.add_property(Assimp::MATKEY_OPACITY, 1.0)
 
   if m.kind_of?(WMBFile::Bayo1Material)
+    if m.parameters["diffuse"]
+      c = Assimp::Color4D::new.set(m.parameters["diffuse"][0],
+                                   m.parameters["diffuse"][1],
+                                   m.parameters["diffuse"][2], 1.0)
+      mat.add_property(Assimp::MATKEY_COLOR_DIFFUSE, c)
+    end
+    if m.parameters["ambient"]
+      c = Assimp::Color4D::new.set(m.parameters["ambient"][0],
+                                   m.parameters["ambient"][1],
+                                   m.parameters["ambient"][2], 1.0)
+      mat.add_property(Assimp::MATKEY_COLOR_AMBIENT, c)
+    end
+    if m.parameters["specular"]
+      c = Assimp::Color4D::new.set(m.parameters["specular"][0],
+                                   m.parameters["specular"][1],
+                                   m.parameters["specular"][2], 1.0)
+      mat.add_property(Assimp::MATKEY_COLOR_SPECULAR, c)
+    end
+    mat.add_property(Assimp::MATKEY_SHININESS, m.parameters["shine"]) if m.parameters["shine"]
     sampler_count = 0
     m.samplers.each { |name, value|
       case name
@@ -226,7 +238,7 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
         index = 1 if name == "Color_2"
         index = 2 if name == "Color_3"
         mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :DIFFUSE, index: index)
-        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :DIFFUSE, index: index)
+#        mat.add_property(Assimp::MATKEY_TEXOP, :Multiply, semantic: :DIFFUSE, index: index)
         mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :DIFFUSE, index: index)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :DIFFUSE, index: index)
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :DIFFUSE, index: index)
@@ -235,16 +247,52 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
         tr = Assimp::UVTransform::new
         tr.translation.x = 0
         tr.translation.y = 0
-        tr.scaling.x = 1.0
-        tr.scaling.y = 1.0
+        if name == "Color_1" && m.parameters["Color_1_Tile"]
+          tr.scaling.x = m.parameters["Color_1_Tile"][0]
+          tr.scaling.y = m.parameters["Color_1_Tile"][1]
+        elsif name == "Color_2" && m.parameters["Color_2_Tile"]
+          tr.scaling.x = m.parameters["Color_2_Tile"][0]
+          tr.scaling.y = m.parameters["Color_2_Tile"][1]
+        elsif name == "Color_3" && m.parameters["Color_3_Tile"]
+          tr.scaling.x = m.parameters["Color_3_Tile"][0]
+          tr.scaling.y = m.parameters["Color_3_Tile"][1]
+        else
+          tr.scaling.x = 1.0
+          tr.scaling.y = 1.0
+        end
         tr.rotation = 0.0
         mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :DIFFUSE, index: index)
         sampler_count += 1
       when "effectmap"
+        next if value >= $texture_count
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :EMISSIVE, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :EMISSIVE, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :EMISSIVE, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :EMISSIVE, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :EMISSIVE, index: sampler_count - 1)
       when "env_amb"
+        next if value >= $texture_count || m.samplers.include?("envmap")
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :REFLECTION, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :BOX, semantic: :REFLECTION, index: sampler_count - 1)
       when "envmap"
+        next if value >= $texture_count
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :REFLECTION, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :BOX, semantic: :REFLECTION, index: sampler_count - 1)
       when "lightmap"
+        next if value >= $texture_count
+        next unless fields.include?(:mapping2)
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :LIGHTMAP, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :LIGHTMAP, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :LIGHTMAP, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :LIGHTMAP, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 1, semantic: :LIGHTMAP, index: sampler_count - 1)
       when "refractmap"
+        next if value >= $texture_count
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :OPACITY, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :OPACITY, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :OPACITY, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :OPACITY, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :OPACITY, index: sampler_count - 1)
       when "reliefmap"
         next if value >= $texture_count
         mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :NORMALS, index: sampler_count - 1)
@@ -254,7 +302,7 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
         mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :NORMALS, index: sampler_count - 1)
     #    mat.add_property(Assimp::MATKEY_TEXBLEND, 1.0, semantic: :NORMALS, index: sampler_count - 1)
         uvsrc = 0
-        uvsrc = 1 if fields.include?(:mapping2)
+        uvsrc = 1 if fields.include?(:mapping2) && !m.parameters.include?("lightmap")
         mat.add_property(Assimp::MATKEY_UVWSRC, uvsrc, semantic: :NORMALS, index: sampler_count - 1)
         tr = Assimp::UVTransform::new
         tr.translation.x = 0
@@ -264,7 +312,19 @@ $scene.materials = $wmb.advanced_materials.each_with_index.collect { |m, i|
         tr.rotation = 0.0
         mat.add_property(Assimp::MATKEY_UVTRANSFORM, tr, semantic: :NORMALS, index: sampler_count - 1)
       when "Spec_Mask"
+        next if value >= $texture_count
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :SPECULAR, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :SPECULAR, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :SPECULAR, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :SPECULAR, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :SPECULAR, index: sampler_count - 1)
       when "Spec_Pow"
+        next if value >= $texture_count
+        mat.add_property(Assimp::MATKEY_TEXTURE, $texture_names[value], semantic: :SHININESS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPING, :UV, semantic: :SHININESS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_U, :Wrap, semantic: :SHININESS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_MAPPINGMODE_V, :Wrap, semantic: :SHININESS, index: sampler_count - 1)
+        mat.add_property(Assimp::MATKEY_UVWSRC, 0, semantic: :SHININESS, index: sampler_count - 1)
       end
     }
   else
@@ -302,7 +362,7 @@ $wtb.each.each_with_index { |info_f, i|
 }
 GC.start
 postprocess = [:FlipWindingOrder]
-if format == "obj"
+#if format == "obj"
   postprocess.push :FlipUVs
-end
+#end
 $scene.export(format, output_dir+"/#{$root_node.name}.#{extension}", preprocessing: postprocess)
