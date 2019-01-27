@@ -488,6 +488,7 @@ module Bayonetta
       b.x = @x*scal
       b.y = @y*scal
       b.z = @z*scal
+      b
     end
 
     def to_yaml_properties

@@ -49,6 +49,7 @@ $meshes = []
 $num_meshes = 0
 
 $wmb = WMBFile::load(source)
+$wmb.scale(100.0) if format == "fbx"
 tex_file_name = source.gsub(/wmb\z/,"wtb")
 $wtb = WTBFile::new(File::new(tex_file_name, "rb"))
 #Meshes
@@ -413,6 +414,8 @@ if format == "collada"
 
   doc.search("node").select { |n| n["id"].match("bone") && n["type"] == "NODE" }.each { |n| n["sid"] = n["id"]; n["type"] = "JOINT" }
   doc.search("skeleton").each { |s| s.child.replace( "#skeleton") }
+
+  doc.search("bump").each { |b| b["bumptype"] = "NORMALMAP" }
 
   # rest is for Noesis
 
