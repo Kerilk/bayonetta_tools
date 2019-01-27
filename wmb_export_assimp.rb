@@ -49,7 +49,7 @@ $meshes = []
 $num_meshes = 0
 
 $wmb = WMBFile::load(source)
-$wmb.scale(100.0) if format == "fbx"
+#$wmb.scale(100.0) if format == "fbx"
 tex_file_name = source.gsub(/wmb\z/,"wtb")
 $wtb = WTBFile::new(File::new(tex_file_name, "rb"))
 #Meshes
