@@ -27,6 +27,10 @@ OptionParser.new do |opts|
     $options[:overwrite] = overwrite
   end
 
+  opts.on("-g", "--[no-]group-batch-by-name", "Try grouping batches using their names") do |group|
+    $options[:group] = group
+  end
+
   opts.on("-f", "--filter-bones=REJECT_LIST", "Don't import all bones") do |filter_bones|
     $options[:filter_bones] = eval(filter_bones)
   end
@@ -301,22 +305,42 @@ def merge_bones(wmb, scene)
 end
 
 def get_mesh_mapping(scene)
-  mesh_nodes = scene.root_node.each_node.select{ |n| n.children.find { |c| c.num_meshes > 0 } }.to_a
-  mesh_mapping = mesh_nodes.collect { |n|
-    batches = []
-    n.children.each { |c|
-      batches += c.meshes
+  if $options[:group]
+    mesh_mapping = Hash::new { |h, k| h[k] = [] }
+    scene.meshes.sort { |m1, m2| m1.name <=> m2.name }.each { |m|
+      data = m.name.match($batch_prefix)
+      if data
+        mesh_name = m.name.gsub(data[0], "")
+      else
+        mesh_name = m.name
+      end
+      data = mesh_name.match(/_(\d\d)/)
+      if data
+        mesh_name = mesh_name.gsub(data[0], "")
+      end
+      mesh_mapping[mesh_name].push(m)
     }
-    [n, batches.collect{ |num| scene.meshes[num] }]
-  }.sort { |(n1, _), (n2, _)| n1.name <=> n2.name }.to_h
-
+  else
+    mesh_nodes = scene.root_node.each_node.select{ |n| n.children.find { |c| c.num_meshes > 0 } }.to_a
+    mesh_mapping = mesh_nodes.collect { |n|
+      batches = []
+      n.children.each { |c|
+        batches += c.meshes
+      }
+      [n, batches.collect{ |num| scene.meshes[num] }]
+    }.sort { |(n1, _), (n2, _)| n1.name <=> n2.name }.to_h
+  end
   mesh_mapping
 end
 
 def create_new_meshes(wmb, mesh_mapping)
   new_meshes = mesh_mapping.each_with_index.collect { |(m, _), i|
     new_mesh = WMBFile::Mesh::new
-    mesh_name = m.name
+    if $options[:group]
+      mesh_name = m
+    else
+      mesh_name = m.name
+    end
     data = mesh_name.match($mesh_prefix)
     if data
       name = mesh_name.gsub(data[0], "")
