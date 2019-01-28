@@ -9,7 +9,7 @@ include Bayonetta
 $options = {}
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: wmb_import_geometry_wiiu_pc.rb target_file source_file [options]"
+  opts.banner = "Usage: wmb_import_assim.rb target_file source_file [options]"
 
   opts.on("-bFILE", "--bone-map=FILE", "Bone map") do |bone_map|
     $options[:bone_map] = bone_map
