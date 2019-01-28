@@ -502,6 +502,56 @@ def merge_geometry(wmb, scene, bone_mapping)
 
 end
 
+def get_new_tex_list(scene)
+  texture_set = Set::new
+  scene.materials.each { |m|
+    m.properties.each { |p|
+      if p.key == Assimp::MATKEY_TEXTURE
+        texture_set.add p.data
+      end
+    }
+  }
+  texture_set.to_a.sort
+end
+
+def merge_materials(wmb, scene, tex)
+  old_tex_count = tex.each.count
+  new_tex_list = get_new_tex_list(scene)
+  new_tex_map = new_tex_list.each_with_index.collect { |t, i| [t, i+old_tex_count] }.to_h
+
+  mat_offset = wmb.materials_offsets.last + wmb.materials.last.size
+  new_materials = []
+  new_materials_offsets = []
+  scene.materials.each_with_index { |mat, i|
+    new_materials_offsets.push(mat_offset + i*0x124)
+    m = WMBFile::Material::new
+    m.type = 0x0
+    m.flag = 0x0
+    m.material_data = [0x0]*(0x120/4)
+    mat.properties.select { |p|
+        p.key == Assimp::MATKEY_TEXTURE
+      }.collect { |p|
+        new_tex_map[p.data]
+      }.each_with_index { |tex, j|
+        m.material_data[j] = tex
+      }
+    m.material_data[0] = (m.material_data[0] ? m.material_data[0] : 0x80000000)
+    m.material_data[1] = (m.material_data[1] ? m.material_data[1] : 0x80000000)
+    new_materials.push(m)
+  }
+  wmb.header.num_materials += new_materials.size
+  wmb.materials += new_materials
+  wmb.materials_offsets += new_materials_offsets
+
+  new_tex_list
+end
+
+def add_textures(tex, path, new_tex_list)
+  new_tex_list.each { |tex_path|
+    tex.push File::new(File.join(path, tex_path), "rb")
+  }
+end
+
 raise "Invalid file #{target}" unless File::file?(target)
 raise "Invalid file #{source}" unless File::file?(source)
 
@@ -525,6 +575,10 @@ common_mapping, bone_mapping = merge_bones(wmb, scene)
 
 merge_geometry(wmb, scene, bone_mapping)
 
+new_tex_list = merge_materials(wmb, scene, tex)
+
+add_textures(tex, File.dirname(source), new_tex_list)
+
 wmb.recompute_relative_positions
 wmb.recompute_layout
 
@@ -534,7 +588,8 @@ File::open("wmb_output/#{File::basename(source,File::extname(source))}_#{File::b
 
 if $options[:overwrite]
   wmb.dump(target)
+  tex.dump(tex_file_name)
 else
   wmb.dump("wmb_output/"+File.basename(target))
+  tex.dump("wtb_output/"+File.basename(tex_file_name))
 end
-
