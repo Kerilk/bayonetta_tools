@@ -505,6 +505,11 @@ module Bayonetta
     register_field :indexes, UByteList
     register_field :weights, UByteList
 
+    def initialize
+      @indexes = UByteList::new
+      @weights = UByteList::new
+    end
+
     def get_indexes_and_weights
       res = []
       4.times { |i|
