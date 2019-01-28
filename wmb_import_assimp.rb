@@ -374,7 +374,11 @@ def set_fields(wmb, bone_mapping, batch, new_indices)
       else
         s = 1.0
       end
-      t.set(o_t.x, o_t.y, o_t.z, s)
+      if o_t.x.nan? || o_t.y.nan? || o_t.z.nan?
+        t.set(0, 0, 0, 1)
+      else
+        t.set(o_t.x, o_t.y, o_t.z, s)
+      end
       wmb.set_vertex_field(field, target_index, t)
     }
   when :mapping, :mapping2, :mapping3, :mapping4, :mapping5
