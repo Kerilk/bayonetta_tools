@@ -576,7 +576,15 @@ end
 
 def add_textures(tex, path, new_tex_list)
   new_tex_list.each { |tex_path|
-    tex.push File::new(File.join(path, tex_path), "rb")
+    extension = File.extname(tex_path)
+    if extension.downcase != ".dds"
+      old_tex_path = File.join(path, tex_path)
+      tex_path = File.join(path, File.join(File.dirname(tex_path), File.basename(tex_path,extension)))+".dds"
+      `convert -define dds:compression=dxt5 "#{old_tex_path}" "#{tex_path}"`
+    else
+      tex_path = File.join(path, tex_path)
+    end
+    tex.push File::new(tex_path, "rb")
   }
 end
 
