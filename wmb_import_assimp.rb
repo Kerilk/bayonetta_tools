@@ -59,6 +59,10 @@ OptionParser.new do |opts|
     $options[:root] = root
   end
 
+  opts.on("--[no-]print-transform", "Print transform matrix when listing") do |print|
+    $options[:print_transform] = print
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -86,6 +90,7 @@ if $options[:list]
 
   scene.root_node.each_node_with_depth { |n, d|
     puts "  "*d + n.name
+    puts n.transformation if $options[:print_transform]
   }
   puts "-----------------------------------------------"
   scene.meshes.each { |m|
