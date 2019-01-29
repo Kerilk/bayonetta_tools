@@ -19,8 +19,12 @@ OptionParser.new do |opts|
     $options[:update_bones] = update_bones
   end
 
-  opts.on("-t", "--[no-]import-textures", "Import textures also") do |import_textures|
-    $options[:import_textures] = import_textures
+#  opts.on("-t", "--[no-]import-textures", "Import textures also") do |import_textures|
+#    $options[:import_textures] = import_textures
+#  end
+
+  opts.on("--[no-]sort-bones", "Sorts the bone alphanumerically, WARNING: may cause issue if the order doesn't respect the hierarchy!") do |sort|
+    $options[:sort] = sort
   end
 
   opts.on("-o", "--[no-]overwrite", "Overwrite destination files") do |overwrite|
@@ -137,7 +141,6 @@ def find_skeleton(scene)
     if known_bones.include?(n.name)
       potential_roots = n.ancestors unless potential_roots
       potential_roots &= n.ancestors
-      break
     end
   }
 
@@ -182,9 +185,11 @@ def scene_bones(scene)
    skeleton.children.each { |c|
      bones += c.each_node_with_depth.collect.to_a
    }
+#this doesn't always work
    bones.sort! { |(n1, d1), (n2, d2)|
      n1.name <=> n2.name
-   }.collect! { |n, d| n }
+   } if $options[:sort]
+   bones.collect! { |n, d| n }
    bones = [skeleton] + bones if $options[:root]
    bones
 end
