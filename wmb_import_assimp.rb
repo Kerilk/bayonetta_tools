@@ -23,6 +23,15 @@ OptionParser.new do |opts|
 #    $options[:import_textures] = import_textures
 #  end
 
+  opts.on("-t", "--[no-]transform-meshes", "Apply node transformation to meshes, conflicts with --group-batch-by-name") do |transform|
+    $options[:transform] = transform
+    $options[:group] = false
+  end
+
+  opts.on("--swap-mesh-y-z", "Use to swap the mesh if it is not aligned to the skeleton") do |swap|
+    $options[:swap] = swap
+  end
+
   opts.on("--[no-]sort-bones", "Sorts the bone alphanumerically, WARNING: may cause issue if the order doesn't respect the hierarchy!") do |sort|
     $options[:sort] = sort
   end
@@ -31,8 +40,9 @@ OptionParser.new do |opts|
     $options[:overwrite] = overwrite
   end
 
-  opts.on("-g", "--[no-]group-batch-by-name", "Try grouping batches using their names") do |group|
+  opts.on("-g", "--[no-]group-batch-by-name", "Try grouping batches using their names, conflicts with --transform-meshes") do |group|
     $options[:group] = group
+    $options[:transform] = false
   end
 
   opts.on("-f", "--filter-bones=REJECT_LIST", "Don't import all bones") do |filter_bones|
@@ -362,7 +372,7 @@ def create_new_meshes(wmb, mesh_mapping)
   }
 end
 
-def set_fields(wmb, bone_mapping, batch, new_indices)
+def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
   bone_refs = {}
   bone_refs = batch.bones.sort { |b1, b2|
       b1.name <=> b2.name
@@ -371,6 +381,8 @@ def set_fields(wmb, bone_mapping, batch, new_indices)
     }.to_h
   fields = wmb.get_vertex_fields
 
+  _, rotation, _ = transform_matrix.decompose
+
   fields.each do |field|
   case field
   when :position
@@ -378,6 +390,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices)
     new_indices.each_with_index { |target_index, index|
       p = Position::new
       o_p = vertices[index]
+      o_p = transform_matrix * o_p
       p.x = o_p.x
       p.y = o_p.y
       p.z = o_p.z
@@ -388,6 +401,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices)
     new_indices.each_with_index { |target_index, index|
       n = Normal::new
       o_n = normals[index]
+      o_n = rotation * o_n
       n.x = o_n.x
       n.y = o_n.y
       n.z = o_n.z
@@ -400,8 +414,11 @@ def set_fields(wmb, bone_mapping, batch, new_indices)
     new_indices.each_with_index { |target_index, index|
       t = Tangents::new
       o_t = tangents[index]
+      o_t = rotation * o_t
       o_n = normals[index]
+      o_n = rotation * o_n
       o_b = bitangents[index]
+      o_b = rotation * o_b
       n_o_b = (o_n ^ o_t)
       if (n_o_b + o_b).length > 1
         s = -1.0
@@ -499,6 +516,20 @@ def merge_geometry(wmb, scene, bone_mapping)
   vertex_types = wmb.get_vertex_types
 
   mesh_mapping.each_with_index { |(n, batches), i|
+    if $options[:transform]
+      matrix = n.world_transformation
+    else
+      matrix = Assimp::Matrix4x4::identity
+    end
+    if $options[:swap]
+      rot = Assimp::Matrix4x4::new
+      rot.a1 = 1.0
+      rot.b3 = -1.0
+      rot.c2 = 1.0
+      rot.d4 = 1.0
+      matrix = rot * matrix
+    end
+
     batches.each_with_index { |batch, j|
       first_vertex_index = wmb.vertexes.length
 
@@ -517,7 +548,7 @@ def merge_geometry(wmb, scene, bone_mapping)
 
       wmb.header.num_vertexes += num_vertices
 
-      bone_refs = set_fields(wmb, bone_mapping, batch, new_indices)
+      bone_refs = set_fields(wmb, bone_mapping, batch, new_indices, matrix)
 
       b = WMBFile::Batch::new
       b.header.material_id = wmb.header.num_materials + batch.material_index
