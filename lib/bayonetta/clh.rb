@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class CLHFile < DataConverter
+  class CLHFile < LibBin::DataConverter
 
-    class FVector < DataConverter
+    class FVector < LibBin::DataConverter
       float :x
       float :y
       float :z
@@ -20,7 +20,7 @@ module Bayonetta
 
     end
 
-    class ClothAT < DataConverter
+    class ClothAT < LibBin::DataConverter
       int16 :p1
       int16 :p2
       float :weight

@@ -5,7 +5,7 @@ $material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_data
 
 module Bayonetta
 
-  class UByteList < DataConverter
+  class UByteList < LibBin::DataConverter
     register_field :data, :L
 
     def self.is_bayo2?(parent)
@@ -24,9 +24,9 @@ module Bayonetta
     def self.convert(input, output, input_big, output_big, parent, index)
       h = self::new
       if is_bayo2?(parent) && input_big
-        h.convert(input, output, false, output_big, parent, index)
+        h.__convert(input, output, false, output_big, parent, index)
       else
-        h.convert(input, output, input_big, output_big, parent, index)
+        h.__convert(input, output, input_big, output_big, parent, index)
       end
       h
     end
@@ -34,9 +34,9 @@ module Bayonetta
     def self.load(input, input_big, parent, index)
       h = self::new
       if is_bayo2?(parent) && input_big
-        h.load(input, false, parent, index)
+        h.__load(input, false, parent, index)
       else
-        h.load(input, input_big, parent, index)
+        h.__load(input, input_big, parent, index)
       end
       h
     end
@@ -196,88 +196,31 @@ module Bayonetta
 
   end
 
-  class Mapping < DataConverter
-    register_field :data, :S, count: 2
-
-    def u
-      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
-    end
-
-    def v
-      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
-    end
-
-    def u=(val)
-      s = Flt::IEEE_binary16::new(val).to_bytes
-      @data[0] = s.unpack("s").first
-      val
-    end
-
-    def v=(val)
-      s = Flt::IEEE_binary16::new(val).to_bytes
-      @data[1] = s.unpack("s").first
-      val
-    end
-
-    def initialize
-      @data = [0, 0]
-    end
-
+  class Mapping < LibBin::DataConverter
+    register_field :u, :half
+    register_field :v, :half
   end
 
-  class FloatMapping < DataConverter
+  class FloatMapping < LibBin::DataConverter
     register_field :u, :F
     register_field :v, :F
   end
 
-  class FloatNormal < DataConverter
+  class FloatNormal < LibBin::DataConverter
     include VectorAccessor
     register_field :x, :F
     register_field :y, :F
     register_field :z, :F
   end
 
-  class HalfNormal < DataConverter
+  class HalfNormal < LibBin::DataConverter
     include VectorAccessor
-    register_field :data, :S, count: 4
-
-    def x
-      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
-    end
-
-    def y
-      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
-    end
-
-    def z
-      Flt::IEEE_binary16::from_bytes([@data[2]].pack("S")).to(Float)
-    end
-
-    def x=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
-      @data[0] = s.unpack("s").first
-      v
-    end
-
-    def y=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
-      @data[1] = s.unpack("s").first
-      v
-    end
-
-    def z=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
-      @data[2] = s.unpack("s").first
-      v
-    end
-
-    def initialize
-      @data = [0, 0, 0, 0]
-    end
-
+    register_field :x, :half
+    register_field :y, :half
+    register_field :z, :half
   end
 
-  class Normal < DataConverter
+  class Normal < LibBin::DataConverter
     include VectorAccessor
     attr_accessor :normal
 
@@ -317,7 +260,7 @@ module Bayonetta
       @normal[2] = v
     end
 
-    def size(position, parent, index)
+    def __size(position, parent, index)
       4
     end
 
@@ -413,8 +356,8 @@ module Bayonetta
     end
 
     def load_normal
-      s = @input.read(4)
-      if @input_big
+      s = @__input.read(4)
+      if @__input_big
         @normal_big_orig = s
         @normal_small_orig = nil
         @normal = decode_big_normal(s)
@@ -426,12 +369,12 @@ module Bayonetta
     end
 
     def dump_normal
-      if @output_big
+      if @__output_big
         s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
       else
         s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
       end
-      @output.write(s2)
+      @__output.write(s2)
     end
 
     def convert_normal
@@ -439,21 +382,21 @@ module Bayonetta
       dump_normal
     end
 
-    def convert_fields
+    def __convert_fields
       convert_normal
     end
 
-    def load_fields
+    def __load_fields
       load_normal
     end
 
-    def dump_fields
+    def __dump_fields
       dump_normal
     end
 
   end
 
-  class Position < DataConverter
+  class Position < LibBin::DataConverter
     include VectorAccessor
     register_field :x, :F
     register_field :y, :F
@@ -501,7 +444,7 @@ module Bayonetta
 
   end
 
-  class BoneInfos < DataConverter
+  class BoneInfos < LibBin::DataConverter
     register_field :indexes, UByteList
     register_field :weights, UByteList
 
@@ -550,7 +493,7 @@ module Bayonetta
 
   end
 
-  class BoneIndexTranslateTable < DataConverter
+  class BoneIndexTranslateTable < LibBin::DataConverter
     register_field :offsets, :s, count: 16
     #attr_accessor :second_levels
     #attr_accessor :third_levels
@@ -562,30 +505,30 @@ module Bayonetta
       t
     end
 
-    def size(position = 0, parent = nil, index = nil)
+    def __size(position = 0, parent = nil, index = nil)
       sz = super()
       if @second_levels
         @second_levels.each { |e|
-          sz += e.size(position, parent, index)
+          sz += e.__size(position, parent, index)
         }
       end
       if @third_levels
         @third_levels.each { |e|
-          sz += e.size(position, parent, index)
+          sz += e.__size(position, parent, index)
         }
       end
       sz
     end
 
-    def convert(input, output, input_big, output_big, parent, index, level = 1)
-      set_convert_type(input, output, input_big, output_big, parent, index)
-      convert_fields
+    def __convert(input, output, input_big, output_big, parent, index, level = 1)
+      __set_convert_type(input, output, input_big, output_big, parent, index)
+      __convert_fields
       if level == 1
         @second_levels = []
         @offsets.each { |o|
           if o != -1
             t = self.class::new
-            t.convert(input, output, input_big, output_big, self, nil, level+1)
+            t.__convert(input, output, input_big, output_big, self, nil, level+1)
             @second_levels.push t
           end
         }
@@ -594,7 +537,7 @@ module Bayonetta
           l.offsets.each { |o|
             if o != -1
               t = self.class::new
-              t.convert(input, output, input_big, output_big, self, nil, level+2)
+              t.__convert(input, output, input_big, output_big, self, nil, level+2)
               @third_levels.push t
             end
           }
@@ -604,18 +547,18 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      unset_convert_type
+      __unset_convert_type
     end
 
-    def load(input, input_big, parent, index, level = 1)
-      set_load_type(input, input_big, parent, index)
-      load_fields
+    def __load(input, input_big, parent, index, level = 1)
+      __set_load_type(input, input_big, parent, index)
+      __load_fields
       if level == 1
         @second_levels = []
         @offsets.each { |o|
           if o != -1
             t = self.class::new
-            t.load(input, input_big, self, nil, level+1)
+            t.__load(input, input_big, self, nil, level+1)
             @second_levels.push t
           end
         }
@@ -624,7 +567,7 @@ module Bayonetta
           l.offsets.each { |o|
             if o != -1
               t = self.class::new
-              t.load(input, input_big, self, nil, level+2)
+              t.__load(input, input_big, self, nil, level+2)
               @third_levels.push t
             end
           }
@@ -634,7 +577,7 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      unset_load_type
+      __unset_load_type
     end
 
     def decode
@@ -688,21 +631,21 @@ module Bayonetta
     end
     private :encode
 
-    def dump(output, output_big, parent, index, level = 1)
-      set_dump_type(output, output_big, parent, index)
+    def __dump(output, output_big, parent, index, level = 1)
+      __set_dump_type(output, output_big, parent, index)
       encode if level == 1
-      dump_fields
+      __dump_fields
       if @second_levels
         @second_levels.each { |e|
-          e.dump(output, output_big, self, nil, level+1)
+          e.__dump(output, output_big, self, nil, level+1)
         }
       end
       if @third_levels
         @third_levels.each { |e|
-          e.dump(output, output_big, self, nil, level+2)
+          e.__dump(output, output_big, self, nil, level+2)
         }
       end
-      unset_dump_type
+      __unset_dump_type
     end
 
   end
@@ -719,14 +662,14 @@ module Bayonetta
     fmapping_t: [ FloatMapping, 8]
   }
 
-  class WMBFile < DataConverter
+  class WMBFile < LibBin::DataConverter
     include Alignment
 
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
-    class UnknownStruct < DataConverter
+    class UnknownStruct < LibBin::DataConverter
       register_field :u_a1, :C, count: 4
       register_field :u_b1, :L
       register_field :u_c1, :s, count: 4
@@ -737,7 +680,7 @@ module Bayonetta
       register_field :u_b3, :L
     end
 
-    class Material < DataConverter
+    class Material < LibBin::DataConverter
       register_field :type, :s
       register_field :flag, :S
       register_field :material_data, :L,
@@ -774,7 +717,7 @@ module Bayonetta
 
     end
 
-    class BatchHeader < DataConverter
+    class BatchHeader < LibBin::DataConverter
       register_field :batch_id, :s #Bayo 2
       register_field :mesh_id, :s
       register_field :u_b, :S
@@ -810,7 +753,7 @@ module Bayonetta
       end
     end
 
-    class Batch < DataConverter
+    class Batch < LibBin::DataConverter
       register_field :header, BatchHeader
       register_field :num_bone_ref, :l, condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
       register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
@@ -917,7 +860,7 @@ module Bayonetta
 
     end
 
-    class MeshHeader < DataConverter
+    class MeshHeader < LibBin::DataConverter
       register_field :id, :s
       register_field :num_batch, :s
       register_field :u_a1, :s
@@ -942,7 +885,7 @@ module Bayonetta
       end
     end
 
-    class Mesh < DataConverter
+    class Mesh < LibBin::DataConverter
       register_field :header, MeshHeader
       register_field :batch_offsets, :L, count: 'header\num_batch',
                      offset: '__position + header\offset_batch_offsets'
@@ -987,21 +930,21 @@ module Bayonetta
 
     end
 
-    class ShaderName < DataConverter
+    class ShaderName < LibBin::DataConverter
       register_field :name, :c, count: 16
     end
 
-    class TexInfo < DataConverter
+    class TexInfo < LibBin::DataConverter
       register_field :id, :L
       register_field :info, :l
     end
 
-    class TexInfos < DataConverter
+    class TexInfos < LibBin::DataConverter
       register_field :num_tex_infos, :l
       register_field :tex_infos, TexInfo, count: 'num_tex_infos'
     end
 
-    class WMBFileHeader < DataConverter
+    class WMBFileHeader < LibBin::DataConverter
       register_field :id, :L
       register_field :u_a, :l
       register_field :u_b, :l
@@ -1063,7 +1006,7 @@ module Bayonetta
         return [@vertex_type, @vertex_ex_type]
       else
         types = VERTEX_TYPES[ [ @header.u_b, @header.vertex_ex_data_size, @header.vertex_ex_data] ]
-        @vertex_type = Class::new(DataConverter)
+        @vertex_type = Class::new(LibBin::DataConverter)
         @vertex_size = 0
         if types[0]
           types[0].each { |name, type|
@@ -1071,7 +1014,7 @@ module Bayonetta
             @vertex_size += VERTEX_FIELDS[type][1]
           }
         end
-        @vertex_ex_type = Class::new(DataConverter)
+        @vertex_ex_type = Class::new(LibBin::DataConverter)
         @vertex_ex_size = 0
         if types[1]
           types[1].each { |name, type|
@@ -1145,7 +1088,7 @@ module Bayonetta
 
       wmb = self::new
       wmb.instance_variable_set(:@__was_big, input_big)
-      wmb.convert(input, output, input_big, output_big)
+      wmb.__convert(input, output, input_big, output_big)
 
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
@@ -1166,7 +1109,7 @@ module Bayonetta
 
       wmb = self::new
       wmb.instance_variable_set(:@__was_big, input_big)
-      wmb.load(input, input_big)
+      wmb.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       wmb
@@ -1202,7 +1145,7 @@ module Bayonetta
       input_big
     end
 
-    def dump(output_name, output_big = false)
+    def __dump(output_name, output_big = false)
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
@@ -1210,9 +1153,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
 
       sz = output.size
       sz = align(sz, 0x20)
@@ -2067,11 +2010,11 @@ module Bayonetta
       end
       if @header.offset_bone_index_translate_table > 0x0
         last_offset = @header.offset_bone_index_translate_table = align(last_offset, 0x20)
-        last_offset += @bone_index_translate_table.size
+        last_offset += @bone_index_translate_table.__size
       end
       if @header.offset_u_j > 0x0
         last_offset = @header.offset_u_j = align(last_offset, 0x20)
-        last_offset += @u_j.size
+        last_offset += @u_j.__size
       end
       if @header.offset_bone_symmetries > 0x0
         last_offset = @header.offset_bone_symmetries = align(last_offset, 0x20)

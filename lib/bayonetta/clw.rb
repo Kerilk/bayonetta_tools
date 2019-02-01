@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class CLWFile < DataConverter
+  class CLWFile < LibBin::DataConverter
 
-    class FVector < DataConverter
+    class FVector < LibBin::DataConverter
       float :x
       float :y
       float :z
@@ -20,7 +20,7 @@ module Bayonetta
 
     end
 
-    class ClothWind < DataConverter
+    class ClothWind < LibBin::DataConverter
       int32 :wind_type
       int32 :parts_no
       register_field :offset,  FVector

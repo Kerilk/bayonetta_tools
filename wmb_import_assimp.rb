@@ -446,6 +446,8 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
       o_m = texture_coords[index]
       m.u = o_m.x
       m.v = o_m.y
+      p m.u
+      p m.v
       wmb.set_vertex_field(field, target_index, m)
     }
   when :color, :color2
@@ -664,9 +666,9 @@ File::open("wmb_output/#{File::basename(source,File::extname(source))}_#{File::b
 }
 
 if $options[:overwrite]
-  wmb.dump(target)
+  wmb.__dump(target)
   tex.dump(tex_file_name)
 else
-  wmb.dump("wmb_output/"+File.basename(target))
+  wmb.__dump("wmb_output/"+File.basename(target))
   tex.dump("wtb_output/"+File.basename(tex_file_name))
 end

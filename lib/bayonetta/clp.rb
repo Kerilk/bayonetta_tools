@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class CLPFile < DataConverter
+  class CLPFile < LibBin::DataConverter
 
-    class FVector < DataConverter
+    class FVector < LibBin::DataConverter
       float :x
       float :y
       float :z
@@ -20,7 +20,7 @@ module Bayonetta
 
     end
 
-    class Header < DataConverter
+    class Header < LibBin::DataConverter
       int32 :num
       float :limit_spring_rate
       float :spd_rate
@@ -64,7 +64,7 @@ module Bayonetta
 
     end
 
-    class Cloth < DataConverter
+    class Cloth < LibBin::DataConverter
       int16 :no
       int16 :no_up
       int16 :no_down

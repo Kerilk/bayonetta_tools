@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class EXPFile2 < DataConverter
+  class EXPFile2 < LibBin::DataConverter
 
-    class EXPFileHeader < DataConverter
+    class EXPFileHeader < LibBin::DataConverter
       int8 :id, count: 4
       int32 :version
       uint32 :offset_records
@@ -20,7 +20,7 @@ module Bayonetta
       end
     end
 
-    class Record < DataConverter
+    class Record < LibBin::DataConverter
       int16 :bone_index
       int8 :animation_track
       int8 :padding
@@ -39,7 +39,7 @@ module Bayonetta
 
     end
 
-    class Operation < DataConverter
+    class Operation < LibBin::DataConverter
       int8 :type
       int8 :info
       int16 :number
@@ -54,7 +54,7 @@ module Bayonetta
 
     end
 
-    class Entry < DataConverter
+    class Entry < LibBin::DataConverter
       register_field :operations, Operation, count: '..\records[__index]\num_operations'
 
       def initialize
@@ -109,7 +109,7 @@ module Bayonetta
 
     end
 
-    class Interpolation < DataConverter
+    class Interpolation < LibBin::DataConverter
       int16 :num_points
       int16 :padding
       uint32 :offset
@@ -122,7 +122,7 @@ module Bayonetta
 
     end
 
-    class Point < DataConverter
+    class Point < LibBin::DataConverter
       float :v
       float :p
       float :m0
@@ -137,7 +137,7 @@ module Bayonetta
 
     end
 
-    class InterpolationEntry < DataConverter
+    class InterpolationEntry < LibBin::DataConverter
       register_field :points, Point, count: '..\interpolations[__index]\num_points'
 
       def get_value(val)
@@ -220,9 +220,9 @@ module Bayonetta
 
   end
 
-  class EXPFile < DataConverter
+  class EXPFile < LibBin::DataConverter
 
-    class EXPFileHeader < DataConverter
+    class EXPFileHeader < LibBin::DataConverter
       int8 :id, count: 4
       int32 :version
       uint32 :offset_records
@@ -237,7 +237,7 @@ module Bayonetta
 
     end
 
-    class Record < DataConverter
+    class Record < LibBin::DataConverter
       int16 :u_a
       int16 :bone_index
       int8 :animation_track
@@ -263,7 +263,7 @@ module Bayonetta
 
     end
 
-    class Operation < DataConverter
+    class Operation < LibBin::DataConverter
       uint32 :flags
       float :value
 
@@ -287,7 +287,7 @@ module Bayonetta
 
     end
 
-    class Entry1 < DataConverter
+    class Entry1 < LibBin::DataConverter
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -306,7 +306,7 @@ module Bayonetta
 
     end
 
-    class Entry2 < DataConverter
+    class Entry2 < LibBin::DataConverter
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -327,7 +327,7 @@ module Bayonetta
 
     end
 
-    class Entry3 < DataConverter
+    class Entry3 < LibBin::DataConverter
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -349,7 +349,7 @@ module Bayonetta
 
     end
 
-    class Entry < DataConverter
+    class Entry < LibBin::DataConverter
 
       def self.convert(input, output, input_big, output_big, parent, index)
         entry_type = parent.records[index].entry_type
@@ -381,7 +381,7 @@ module Bayonetta
 
     end
 
-    class Point4 < DataConverter
+    class Point4 < LibBin::DataConverter
       float :v
       uint16 :dummy
       uint16 :cp
@@ -402,7 +402,7 @@ module Bayonetta
 
     end
 
-    class Interpolation4 < DataConverter
+    class Interpolation4 < LibBin::DataConverter
       float :p
       float :dp
       float :m0
@@ -431,7 +431,7 @@ module Bayonetta
       end
     end
 
-    class Interpolation < DataConverter
+    class Interpolation < LibBin::DataConverter
 
       def self.convert(input, output, input_big, output_big, parent, index)
         interpolation_type = parent.records[index].interpolation_type
