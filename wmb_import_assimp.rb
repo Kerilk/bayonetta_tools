@@ -446,8 +446,6 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
       o_m = texture_coords[index]
       m.u = o_m.x
       m.v = o_m.y
-      p m.u
-      p m.v
       wmb.set_vertex_field(field, target_index, m)
     }
   when :color, :color2
