@@ -486,12 +486,16 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     }
     bone_infos = bone_infos.collect { |bone_info|
       b_i = bone_info.sort { |(_, w1), (_, w2)| w1 <=> w2 }.reverse.first(4).reject { |_, w| w <= 0.0 }
-      sum = b_i.reduce(0.0) { |memo, (_, w)| memo + w }
-      b_i.collect! { |ind, w| [ind, (w*255.0/sum).round.clamp(0, 255)] }
-      sum = b_i.reduce(0) { |memo, (_, w)| memo + w }
-      if sum != 255
-        diff = 255 - sum
-        b_i.first[1] += diff
+      if b_i.length == 0
+        warn "Invalid rigging for batch: #{batch.name}, orphan vertex!"
+      else
+        sum = b_i.reduce(0.0) { |memo, (_, w)| memo + w }
+        b_i.collect! { |ind, w| [ind, (w*255.0/sum).round.clamp(0, 255)] }
+        sum = b_i.reduce(0) { |memo, (_, w)| memo + w }
+        if sum != 255
+          diff = 255 - sum
+          b_i.first[1] += diff
+        end
       end
       b_i
     }
