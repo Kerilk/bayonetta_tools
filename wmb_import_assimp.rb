@@ -432,6 +432,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
           t.set(o_t.x, o_t.y, o_t.z, s)
         end
       else
+        warn "Invalid mapping(tangents not computable) for batch: #{batch.name}!"
         t.set(0, 0, 0, 1)
       end
       wmb.set_vertex_field(field, target_index, t)
