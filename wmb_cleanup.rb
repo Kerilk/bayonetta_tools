@@ -30,6 +30,10 @@ OptionParser.new do |opts|
     $options[:bone_refs] = bone_refs
   end
 
+  opts.on("--[no-]submodel-bone-refs", "Add ancestry to bone refs and sort them") do |bone_refs|
+    $options[:submodel_bone_refs] = bone_refs
+  end
+
   opts.on("-b", "--[no-]bones", "Cleanup bones") do |bones|
     $options[:bones] = bones
   end
@@ -164,6 +168,7 @@ wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
 wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
 wmb.cleanup_bone_refs if $options[:bone_refs]
+wmb.add_ancestors_bone_refs if $options[:submodel_bone_refs]
 wmb.cleanup_bones if $options[:bones]
 wmb.recompute_relative_positions if $options[:recompute_relative_positions]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
