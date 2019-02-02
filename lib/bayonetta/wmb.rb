@@ -935,6 +935,22 @@ module Bayonetta
         end
       end
 
+      def add_previous_bone_refs(vertexes, bones)
+        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+          bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
+          used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
+          last_bone = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.max
+          new_bone_refs_list = (0..last_bone).to_a
+          new_bone_refs_reverse_map = new_bone_refs_list.each_with_index.collect { |b, i| [b, i] }.to_h
+          translation_map = used_bone_refs_indexes.collect { |ri|
+            [ri, new_bone_refs_reverse_map[bone_refs_map[ri]]]
+          }.to_h
+          vertex_indices.uniq.sort.each { |vi| vertexes[vi].bone_infos.remap_indexes(translation_map) }
+          @bone_refs = new_bone_refs_list
+          @num_bone_ref = @bone_refs.length
+        end
+      end
+
     end
 
     class MeshHeader < DataConverter
@@ -1818,6 +1834,15 @@ module Bayonetta
       @meshes.each { |m|
         m.batches.each { |b|
           b.add_ancestors_bone_refs(@vertexes, get_bone_structure)
+        }
+      }
+      self
+    end
+
+    def add_previous_bone_refs
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.add_previous_bone_refs(@vertexes, get_bone_structure)
         }
       }
       self
