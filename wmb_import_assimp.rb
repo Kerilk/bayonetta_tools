@@ -111,9 +111,9 @@ if $options[:list]
     m.bones.each { |b|
       puts "  "+b.name
     }
-    puts "normals: #{!m[:normals].nil?}"
-    puts "tangents: #{!m[:tangents].nil?}" 
-    puts "bitangents: #{!m[:bitangents].nil?}"
+    puts "normals: #{!m[:normals].null?}"
+    puts "tangents: #{!m[:tangents].null?}"
+    puts "bitangents: #{!m[:bitangents].null?}"
     m.colors.each_with_index { |c, i|
       puts "color #{i}" if c
     }
