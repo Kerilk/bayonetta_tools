@@ -414,21 +414,25 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     new_indices.each_with_index { |target_index, index|
       t = Tangents::new
       o_t = tangents[index]
-      o_t = rotation * o_t
-      o_n = normals[index]
-      o_n = rotation * o_n
-      o_b = bitangents[index]
-      o_b = rotation * o_b
-      n_o_b = (o_n ^ o_t)
-      if (n_o_b + o_b).length > 1
-        s = -1.0
+      if o_t
+        o_t = rotation * o_t
+        o_n = normals[index]
+        o_n = rotation * o_n
+        o_b = bitangents[index]
+        o_b = rotation * o_b
+        n_o_b = (o_n ^ o_t)
+        if (n_o_b + o_b).length > 1
+          s = -1.0
+        else
+          s = 1.0
+        end
+        if o_t.x.nan? || o_t.y.nan? || o_t.z.nan?
+          t.set(0, 0, 0, 1)
+        else
+          t.set(o_t.x, o_t.y, o_t.z, s)
+        end
       else
-        s = 1.0
-      end
-      if o_t.x.nan? || o_t.y.nan? || o_t.z.nan?
         t.set(0, 0, 0, 1)
-      else
-        t.set(o_t.x, o_t.y, o_t.z, s)
       end
       wmb.set_vertex_field(field, target_index, t)
     }
