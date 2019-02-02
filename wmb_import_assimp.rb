@@ -99,7 +99,7 @@ if $options[:list]
   puts "Found #{scene.num_materials} materials."
 
   scene.root_node.each_node_with_depth { |n, d|
-    puts "  "*d + n.name
+    puts "  "*d + n.name + (n.num_meshes > 0 ? " (#{n.num_meshes} mesh#{n.num_meshes > 1 ? "es" : ""})" : "")
     puts n.transformation if $options[:print_transform]
   }
   puts "-----------------------------------------------"
