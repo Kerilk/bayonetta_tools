@@ -1,10 +1,8 @@
 #!ruby
 require 'win32-mmap'
-require 'float-formats'
+require 'libbin'
 
 include Win32
-
-Flt::IEEE.binary :IEEE_binary16_pg, significand: 9, exponent: 6, bias: 47
 
 class MotHeader < FFI::Struct
   layout :id,           [:char, 4],
@@ -25,13 +23,13 @@ class HalfFloat < FFI::Struct
   end
 
   def value=(new)
-    s = Flt::IEEE_binary16_pg::new(new).to_bytes.bytes
+    s = LibBin::pghalf_to_string(new, "S").bytes
     self[:value][0] = s[0]
     self[:value][1] = s[1]
   end
 
   def value
-    Flt::IEEE_binary16_pg::from_bytes(self[:value].to_ptr.read_string(2)).to(Float)
+    LibBin::pghalf_from_string(self[:value].to_ptr.read_string(2), "S")
   end
 
 end

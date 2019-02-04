@@ -200,21 +200,21 @@ module Bayonetta
     register_field :data, :S, count: 2
 
     def u
-      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
+      LibBin::half_from_string([@data[0]].pack("S"), "S")
     end
 
     def v
-      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
+      LibBin::half_from_string([@data[1]].pack("S"), "S")
     end
 
     def u=(val)
-      s = Flt::IEEE_binary16::new(val).to_bytes
+      s = LibBin::half_to_string(val, "S")
       @data[0] = s.unpack("s").first
       val
     end
 
     def v=(val)
-      s = Flt::IEEE_binary16::new(val).to_bytes
+      s = LibBin::half_to_string(val, "S")
       @data[1] = s.unpack("s").first
       val
     end
@@ -242,31 +242,31 @@ module Bayonetta
     register_field :data, :S, count: 4
 
     def x
-      Flt::IEEE_binary16::from_bytes([@data[0]].pack("S")).to(Float)
+      LibBin::half_from_string([@data[0]].pack("S"), "S")
     end
 
     def y
-      Flt::IEEE_binary16::from_bytes([@data[1]].pack("S")).to(Float)
+      LibBin::half_from_string([@data[1]].pack("S"), "S")
     end
 
     def z
-      Flt::IEEE_binary16::from_bytes([@data[2]].pack("S")).to(Float)
+      LibBin::half_from_string([@data[2]].pack("S"), "S")
     end
 
     def x=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
+      s = LibBin::half_to_string(v, "S")
       @data[0] = s.unpack("s").first
       v
     end
 
     def y=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
+      s = LibBin::half_to_string(v, "S")
       @data[1] = s.unpack("s").first
       v
     end
 
     def z=(v)
-      s = Flt::IEEE_binary16::new(v).to_bytes
+      s = LibBin::half_to_string(v, "S")
       @data[2] = s.unpack("s").first
       v
     end

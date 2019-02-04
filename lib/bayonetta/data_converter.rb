@@ -1,15 +1,4 @@
-def silence_warnings(&block)
-  warn_level = $VERBOSE
-  $VERBOSE = nil
-  result = block.call
-  $VERBOSE = warn_level
-  result
-end
-
-silence_warnings { require 'float-formats' }
-
-Flt::IEEE.binary :IEEE_binary16_pg, significand: 9, exponent: 6, bias: 47
-Flt::IEEE.binary :IEEE_binary16_pg_BE, significand: 9, exponent: 6, bias: 47, endianness: :big_endian
+require 'libbin'
 
 module Bayonetta
 
@@ -83,10 +72,10 @@ module Bayonetta
       :F => l["g"],
       :D => l["G"],
       :"a*" => l["a*"],
-      :half => [ lambda { |str| Flt::IEEE_binary16_BE::from_bytes(str).to(Float) },
-                 lambda { |v| Flt::IEEE_binary16_BE::new(v).to_bytes } ],
-      :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg_BE::from_bytes(str).to(Float) },
-                   lambda { |v| Flt::IEEE_binary16_pg_BE::new(v).to_bytes } ]
+      :half => [ lambda { |str| LibBin::half_from_string(str, "S>") },
+                 lambda { |v| LibBin::half_to_string(v, "S>") } ],
+      :pghalf => [ lambda { |str| LibBin::pghalf_from_string(str, "S>") },
+                   lambda { |v| LibBin::pghalf_to_string(v, "S>") } ]
     } )
     DATA_ENDIAN[false].merge!( {
       :c => l["c"],
@@ -100,10 +89,10 @@ module Bayonetta
       :F => l["e"],
       :D => l["E"],
       :"a*" => l["a*"],
-      :half => [ lambda { |str| Flt::IEEE_binary16::from_bytes(str).to(Float) },
-                 lambda { |v| Flt::IEEE_binary16::new(v).to_bytes } ],
-      :pghalf => [ lambda { |str| Flt::IEEE_binary16_pg::from_bytes(str).to(Float) },
-                   lambda { |v| Flt::IEEE_binary16_pg::new(v).to_bytes } ]
+      :half => [ lambda { |str| LibBin::half_from_string(str, "S<") },
+                 lambda { |v| LibBin::half_to_string(v, "S<") } ],
+      :pghalf => [ lambda { |str| LibBin::pghalf_from_string(str, "S<") },
+                   lambda { |v| LibBin::pghalf_to_string(v, "S<") } ]
     } )
 
     attr_reader :__parent

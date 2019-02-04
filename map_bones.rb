@@ -1,7 +1,6 @@
 #!ruby
 require 'ffi'
 require 'win32-mmap'
-require 'float-formats'
 include Win32
 
 class WMBHeader < FFI::Struct
@@ -102,9 +101,9 @@ def load_bone_positions( f )
     pos = 3.times.collect { |j|
       s = (p+(i*3*4+j*4)).read_string(4)
       if order == :big then
-        Flt::IEEE_binary32_BE::from_bytes(s).to(Float)
+        s.unpack("g").first
       else
-        Flt::IEEE_binary32::from_bytes(s).to(Float)
+        s.unpack("e").first
       end
     }
     Bone::new(pos[0], pos[1], pos[2])
