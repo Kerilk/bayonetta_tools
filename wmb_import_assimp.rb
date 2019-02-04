@@ -99,7 +99,7 @@ if $options[:list]
   puts "Found #{scene.num_materials} materials."
 
   scene.root_node.each_node_with_depth { |n, d|
-    puts "  "*d + n.name
+    puts "  "*d + n.name + (n.num_meshes > 0 ? " (#{n.num_meshes} mesh#{n.num_meshes > 1 ? "es" : ""})" : "")
     puts n.transformation if $options[:print_transform]
   }
   puts "-----------------------------------------------"
@@ -111,9 +111,9 @@ if $options[:list]
     m.bones.each { |b|
       puts "  "+b.name
     }
-    puts "normals: #{!m[:normals].nil?}"
-    puts "tangents: #{!m[:tangents].nil?}" 
-    puts "bitangents: #{!m[:bitangents].nil?}"
+    puts "normals: #{!m[:normals].null?}"
+    puts "tangents: #{!m[:tangents].null?}"
+    puts "bitangents: #{!m[:bitangents].null?}"
     m.colors.each_with_index { |c, i|
       puts "color #{i}" if c
     }
@@ -414,21 +414,26 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     new_indices.each_with_index { |target_index, index|
       t = Tangents::new
       o_t = tangents[index]
-      o_t = rotation * o_t
-      o_n = normals[index]
-      o_n = rotation * o_n
-      o_b = bitangents[index]
-      o_b = rotation * o_b
-      n_o_b = (o_n ^ o_t)
-      if (n_o_b + o_b).length > 1
-        s = -1.0
+      if o_t
+        o_t = rotation * o_t
+        o_n = normals[index]
+        o_n = rotation * o_n
+        o_b = bitangents[index]
+        o_b = rotation * o_b
+        n_o_b = (o_n ^ o_t)
+        if (n_o_b + o_b).length > 1
+          s = -1.0
+        else
+          s = 1.0
+        end
+        if o_t.x.nan? || o_t.y.nan? || o_t.z.nan?
+          t.set(0, 0, 0, 1)
+        else
+          t.set(o_t.x, o_t.y, o_t.z, s)
+        end
       else
-        s = 1.0
-      end
-      if o_t.x.nan? || o_t.y.nan? || o_t.z.nan?
+        warn "Invalid mapping(tangents not computable) for batch: #{batch.name}!"
         t.set(0, 0, 0, 1)
-      else
-        t.set(o_t.x, o_t.y, o_t.z, s)
       end
       wmb.set_vertex_field(field, target_index, t)
     }
@@ -486,12 +491,16 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     }
     bone_infos = bone_infos.collect { |bone_info|
       b_i = bone_info.sort { |(_, w1), (_, w2)| w1 <=> w2 }.reverse.first(4).reject { |_, w| w <= 0.0 }
-      sum = b_i.reduce(0.0) { |memo, (_, w)| memo + w }
-      b_i.collect! { |ind, w| [ind, (w*255.0/sum).round.clamp(0, 255)] }
-      sum = b_i.reduce(0) { |memo, (_, w)| memo + w }
-      if sum != 255
-        diff = 255 - sum
-        b_i.first[1] += diff
+      if b_i.length == 0
+        warn "Invalid rigging for batch: #{batch.name}, orphan vertex!"
+      else
+        sum = b_i.reduce(0.0) { |memo, (_, w)| memo + w }
+        b_i.collect! { |ind, w| [ind, (w*255.0/sum).round.clamp(0, 255)] }
+        sum = b_i.reduce(0) { |memo, (_, w)| memo + w }
+        if sum != 255
+          diff = 255 - sum
+          b_i.first[1] += diff
+        end
       end
       b_i
     }

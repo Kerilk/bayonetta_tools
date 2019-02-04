@@ -3,7 +3,7 @@
 Some scripts I had to create in order to analyze Bayonetta file structure.
 
 
-You will need the nokogiri and float-formats gems installed.
+You will need the nokogiri, libbin and assimp-ffi gems installed.
 ```bash
-gem install --user-install nokogiri float-formats
+gem install --user-install nokogiri libbin assimp-ffi
 ```
