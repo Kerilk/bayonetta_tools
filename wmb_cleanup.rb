@@ -204,7 +204,7 @@ unless wmb.class == WMB3File
   wmb.recompute_layout
 end
 if $options[:overwrite]
-  wmb.__dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
+  wmb.dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
 else
-  wmb.__dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
+  wmb.dump("wmb_output/"+File.basename(input_file), $options[:swap] ? !wmb.was_big? : wmb.was_big? )
 end

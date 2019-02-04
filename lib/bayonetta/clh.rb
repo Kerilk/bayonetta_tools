@@ -116,7 +116,7 @@ module Bayonetta
 
       clp = self::new
       clp.instance_variable_set(:@__was_big, input_big)
-      clp.convert(input, output, input_big, output_big)
+      clp.__convert(input, output, input_big, output_big)
 
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
@@ -133,7 +133,7 @@ module Bayonetta
 
       clp = self::new
       clp.instance_variable_set(:@__was_big, input_big)
-      clp.load(input, input_big)
+      clp.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
       clp
     end
@@ -146,9 +146,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
 
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self

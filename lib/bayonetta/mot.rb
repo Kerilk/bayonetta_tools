@@ -204,7 +204,7 @@ module Bayonetta
       float :m0
       float :m1
 
-      def size
+      def __size
         16
       end
 
@@ -216,7 +216,7 @@ module Bayonetta
       include KeyFrameInterpolate
       register_field :keys, Key4, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         @keys.length * 16
       end
 
@@ -241,7 +241,7 @@ module Bayonetta
       float :dm1
       register_field :keys, Key5, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         24 + @keys.length * 8
       end
 
@@ -266,7 +266,7 @@ module Bayonetta
       pghalf :dm1
       register_field :keys, Key6, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         12 + @keys.length * 4
       end
 
@@ -291,7 +291,7 @@ module Bayonetta
       pghalf :dm1
       register_field :keys, Key7, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         12 + @keys.length * 4
       end
 
@@ -324,7 +324,7 @@ module Bayonetta
       pghalf :dm1
       register_field :keys, Key8, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         12 + @keys.length * 4
       end
 
@@ -343,7 +343,7 @@ module Bayonetta
         [@offset].pack("L").unpack("F").first
       end
 
-      def size
+      def __size
         12
       end
     end
@@ -434,7 +434,7 @@ module Bayonetta
       else
         mot = self::new
       end
-      mot.convert(input, output, input_big, output_big)
+      mot.__convert(input, output, input_big, output_big)
 
       input.close
       output.close
@@ -456,13 +456,13 @@ module Bayonetta
 
       mot = self::new
       mot.instance_variable_set(:@__was_big, input_big)
-      mot.load(input, input_big)
+      mot.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       mot
     end
 
-    def dump(output_name, output_big = false)
+    def __dump(output_name, output_big = false)
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
@@ -470,9 +470,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
@@ -530,7 +530,7 @@ module Bayonetta
       float :dm1
       register_field :keys, Key4, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         24 + @keys.length*8
       end
 
@@ -549,7 +549,7 @@ module Bayonetta
         @cm1 = 0
       end
 
-      def size
+      def __size
         4
       end
 
@@ -567,7 +567,7 @@ module Bayonetta
       pghalf :dm1
       register_field :keys, Key6, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         12 + @keys.length*4
       end
 
@@ -588,7 +588,7 @@ module Bayonetta
         @cm1 = 0
       end
 
-      def size
+      def __size
         6
       end
 
@@ -606,7 +606,7 @@ module Bayonetta
       pghalf :dm1
       register_field :keys, Key7, count: '..\records[__index]\num_keys'
 
-      def size
+      def __size
         12 + @keys.length * 6
       end
 
@@ -625,7 +625,7 @@ module Bayonetta
         [@offset].pack("L").unpack("F").first
       end
 
-      def size
+      def __size
         12
       end
     end
@@ -708,7 +708,7 @@ module Bayonetta
       else
         mot = self::new
       end
-      mot.convert(input, output, input_big, output_big)
+      mot.__convert(input, output, input_big, output_big)
 
       input.close
       output.close
@@ -730,7 +730,7 @@ module Bayonetta
 
       mot = self::new
       mot.instance_variable_set(:@__was_big, input_big)
-      mot.load(input, input_big)
+      mot.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       mot
@@ -748,9 +748,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end

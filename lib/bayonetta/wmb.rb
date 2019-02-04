@@ -41,14 +41,14 @@ module Bayonetta
       h
     end
 
-    def dump(output, output_big, parent = nil, index = nil)
+    def __dump(output, output_big, parent = nil, index = nil)
       if self.class.is_bayo2?(parent) && output_big
-        set_dump_type(output, false, parent, index)
+        __set_dump_type(output, false, parent, index)
       else
-        set_dump_type(output, output_big, parent, index)
+        __set_dump_type(output, output_big, parent, index)
       end
-      dump_fields
-      unset_dump_type
+      __dump_fields
+      __unset_dump_type
       self
     end
 
@@ -1181,7 +1181,7 @@ module Bayonetta
       input_big
     end
 
-    def __dump(output_name, output_big = false)
+    def dump(output_name, output_big = false)
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else

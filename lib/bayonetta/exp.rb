@@ -211,9 +211,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
@@ -605,7 +605,7 @@ module Bayonetta
       else
         exp = self::new
       end
-      exp.convert(input, output, input_big, output_big)
+      exp.__convert(input, output, input_big, output_big)
 
       input.close
       output.close
@@ -625,7 +625,7 @@ module Bayonetta
         exp = self::new
       end
       exp.instance_variable_set(:@__was_big, input_big)
-      exp.load(input, input_big)
+      exp.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       exp
@@ -639,9 +639,9 @@ module Bayonetta
       end
       output.rewind
 
-      set_dump_type(output, output_big, nil, nil)
-      dump_fields
-      unset_dump_type
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end

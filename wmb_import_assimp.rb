@@ -673,9 +673,9 @@ File::open("wmb_output/#{File::basename(source,File::extname(source))}_#{File::b
 }
 
 if $options[:overwrite]
-  wmb.__dump(target)
+  wmb.dump(target)
   tex.dump(tex_file_name)
 else
-  wmb.__dump("wmb_output/"+File.basename(target))
+  wmb.dump("wmb_output/"+File.basename(target))
   tex.dump("wtb_output/"+File.basename(tex_file_name))
 end
