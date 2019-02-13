@@ -1617,6 +1617,27 @@ module Bayonetta
       self
     end
 
+    def split_meshes(list)
+      kept_meshes = @meshes.size.times.to_a - list
+      split_meshes = @meshes.size.times.to_a - kept_meshes
+      new_meshes = []
+      split_meshes.each { |i|
+        @meshes[i].batches.each_with_index { |b, j|
+          new_mesh = @meshes[i].dup
+          new_mesh.header = @meshes[i].header.dup
+          new_mesh.header.name = @meshes[i].header.name.tr("\x00","") + ("_%02d" % j)
+          new_mesh.batches = [b]
+          new_meshes.push new_mesh
+        }
+      }
+      @meshes = kept_meshes.collect { |i|
+        @meshes[i]
+      }
+      @meshes += new_meshes
+      @header.num_meshes = @meshes.size
+      self
+    end
+
     def duplicate_meshes(list)
       @meshes += list.collect { |i|
         @meshes[i].duplicate(@positions, @vertexes, @vertexes_ex_data)

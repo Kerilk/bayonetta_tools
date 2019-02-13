@@ -94,6 +94,10 @@ OptionParser.new do |opts|
     $options[:delete_meshes] = eval(mesh_list).to_a
   end
 
+  opts.on("--split-meshes=MESHLIST", "Split the selected meshes into meshes containing only one batch") do |split_meshes|
+    $options[:split_meshes] = eval(split_meshes).to_a
+  end
+
   opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
     $options[:delete_bones] = eval(bone_list).to_a
   end
@@ -166,6 +170,7 @@ wmb = WMBFile::load(input_file)
 wmb.scale($options[:scale]) if $options[:scale]
 wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]
+wmb.split_meshes($options[:split_meshes]) if $options[:split_meshes]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.move_meshes($options[:move_meshes]) if $options[:move_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
