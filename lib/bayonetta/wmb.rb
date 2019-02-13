@@ -2089,6 +2089,18 @@ module Bayonetta
       }
     end
 
+    def copy_uv12(mesh_list)
+      raise "No UV2 in model!" unless @vertexes_ex_data[0].respond_to?(:mapping2)
+      mesh_list.each { |i|
+        @meshes[i].batches.each { |b|
+          b.vertex_indices.each { |vi|
+            @vertexes_ex_data[vi].mapping2.u = @vertexes[vi].mapping.u
+            @vertexes_ex_data[vi].mapping2.v = @vertexes[vi].mapping.v
+          }
+        }
+      }
+    end
+
     def reverse_tangents_byte_order(mesh_list)
       raise "Vertex don't have tangents information!" unless @vertexes[0].respond_to?(:tangents)
       vertex_indices = []

@@ -66,6 +66,10 @@ OptionParser.new do |opts|
     $options[:fix] = fix
   end
 
+  opts.on("--copy-uv1to2=MESHLIST", "Copy the first UV mapping to the second one") do |copy_uv|
+    $options[:copy_uv] = eval(copy_uv).to_a
+  end
+
   opts.on("--[no-]remove-triangle-strips", "Remove triangle strips and replace by triangles") do |strips|
     $options[:strips] = strips
   end
@@ -186,6 +190,7 @@ wmb.remove_triangle_strips if $options[:strips]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
+wmb.copy_uv12($options[:copy_uv]) if $options[:copy_uv]
 wmb.reverse_tangents_byte_order($options[:reverse_tangents]) if $options[:reverse_tangents]
 if $options[:set_pose]
   exp_name = input_file.gsub(".wmb", ".exp")
