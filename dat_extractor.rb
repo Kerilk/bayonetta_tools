@@ -2,6 +2,8 @@
 require 'yaml'
 require_relative 'lib/bayonetta'
 
+save_pwd = Dir.pwd
+
 ARGV.each { |filename|
   directory = File.dirname(filename)
   name = File.basename(filename)
@@ -51,4 +53,6 @@ ARGV.each { |filename|
   File::open("big.yaml","w") { |fl|
     fl.print YAML::dump( dat.big )
   }
+  # clean up
+  Dir.chdir(save_pwd)
 }
