@@ -1647,9 +1647,9 @@ typedef struct {
 struct {
 	char    id[4]; //WMB
     int32   unknownA;
-    int32   unknownB;
+    int32   vertexFormat <comment="0x8000000 && 0x10 => vertex ex data, 0x40000000: vertex data present, 0x8000000(compressed mapping/normals): size +=12, 0x20(position2): size+= 12, 0x10(bone): size += 8, 0x8(normal): size += 12(float) or 4(compressed), 0x4(mapping): size += numMapping*(4(half) or 8(float)), 0x2(color): size += 4, 0x1(tangents): size += 4  ">;
     int32   numVertexes;
-    char    vertexExDataSize;
+    char    numMapping <comment="vertexFormat & 0x4 && numMapping == 2 => exSize += 4\n, vertexFormat & 0x2 => exSize += 4,\n vertexFormat & 0x20 => exSize += 12">;
     char    vertexExData;
     int16   unknownE;
     uint32  offsetPositions;
@@ -1743,8 +1743,8 @@ if ( header.offsetPositions ) {
 }
 
 FSeek( header.offsetVertexes );
-if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
-    if ( header.vertexExDataSize == 2 ) {
+if ( header.vertexFormat == 0x6000001F || header.vertexFormat == 0x4000001F ) {
+    if ( header.numMapping == 2 ) {
         struct {
             fnormals_t      normal;
             ubyteList       color;
@@ -1764,7 +1764,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
             fmapping_t      mapping; 
         } vertexes[header.numVertexes];
     }
-} else if (( header.unknownB & 0xff ) == 0x3f ) {
+} else if (( header.vertexFormat & 0xff ) == 0x3f ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -1773,7 +1773,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         boneIndexes_t   boneIndexes;
         boneWeights_t   boneWeights;
     } vertexes[header.numVertexes];
-} else if (( header.unknownB & 0xff ) == 0x2f ) {
+} else if (( header.vertexFormat & 0xff ) == 0x2f ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -1782,7 +1782,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         ubyteList       color;
         vector          position2;
     } vertexes[header.numVertexes];
-} else if (( header.unknownB & 0xff ) == 0x1f ) {
+} else if (( header.vertexFormat & 0xff ) == 0x1f ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -1791,7 +1791,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         boneIndexes_t   boneIndexes;
         boneWeights_t   boneWeights;
     } vertexes[header.numVertexes];
-} else if (( header.unknownB & 0xff ) == 0x1d ) {
+} else if (( header.vertexFormat & 0xff ) == 0x1d ) {
     struct {
         vector          position;
         mapping_t       mapping;
@@ -1800,8 +1800,8 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
         boneIndexes_t   boneIndexes;
         boneWeights_t   boneWeights;
     } vertexes[header.numVertexes];
-} else if ( ( header.unknownB & 0xff ) == 0xf ) {
-    if ( header.vertexExDataSize == 1 ) {
+} else if ( ( header.vertexFormat & 0xff ) == 0xf ) {
+    if ( header.numMapping == 1 ) {
         struct {
             vector      position;
             mapping_t   mapping;
@@ -1819,7 +1819,7 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
             mapping_t   mapping2;
         } vertexes[header.numVertexes];
     }
-} else if ( ( header.unknownB & 0xff ) == 0xd ) {
+} else if ( ( header.vertexFormat & 0xff ) == 0xd ) {
     struct {
         vector      position;
         mapping_t   mapping;
@@ -1828,9 +1828,9 @@ if ( header.unknownB == 0x6000001F || header.unknownB == 0x4000001F ) {
     } vertexes[header.numVertexes];
 }
 
-if ( header.offsetVertexesExData && ( header.unknownB & 0xff ) != 0x2f ) {
+if ( header.offsetVertexesExData && ( header.vertexFormat & 0xff ) != 0x2f ) {
 FSeek( header.offsetVertexesExData );
-if ( header.vertexExDataSize == 2 ) {
+if ( header.numMapping == 2 ) {
     struct {
         color_t     color;
         mapping_t   mapping;
@@ -2253,7 +2253,7 @@ typedef struct {
         int32  vertexOffset;
         int32   unknownF[7];
     } batchHeader;
-    if ((batchHeader.unknownB & 0x8000) || (batchHeader.unknownB & 0x80) || (header.unknownB & 0x10) ) {
+    if ((batchHeader.unknownB & 0x8000) || (batchHeader.unknownB & 0x80) || (batchHeader.unknownB & 0x10) ) {
         int32 numBoneRefs;
         if(numBoneRefs > 0) {
             uchar boneRefs[numBoneRefs];
@@ -2272,12 +2272,17 @@ typedef    struct {
         int16   id;
         int16   numBatch;
         int16   unknownA1;
-        int16   unknownA2;
+        int16   boundingBoxInfos <comment="0x0 center + height, 0x1: + corner1 + corner2 + 2 infos">;
         uint32  offsetBatchOffsets;
-        int32   unknownB <format=hex>;
+        int32   flags <format=hex,comment="0x80000000: name present">;
         int32   unknownC[4];
         char    name[32];
-        float   mat[12];
+        vector  center;
+        float   height;
+        vector  corner1;
+        vector  corner2;
+        float   unknownD;
+        float   unknownE;
     } meshHeader;
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
     uint32 batchOffsets[meshHeader.numBatch];
