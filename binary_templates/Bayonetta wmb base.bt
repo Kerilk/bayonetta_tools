@@ -2239,7 +2239,7 @@ typedef struct {
     struct {
         int16   batchIdx <comment="Bayonetta 2">;
         int16   id;
-        uint16   unknownB <format=hex>;
+        uint16  flags <format=hex,comment="0x1: use vertexOffset">;
         int16   exMaterialID;
         byte    materialID;
         byte    unknownD;
@@ -2253,7 +2253,7 @@ typedef struct {
         int32  vertexOffset;
         int32   unknownF[7];
     } batchHeader;
-    if ((batchHeader.unknownB & 0x8000) || (batchHeader.unknownB & 0x80) || (batchHeader.unknownB & 0x10) ) {
+    if ((batchHeader.flags & 0x8000) || (batchHeader.flags & 0x80) || (header.vertexFormat & 0x10) ) {
         int32 numBoneRefs;
         if(numBoneRefs > 0) {
             uchar boneRefs[numBoneRefs];
