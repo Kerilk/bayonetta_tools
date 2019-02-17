@@ -152,6 +152,24 @@
 55:
   :size: 216
   :shader: modelshaderbos00_bxnxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_2: sampler2D_t
+    lightmap: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    Color_2_Tile: f4_float2_t
+    depth: f4_float_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 56:
   :size: 212
   :shader: modelshaderobs00_bxnxx
@@ -251,6 +269,15 @@
 61:
   :size: 120
   :shader: modelshaderefs00_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
 62:
   :size: 272
   :shader: modelshaderefs01_bxxxx
@@ -277,6 +304,14 @@
 63:
   :size: 104
   :shader: modelshaderefs02_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored1: f4_ignored_t
 64:
   :size: 196
   :shader: modelshaderobs02_bxxxx
@@ -430,6 +465,14 @@
 71:
   :size: 104
   :shader: modelshadervtx00_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored1: f4_ignored_t
 72:
   :size: 192
   :shader: modelshaderbgs01_bxxxx
@@ -562,6 +605,15 @@
 79:
   :size: 120
   :shader: modelshadereve00_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
 80:
   :shader: modelshadertmp00_bxxxx
 81:
@@ -752,12 +804,49 @@
 94:
   :size: 172
   :shader: modelshadervtx01_bxxmx
+  :layout:
+    Color_1: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 95:
   :size: 208
   :shader: modelshadervtx02_bxxmx
+  :layout:
+    Color_1: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 96:
   :size: 104
   :shader: modelshadervtx00_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored1: f4_ignored_t
 97:
   :size: 248
   :shader: modelshaderbgs05_bxxxx
@@ -801,6 +890,12 @@
 103:
   :size: 88
   :shader: modelshaderbil03_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    fog: f4_float3_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 104:
   :size: 172
   :shader: modelshaderetc00_bxxmx
@@ -820,6 +915,14 @@
 105:
   :size: 152
   :shader: modelshaderbil04_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    fog: f4_float3_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 106:
   :size: 212
   :shader: modelshaderefs04_bxnxx
@@ -920,6 +1023,14 @@
 112:
   :size: 104
   :shader: modelshaderefs02_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored1: f4_ignored_t
 113:
   :size: 228
   :shader: modelshaderpls01_bxxmx
@@ -964,6 +1075,24 @@
 115:
   :size: 228
   :shader: modelshaderefs06_bxnxx
+  :layout:
+    Color_1: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    reliefmap2: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    tile2: f4_float2_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 116:
   :size: 228
   :shader: modelshaderbgs09_xxxxx
@@ -1024,9 +1153,39 @@
 119:
   :size: 176
   :shader: modelshaderefs07_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    envmap: samplerCUBE_t
+    effectmap: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 120:
   :size: 196
   :shader: modelshaderefs07_bxnxx
+  :layout:
+    Color_1: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    effectmap: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 121:
   :size: 212
   :shader: modelshaderbos02_bxnmx
@@ -1114,6 +1273,14 @@
 126:
   :size: 152
   :shader: modelshaderbil04_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    fog: f4_float3_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 127:
   :size: 292
   :shader: modelshaderpls05_bxnxx
@@ -1237,6 +1404,12 @@
 133:
   :size: 88
   :shader: modelshadergrs00_xxxxa
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    fog: f4_float3_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 134:
   :shader: modelshadergrs00_bxxxa
 135:
@@ -1302,6 +1475,27 @@
 140:
   :size: 288
   :shader: modelshaderefs09_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    refractmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    refract_blend: f4_float_t
+    refract_distortion: f4_float_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    env_distortion: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
+    Color_1_Offset: f4_float2_t
 141:
   :size: 212
   :shader: modelshaderbgs11_xxxxx
@@ -1475,15 +1669,80 @@
 152:
   :size: 288
   :shader: modelshaderefs10_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    refractmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    refract_blend: f4_float_t
+    refract_distortion: f4_float_t
+    eSSS_blend: f4_float_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    env_distortion: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
 153:
   :size: 232
   :shader: modelshaderefs11_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_2: sampler2D_t
+    lightmap: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    Color_2_Tile: f4_float2_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    ref_blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    diffuse: f4_float3_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos2: f4_float4_t
+    diffuse2: f4_float3_t
 154:
   :size: 104
   :shader: modelshaderefs12_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    c_alp: f4_float_t
+    o_alp: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
 155:
   :size: 212
   :shader: modelshaderbgs12_xxxxa
+  :layout:
+    Color_1: sampler2D_t
+    lightmap: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    ref_blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    diffuse: f4_float3_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos2: f4_float4_t
+    diffuse2: f4_float3_t
 156:
   :size: 156
   :shader: modelshaderetc04_xxxxx
@@ -1537,6 +1796,14 @@
 160:
   :size: 104
   :shader: modelshaderbgs00_xxxxa
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    ingored0: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored1: f4_ignored_t
 161:
   :size: 176
   :shader: modelshaderetc06_bxxxx
@@ -1557,6 +1824,23 @@
 162:
   :size: 200
   :shader: modelshaderefs13_bxnxx
+  :layout:
+    Color_1: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    effectmap: sampler2D_t
+    zmap: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    ingored0: f4_ignored_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 163:
   :size: 228
   :shader: modelshaderobs10_bxnxx
@@ -1598,18 +1882,106 @@
 165:
   :size: 188
   :shader: modelshaderefs14_bxnxx
+  :layout:
+    Color_1: sampler2D_t
+    ignored0: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 166:
   :size: 212
   :shader: modelshaderefs15_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    lightmap: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    ingored0: f4_ignored_t
+    ref_blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    diffuse: f4_float3_t
+    ingored1: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos2: f4_float4_t
+    diffuse2: f4_float3_t
 167:
   :size: 188
   :shader: modelshaderefs16_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    ignored0: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 168:
   :size: 304
   :shader: modelshadermag03_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    effectmap: sampler2D_t
+    zmap: sampler2D_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    ingored0: f4_ignored_t
+    refract_distortion: f4_float_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    test_color: f4_float3_t
+    diffuse: f4_float3_t
+    ingored3: f4_ignored_t
+    ingored4: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored5: f4_ignored_t
+    lightpos2: f4_float4_t
+    diffuse2: f4_float3_t
 169:
   :size: 288
   :shader: modelshaderefs17_xxxxx
+  :layout:
+    Color_1: sampler2D_t
+    refractmap: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    refract_blend: f4_float_t
+    refract_distortion: f4_float_t
+    eSSS_blend: f4_float_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    env_distortion: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
 170:
   :size: 196
   :shader: modelshaderetc07_bxxxx
@@ -1632,6 +2004,16 @@
 171:
   :size: 124
   :shader: modelshaderbos03_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    envmap: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    bias: f4_float_t
+    diffuse: f4_float3_t
+    ambient: f4_float3_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
 172:
   :size: 208
   :shader: modelshaderobs07_bxnxa
@@ -1654,6 +2036,20 @@
 173:
   :size: 188
   :shader: modelshaderefs18_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    ignored0: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    ingored3: f4_ignored_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 174:
   :size: 172
   :shader: modelshaderetc08_bxxmx
@@ -1673,6 +2069,17 @@
 175:
   :size: 184
   :shader: modelshaderetc09_bxxxx
+  :layout:
+    Color_1: sampler2D_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    ingored2: f4_ignored_t
+    Color_1_Offset: f4_float2_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 176:
   :shader: modelshaderetc10_xxxxx
 177:
@@ -1740,6 +2147,14 @@
 180:
   :size: 152
   :shader: modelshaderbil04_xxxxa
+  :layout:
+    Color_1: sampler2D_t
+    bias: f4_float_t
+    fog: f4_float3_t
+    ingored0: f4_ignored_t
+    ingored1: f4_ignored_t
+    finalcolor_enhance: f4_float4_t
+    prefogcolor_enhance: f4_float4_t
 181:
   :shader: modelshaderpls06_bxnxa
 182:
@@ -1785,6 +2200,23 @@
 184:
   :size: 212
   :shader: modelshaderpls06_bxnxb
+  :layout:
+    Color_1: sampler2D_t
+    reliefmap: sampler2D_t
+    envmap: samplerCUBE_t
+    env_amb: samplerCUBE_t
+    Color_1_Tile: f4_float2_t
+    depth: f4_float_t
+    tile: f4_float2_t
+    blend: f4_float_t
+    Env_Amb_Param: f4_float_t
+    fog: f4_float3_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    lightpos: f4_float4_t
+    light_col: f4_float3_t
+    lightpos2: f4_float4_t
+    light_col2: f4_float3_t
 185:
   :shader: modelshaderpls01_bxxmb
 186:
