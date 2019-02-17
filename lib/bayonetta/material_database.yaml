@@ -184,6 +184,7 @@
     light_col2: f4_float3_t
 63:
   :size: 104
+  :shader: modelshaderefs02_bxxxx
 96:
   :size: 104
 98:
@@ -406,6 +407,7 @@
     diffuse2: f4_float3_t
 71:
   :size: 104
+  :shader: modelshadervtx00_xxxxx
 52:
   :size: 248
   :shader: modelshaderbgs05_xxxxx
@@ -1338,6 +1340,7 @@
     light_col2: f4_float3_t
 61:
   :size: 120
+  :shader: modelshaderefs00_bxxxx
 164:
   :size: 176
   :shader: modelshaderetc06_bxxmx
@@ -1432,6 +1435,7 @@
     diffuse2: f4_float3_t
 79:
   :size: 120
+  :shader: modelshadereve00_bxxxx
 152:
   :size: 288
 88:
@@ -1519,6 +1523,7 @@
     light_col2: f4_float3_t
 55:
   :size: 216
+  :shader: modelshaderbos00_bxnxx
 12:
   :size: 372
 87:
@@ -1530,6 +1535,12 @@
     fog: f4_float3_t
     finalcolor_enhance: f4_float4_t
     prefogcolor_enhance: f4_float4_t
+80:
+  :shader: modelshadertmp00_bxxxx
+81:
+  :shader: modelshadermag01_xxxxx
+82:
+  :shader: modelshadermag01_bxxxx
 48:
   :size: 104
   :shader: modelshaderbgs00_xxxxx
