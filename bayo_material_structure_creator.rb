@@ -49,7 +49,7 @@ broker = <<EOF
 EOF
 
 mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
-  if props[:shader]
+  if props[:shader] && props[:size]
     source = `./fxc.exe /dumpbin /nologo "#{shader_path}\\#{props[:shader]}.pso"`
     params = source.match(/\/\/ Parameters:\r\n(.*)?\/\/ Registers/m)[1]
     registers = source.match(/\/\/ Registers:\r\n(.*)?\/\/\r\n/m)[1]
@@ -93,8 +93,15 @@ EOF
 EOF
       remaining_size -= 4
     }
-
     ignored_counter = 0
+    while remaining_size % 16 != 0 #add unused sampler
+       s << <<EOF
+  samplerCUBE_t ignored#{ignored_counter};
+EOF
+      ignored_counter += 1
+      remaining_size -= 4
+    end
+
     parameters.each { |parameter|
       break if remaining_size == 0
       raise "Invalid material size #{props[:size]} for material #{num}!" if remaining_size < 0

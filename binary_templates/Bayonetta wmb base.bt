@@ -178,6 +178,26 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t depth;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_37_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t reliefmap;
   samplerCUBE_t envmap;
   sampler2D_t Spec_Mask;
@@ -269,6 +289,17 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_3d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t refractmap;
   samplerCUBE_t envmap;
   f4_float2_t Color_1_Tile;
@@ -288,6 +319,16 @@ typedef struct {
   f4_ignored_t ingored2;
   f4_ignored_t ingored3;
 } mat_3e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_3f_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -434,6 +475,16 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_47_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t lightmap;
   sampler2D_t reliefmap;
   f4_float2_t Color_1_Tile;
@@ -553,6 +604,17 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_4e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_4f_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -726,6 +788,49 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_5e_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_5f_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_60_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t Color_2;
   sampler2D_t lightmap;
   sampler2D_t reliefmap;
@@ -756,6 +861,14 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_67_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   samplerCUBE_t envmap;
   f4_float2_t Color_1_Tile;
   f4_float_t blend;
@@ -768,6 +881,16 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_68_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_69_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -861,6 +984,16 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_70_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   samplerCUBE_t envmap;
   sampler2D_t Spec_Mask;
   sampler2D_t Spec_Pow;
@@ -897,6 +1030,26 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_72_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t reliefmap2;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float2_t tile2;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_73_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -951,6 +1104,40 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_76_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_77_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_78_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1029,6 +1216,16 @@ typedef struct {
   f4_float_t fognear;
   f4_float_t fogfar;
 } mat_7d_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_7e_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1146,6 +1343,14 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_85_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t reliefmap;
   samplerCUBE_t envmap;
   samplerCUBE_t env_amb;
@@ -1196,6 +1401,29 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t diffuse2;
 } mat_89_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t refractmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t refract_blend;
+  f4_float_t refract_distortion;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float_t env_distortion;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+  f4_float2_t Color_1_Offset;
+} mat_8c_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1356,6 +1584,79 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  sampler2D_t refractmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t refract_blend;
+  f4_float_t refract_distortion;
+  f4_float_t eSSS_blend;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float_t env_distortion;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+} mat_98_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t Color_2;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float2_t Color_2_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_99_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float2_t Color_1_Tile;
+  f4_float_t c_alp;
+  f4_float_t o_alp;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_9a_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_9b_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t lightmap;
   f4_float2_t Color_1_Tile;
   f4_float3_t diffuse;
@@ -1402,6 +1703,16 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_ignored_t ingored0;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored1;
+} mat_a0_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   samplerCUBE_t envmap;
   sampler2D_t Spec_Mask;
   f4_float2_t Color_1_Tile;
@@ -1415,6 +1726,25 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_a1_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  sampler2D_t effectmap;
+  sampler2D_t zmap;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored0;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a2_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1454,6 +1784,104 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  samplerCUBE_t ignored0;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a5_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t lightmap;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_ignored_t ingored0;
+  f4_float_t ref_blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_a6_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t ignored0;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_a7_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t effectmap;
+  sampler2D_t zmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_ignored_t ingored0;
+  f4_float_t refract_distortion;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_float3_t test_color;
+  f4_float3_t diffuse;
+  f4_ignored_t ingored3;
+  f4_ignored_t ingored4;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored5;
+  f4_float4_t lightpos2;
+  f4_float3_t diffuse2;
+} mat_a8_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t refractmap;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float_t refract_blend;
+  f4_float_t refract_distortion;
+  f4_float_t eSSS_blend;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float_t env_distortion;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+} mat_a9_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   sampler2D_t lightmap;
   samplerCUBE_t envmap;
   samplerCUBE_t env_amb;
@@ -1469,6 +1897,18 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_aa_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  samplerCUBE_t envmap;
+  f4_float2_t Color_1_Tile;
+  f4_float_t bias;
+  f4_float3_t diffuse;
+  f4_float3_t ambient;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+} mat_ab_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1490,6 +1930,22 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  samplerCUBE_t ignored0;
+  f4_float2_t Color_1_Tile;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_ignored_t ingored3;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_ad_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   samplerCUBE_t envmap;
   f4_float2_t Color_1_Tile;
   f4_float_t blend;
@@ -1502,6 +1958,19 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_ae_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_ignored_t ingored2;
+  f4_float2_t Color_1_Offset;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_af_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1564,6 +2033,16 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t bias;
+  f4_float3_t fog;
+  f4_ignored_t ingored0;
+  f4_ignored_t ingored1;
+  f4_float4_t finalcolor_enhance;
+  f4_float4_t prefogcolor_enhance;
+} mat_b4_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
   samplerCUBE_t envmap;
   sampler2D_t Spec_Mask;
   sampler2D_t Spec_Pow;
@@ -1599,6 +2078,25 @@ typedef struct {
   f4_float4_t lightpos2;
   f4_float3_t light_col2;
 } mat_b7_values_t;
+
+typedef struct {
+  sampler2D_t Color_1;
+  sampler2D_t reliefmap;
+  samplerCUBE_t envmap;
+  samplerCUBE_t env_amb;
+  f4_float2_t Color_1_Tile;
+  f4_float_t depth;
+  f4_float2_t tile;
+  f4_float_t blend;
+  f4_float_t Env_Amb_Param;
+  f4_float3_t fog;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t lightpos;
+  f4_float3_t light_col;
+  f4_float4_t lightpos2;
+  f4_float3_t light_col2;
+} mat_b8_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
@@ -1964,6 +2462,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x36:
             mat_36_values_t data;
             break;
+        case 0x37:
+            mat_37_values_t data;
+            break;
         case 0x38:
             mat_38_values_t data;
             break;
@@ -1979,8 +2480,14 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x3c:
             mat_3c_values_t data;
             break;
+        case 0x3d:
+            mat_3d_values_t data;
+            break;
         case 0x3e:
             mat_3e_values_t data;
+            break;
+        case 0x3f:
+            mat_3f_values_t data;
             break;
         case 0x40:
             mat_40_values_t data;
@@ -2003,6 +2510,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x46:
             mat_46_values_t data;
             break;
+        case 0x47:
+            mat_47_values_t data;
+            break;
         case 0x48:
             mat_48_values_t data;
             break;
@@ -2023,6 +2533,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
             break;
         case 0x4e:
             mat_4e_values_t data;
+            break;
+        case 0x4f:
+            mat_4f_values_t data;
             break;
         case 0x53:
             mat_53_values_t data;
@@ -2057,14 +2570,29 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x5d:
             mat_5d_values_t data;
             break;
+        case 0x5e:
+            mat_5e_values_t data;
+            break;
+        case 0x5f:
+            mat_5f_values_t data;
+            break;
+        case 0x60:
+            mat_60_values_t data;
+            break;
         case 0x61:
             mat_61_values_t data;
             break;
         case 0x62:
             mat_62_values_t data;
             break;
+        case 0x67:
+            mat_67_values_t data;
+            break;
         case 0x68:
             mat_68_values_t data;
+            break;
+        case 0x69:
+            mat_69_values_t data;
             break;
         case 0x6a:
             mat_6a_values_t data;
@@ -2081,11 +2609,17 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x6e:
             mat_6e_values_t data;
             break;
+        case 0x70:
+            mat_70_values_t data;
+            break;
         case 0x71:
             mat_71_values_t data;
             break;
         case 0x72:
             mat_72_values_t data;
+            break;
+        case 0x73:
+            mat_73_values_t data;
             break;
         case 0x74:
             mat_74_values_t data;
@@ -2095,6 +2629,12 @@ for ( i = 0; i < header.numMaterials; i++ ) {
             break;
         case 0x76:
             mat_76_values_t data;
+            break;
+        case 0x77:
+            mat_77_values_t data;
+            break;
+        case 0x78:
+            mat_78_values_t data;
             break;
         case 0x79:
             mat_79_values_t data;
@@ -2107,6 +2647,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
             break;
         case 0x7d:
             mat_7d_values_t data;
+            break;
+        case 0x7e:
+            mat_7e_values_t data;
             break;
         case 0x7f:
             mat_7f_values_t data;
@@ -2126,6 +2669,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x84:
             mat_84_values_t data;
             break;
+        case 0x85:
+            mat_85_values_t data;
+            break;
         case 0x87:
             mat_87_values_t data;
             break;
@@ -2134,6 +2680,9 @@ for ( i = 0; i < header.numMaterials; i++ ) {
             break;
         case 0x89:
             mat_89_values_t data;
+            break;
+        case 0x8c:
+            mat_8c_values_t data;
             break;
         case 0x8d:
             mat_8d_values_t data;
@@ -2162,6 +2711,18 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x97:
             mat_97_values_t data;
             break;
+        case 0x98:
+            mat_98_values_t data;
+            break;
+        case 0x99:
+            mat_99_values_t data;
+            break;
+        case 0x9a:
+            mat_9a_values_t data;
+            break;
+        case 0x9b:
+            mat_9b_values_t data;
+            break;
         case 0x9c:
             mat_9c_values_t data;
             break;
@@ -2174,8 +2735,14 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0x9f:
             mat_9f_values_t data;
             break;
+        case 0xa0:
+            mat_a0_values_t data;
+            break;
         case 0xa1:
             mat_a1_values_t data;
+            break;
+        case 0xa2:
+            mat_a2_values_t data;
             break;
         case 0xa3:
             mat_a3_values_t data;
@@ -2183,14 +2750,38 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0xa4:
             mat_a4_values_t data;
             break;
+        case 0xa5:
+            mat_a5_values_t data;
+            break;
+        case 0xa6:
+            mat_a6_values_t data;
+            break;
+        case 0xa7:
+            mat_a7_values_t data;
+            break;
+        case 0xa8:
+            mat_a8_values_t data;
+            break;
+        case 0xa9:
+            mat_a9_values_t data;
+            break;
         case 0xaa:
             mat_aa_values_t data;
+            break;
+        case 0xab:
+            mat_ab_values_t data;
             break;
         case 0xac:
             mat_ac_values_t data;
             break;
+        case 0xad:
+            mat_ad_values_t data;
+            break;
         case 0xae:
             mat_ae_values_t data;
+            break;
+        case 0xaf:
+            mat_af_values_t data;
             break;
         case 0xb1:
             mat_b1_values_t data;
@@ -2201,11 +2792,17 @@ for ( i = 0; i < header.numMaterials; i++ ) {
         case 0xb3:
             mat_b3_values_t data;
             break;
+        case 0xb4:
+            mat_b4_values_t data;
+            break;
         case 0xb6:
             mat_b6_values_t data;
             break;
         case 0xb7:
             mat_b7_values_t data;
+            break;
+        case 0xb8:
+            mat_b8_values_t data;
             break;
         case 0xbb:
             mat_bb_values_t data;
