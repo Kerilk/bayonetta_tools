@@ -1818,7 +1818,7 @@ module Bayonetta
       raise "Unsupported for Bayonetta 2!" if @shader_names
       @materials.each { |m|
          type = m.type
-         if $material_db.key?(type)
+         if $material_db.key?(type) && $material_db[type][:size]
            size = $material_db[type][:size]
          else
            warn "Unknown material type #{m.type}!"
@@ -1832,7 +1832,7 @@ module Bayonetta
 
     def maximize_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      max_size_mat = $material_db.max_by { |k, v|
+      max_size_mat = $material_db.select { |k, v| v[:size] }.max_by { |k, v|
         v[:size]
       }
       max_data_number = (max_size_mat[1][:size] - 4)/4
