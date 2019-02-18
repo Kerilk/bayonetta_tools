@@ -2836,10 +2836,10 @@ typedef struct {
     struct {
         int16   batchIdx <comment="Bayonetta 2">;
         int16   id;
-        uint16  flags <format=hex,comment="0x1: use vertexOffset">;
+        uint16  flags <format=hex,comment="0x1: use extended batch info">;
         int16   exMaterialID;
         byte    materialID;
-        byte    unknownD;
+        byte    hasBoneRefs;
         byte    unknownE1;
         byte    unknownE2;
         int32   vertexStart;
@@ -2847,8 +2847,10 @@ typedef struct {
         int32   primitiveType <comment="4: triangles, 5: triangles strip">;
         uint32  offsetIndices;
         int32   numIndices;
-        int32  vertexOffset;
-        int32   unknownF[7];
+        if (flags & 0x1) {
+            int32  vertexOffset;
+            int32   unknownF[7];
+        }
     } batchHeader;
     if ((batchHeader.flags & 0x8000) || (batchHeader.flags & 0x80) || (header.vertexFormat & 0x10) ) {
         int32 numBoneRefs;
