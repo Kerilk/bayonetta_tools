@@ -199,7 +199,7 @@ module Bayonetta
       v
     end
 
-    def self.get_rotation_matrix(*args, center: nil)
+    def self.get_rotation_matrix(*args, center: nil, order: nil)
       v = get_rotation_vector(*args)
       if center
         vt = get_translation_vector(*[center].flatten)
@@ -210,14 +210,43 @@ module Bayonetta
         mt2 = get_unit_matrix
       end
       m = mt2
-      m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
-      m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
-      m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+      if order
+        case order
+        when 0
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+        when 1
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+        when 2
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+        when 3
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+        when 4
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+        else
+          m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+        end
+      else
+        m = m * rotation_matrix( v[2], Vector::new(0.0, 0.0, 1.0))
+        m = m * rotation_matrix( v[1], Vector::new(0.0, 1.0, 0.0))
+        m = m * rotation_matrix( v[0], Vector::new(1.0, 0.0, 0.0))
+      end
       m = m * mt1
       m
     end
 
-    def self.get_inverse_rotation_matrix(*args, center: nil)
+    def self.get_inverse_rotation_matrix(*args, center: nil, order: nil)
       v = get_rotation_vector(*args)
       if center
         vt = get_translation_vector(*[center].flatten)
@@ -228,9 +257,38 @@ module Bayonetta
         mt2 = get_unit_matrix
       end
       m = mt2
-      m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
-      m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
-      m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+      if order
+        case order
+        when 0
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+        when 1
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+        when 2
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+        when 3
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+        when 4
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+        else
+          m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+          m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+          m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+        end
+      else
+        m = m * rotation_matrix( -v[0], Vector::new(1.0, 0.0, 0.0))
+        m = m * rotation_matrix( -v[1], Vector::new(0.0, 1.0, 0.0))
+        m = m * rotation_matrix( -v[2], Vector::new(0.0, 0.0, 1.0))
+      end
       m = m * mt1
       m
     end
@@ -243,15 +301,15 @@ module Bayonetta
       Matrix::new * 0.0
     end
 
-    def self.get_transformation_matrix(translate, rotate, scale)
+    def self.get_transformation_matrix(translate, rotate, scale, order: nil)
       get_translation_matrix(translate) *
-      get_rotation_matrix(rotate) *
+      get_rotation_matrix(rotate, order) *
       get_scaling_matrix(scale)
     end
 
-    def self.get_inverse_transformation_matrix(translate, rotate, scale)
+    def self.get_inverse_transformation_matrix(translate, rotate, scale, order: nil)
       get_inverse_scaling_matrix(scale) *
-      get_inverse_rotation_matrix(rotate) *
+      get_inverse_rotation_matrix(rotate, order) *
       get_inverse_translation_matrix(translate)
     end
 

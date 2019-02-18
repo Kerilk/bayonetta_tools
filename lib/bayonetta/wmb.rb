@@ -1489,9 +1489,14 @@ module Bayonetta
       if exp
         exp.apply(tracks, table)
       end
-      matrices = tracks.collect { |ts|
+      matrices = tracks.each_with_index.collect { |ts, bi|
+        if @header.offset_bone_flags > 0x0
+          order = @bone_flags[bi]
+        else
+          order = nil
+        end
         m = Linalg::get_translation_matrix(*ts[0..2])
-        m = m * Linalg::get_rotation_matrix(*ts[3..5])
+        m = m * Linalg::get_rotation_matrix(*ts[3..5], order: order)
         m = m * Linalg::get_scaling_matrix(*ts[7..9])
       }
       multiplied_matrices = []

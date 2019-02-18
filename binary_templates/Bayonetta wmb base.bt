@@ -36,7 +36,11 @@ typedef struct {
   float w;
 } f4_float4_t;
 
-typedef uint32 sampler2D_t <format=hex>;
+typedef uint32 sampler2D_t <format=hex, comment="0x80000000: special,
+0x90000000: sampler > 0xff => truncate to 1 byte else search in sampler Cache,
+0xA0000000: search samplerID >> 16 in special sampler cache and truncate ID to 1 byte ,
+0x80000000: truncate to 1 byte and look inside level specific samplers
+">;
 typedef uint32 samplerCUBE_t <format=hex>;
 
 typedef struct {
@@ -2397,7 +2401,13 @@ if ( header.offsetBoneSymmetries ) {
 
 if ( header.offsetBoneFlags ) {
     FSeek( header.offsetBoneFlags );
-    byte boneFlags[header.numBones];
+    byte boneFlags[header.numBones] <comment="Transform Order,
+      0: rot x rot y rot z,
+      1: rot x rot z rot y,
+      2: rot y rot x rot z,
+      3: rot y rot z rot x,
+      4: rot z rot x rot y,
+      5: rot z rot y rot x">;
 }
 
 
