@@ -301,15 +301,17 @@ module Bayonetta
       Matrix::new * 0.0
     end
 
-    def self.get_transformation_matrix(translate, rotate, scale, order: nil)
+    def self.get_transformation_matrix(translate, rotate, scale, parent_scale, order: nil)
       get_translation_matrix(translate) *
+      get_inverse_scaling_matrix(parent_scale) *
       get_rotation_matrix(rotate, order) *
       get_scaling_matrix(scale)
     end
 
-    def self.get_inverse_transformation_matrix(translate, rotate, scale, order: nil)
+    def self.get_inverse_transformation_matrix(translate, rotate, scale, parent_scale, order: nil)
       get_inverse_scaling_matrix(scale) *
       get_inverse_rotation_matrix(rotate, order) *
+      get_scaling_matrix(parent_scale) *
       get_inverse_translation_matrix(translate)
     end
 

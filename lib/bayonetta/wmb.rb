@@ -1476,6 +1476,7 @@ module Bayonetta
           b.relative_position.z,
           0.0, 0.0, 0.0,
           0.0,
+          1.0, 1.0, 1.0,
           1.0, 1.0, 1.0 ]
       }
       pose.each { |b, ts|
@@ -1496,8 +1497,15 @@ module Bayonetta
           order = nil
         end
         m = Linalg::get_translation_matrix(*ts[0..2])
+        pi = @bone_hierarchy[bi]
+        if pi != -1
+          parent_cumulative_scale = tracks[pi][10..12]
+          m = m * Linalg::get_inverse_scaling_matrix(*parent_cumulative_scale)
+          3.times { |i| ts[10+i] *= parent_cumulative_scale[i] }
+        end
+        3.times { |i|  ts[10+i] *= ts[7+i] }
         m = m * Linalg::get_rotation_matrix(*ts[3..5], order: order)
-        m = m * Linalg::get_scaling_matrix(*ts[7..9])
+        m = m * Linalg::get_scaling_matrix(*ts[10..12])
       }
       multiplied_matrices = []
       inverse_bind_pose = bones.collect { |b|
