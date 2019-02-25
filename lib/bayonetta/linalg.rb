@@ -15,6 +15,55 @@ module Bayonetta
         @data[i]
       end
 
+      def transpose
+        m = Matrix::new
+        4.times { |i|
+          4.times { |j|
+            m.data[i][j] = data[j][i]
+          }
+        }
+        m
+      end
+
+      def inverse
+        m = Matrix::new
+        s0 = data[0][0] * data[1][1] - data[1][0] * data[0][1]
+        s1 = data[0][0] * data[1][2] - data[1][0] * data[0][2]
+        s2 = data[0][0] * data[1][3] - data[1][0] * data[0][3]
+        s3 = data[0][1] * data[1][2] - data[1][1] * data[0][2]
+        s4 = data[0][1] * data[1][3] - data[1][1] * data[0][3]
+        s5 = data[0][2] * data[1][3] - data[1][2] * data[0][3]
+
+        c5 = data[2][2] * data[3][3] - data[3][2] * data[2][3]
+        c4 = data[2][1] * data[3][3] - data[3][1] * data[2][3]
+        c3 = data[2][1] * data[3][2] - data[3][1] * data[2][2]
+        c2 = data[2][0] * data[3][3] - data[3][0] * data[2][3]
+        c1 = data[2][0] * data[3][2] - data[3][0] * data[2][2]
+        c0 = data[2][0] * data[3][1] - data[3][0] * data[2][1]
+
+        invdet = 1.0 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0)
+        m.data[0][0] = ( data[1][1] * c5 - data[1][2] * c4 + data[1][3] * c3) * invdet
+        m.data[0][1] = (-data[0][1] * c5 + data[0][2] * c4 - data[0][3] * c3) * invdet
+        m.data[0][2] = ( data[3][1] * s5 - data[3][2] * s4 + data[3][3] * s3) * invdet
+        m.data[0][3] = (-data[2][1] * s5 + data[2][2] * s4 - data[2][3] * s3) * invdet
+
+        m.data[1][0] = (-data[1][0] * c5 + data[1][2] * c2 - data[1][3] * c1) * invdet
+        m.data[1][1] = ( data[0][0] * c5 - data[0][2] * c2 + data[0][3] * c1) * invdet
+        m.data[1][2] = (-data[3][0] * s5 + data[3][2] * s2 - data[3][3] * s1) * invdet
+        m.data[1][3] = ( data[2][0] * s5 - data[2][2] * s2 + data[2][3] * s1) * invdet
+
+        m.data[2][0] = ( data[1][0] * c4 - data[1][1] * c2 + data[1][3] * c0) * invdet
+        m.data[2][1] = (-data[0][0] * c4 + data[0][1] * c2 - data[0][3] * c0) * invdet
+        m.data[2][2] = ( data[3][0] * s4 - data[3][1] * s2 + data[3][3] * s0) * invdet
+        m.data[2][3] = (-data[2][0] * s4 + data[2][1] * s2 - data[2][3] * s0) * invdet
+
+        m.data[3][0] = (-data[1][0] * c3 + data[1][1] * c1 - data[1][2] * c0) * invdet
+        m.data[3][1] = ( data[0][0] * c3 - data[0][1] * c1 + data[0][2] * c0) * invdet
+        m.data[3][2] = (-data[3][0] * s3 + data[3][1] * s1 - data[3][2] * s0) * invdet
+        m.data[3][3] = ( data[2][0] * s3 - data[2][1] * s1 + data[2][2] * s0) * invdet
+        m
+      end
+
       def +(other)
         if other.kind_of?(Matrix)
           m = Matrix::new
@@ -304,13 +353,13 @@ module Bayonetta
     def self.get_transformation_matrix(translate, rotate, scale, parent_scale, order: nil)
       get_translation_matrix(translate) *
       get_inverse_scaling_matrix(parent_scale) *
-      get_rotation_matrix(rotate, order) *
+      get_rotation_matrix(rotate, order: order) *
       get_scaling_matrix(scale)
     end
 
     def self.get_inverse_transformation_matrix(translate, rotate, scale, parent_scale, order: nil)
       get_inverse_scaling_matrix(scale) *
-      get_inverse_rotation_matrix(rotate, order) *
+      get_inverse_rotation_matrix(rotate, order: order) *
       get_scaling_matrix(parent_scale) *
       get_inverse_translation_matrix(translate)
     end

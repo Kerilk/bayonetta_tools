@@ -1539,18 +1539,19 @@ module Bayonetta
           i = bone_refs[bi]
           vertex_matrix = vertex_matrix + multiplied_matrices[i] * (bw.to_f/255.to_f)
         }
+        normal_matrix = vertex_matrix.inverse.transpose
         vp = get_vertex_field(:position, vi)
         new_vp = vertex_matrix * Linalg::Vector::new(vp.x, vp.y, vp.z)
         vp.x = new_vp.x
         vp.y = new_vp.y
         vp.z = new_vp.z
         n = get_vertex_field(:normal, vi)
-        new_n = vertex_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)
+        new_n = (normal_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)).normalize
         n.x = new_n.x
         n.y = new_n.y
         n.z = new_n.z
         t = get_vertex_field(:tangents, vi)
-        new_t = vertex_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)
+        new_t = (normal_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)).normalize
         t.x = new_t.x
         t.y = new_t.y
         t.z = new_t.z
