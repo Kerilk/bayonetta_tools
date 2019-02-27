@@ -59,7 +59,7 @@ string pghalfRead( pghalf value )
 
 struct {
 	char      id[4]; // "mot\0"
-	uint16    flag; //sometimes seem to indicate that out of bound bone index are used no idea why.
+	uint16    flag <comment="0x1: looping, 0x2: camera motion, 0x4: unknown camera field relevant">; //0x2: camera motion present? 0x4: camera unknown field is relevant. 0x1 looping anim
 	int16     frameCount;
 	uint32    recordOffset;
 	uint32    recordNumber;
@@ -68,11 +68,11 @@ struct {
 FSeek( header.recordOffset );
 
 struct {
-	int16    boneIndex;
+	int16    boneIndex;//3936+ seems to be camera related? see em0600_010.mot for example
 	char     index;
 	char     flag;
 	int16    elemNumber;
-	int16    unknown; //always -1
+	int16    unknown; //always -1 unless header.flag & 0x4
 	union {
 		float    flt;
 		uint32   offset;
@@ -96,7 +96,31 @@ for ( i = 0; i < header.recordNumber; i++) {
 		    float values[records[i].elemNumber];
         } interpol1;
 		break;
-
+    // hermit spline coeffs values at key point index:
+    case 2:
+        struct {
+            struct {
+                uint16 index;
+                uint16 dummy;
+                float p;
+                float m0;
+                float m1;
+            } keys[records[i].elemNumber];
+        } interpol2;
+        break;
+	// same as 1 but with quantized data
+	// value: p + dp * cp;
+    case 3:
+        struct {
+            struct {
+                struct {
+                    float p;
+                    float dp;
+                } values;
+            } keys[records[i].elemNumber];
+            uint16 cp[records[i].elemNumber];
+        } interpol3;
+        break;
 	// quantized hermit spline coeffs values at key point index :
 	// value: p + dp * cp
 	// incoming derivative: m0 + dm0 * cm0
@@ -120,7 +144,15 @@ for ( i = 0; i < header.recordNumber; i++) {
 	    	} keys[records[i].elemNumber];
         } interpol4;
 		break;
-
+    case 5:
+        struct {
+            struct {
+                float p;
+                float dp;
+            } values;
+            uint32 cp[records[i].elemNumber];
+        }interpol5;
+        break;
 	// same as 4 with reduced precision and relative frame index encoding
 	case 6:
         struct {
