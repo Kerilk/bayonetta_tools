@@ -1,3 +1,59 @@
+typedef uint16 pghalf<read=pghalfRead>;
+
+string pghalfRead( pghalf value )
+{
+    double f = 0.0;
+    uint32 ui = value;
+    uint32 sign = ui & 0x8000;
+    ui = ui ^ sign;
+
+    uint32 exponent = ui & 0x7E00;
+    uint32 significand = ui ^ exponent;
+    int i;
+    int bit = 0x1 << 8;
+    for ( i = 1; i <= 9; i++ ) {
+        if ( bit & significand ) {
+            f += Pow(2.0, -i);
+        }
+        bit >>= 1;
+    }
+    string s;
+
+    int32 sexponent;
+    if ( exponent == 0x7E00 ) {
+        if (significand) {
+            SPrintf( s, "NaN" );
+        } else if (sign) {
+            SPrintf( s, "-Infinity" );
+        } else {
+            SPrintf( s, "+Infinity" );
+        }
+	} else if ( exponent != 0 ) {
+        exponent >>= 9;
+        sexponent = exponent;
+        sexponent -= 47;
+        f += 1.0;
+        f *= Pow(2.0, sexponent);
+        if (sign) {
+            f *= -1.0;
+        }
+        SPrintf( s, "%e", f );
+	} else {
+        if (significand) { //denorm
+            if( sign ) {
+                f *= -1;
+            }
+            f *= Pow(2.0, -46);
+            SPrintf( s, "%e", f );
+        } else if (sign) {
+            SPrintf( s, "-0.0" );
+        } else {
+            SPrintf( s, "0.0" );
+        }
+    }
+    return s;
+}
+
 struct {
     char    id[4];
     int32   u_a;
@@ -9,74 +65,124 @@ struct {
 FSeek(header.offsetRecord);
 
 struct {
-    int16   u_e;
+    int16   flags<comment="0x1: interpolation, 0x2 interpolation postprocessing">;
     int16   bone_index;
     char    animation_track;
-    char    entry_type;
-    char    u_h;
-    char    interpolation;//?
+    char    entry_count;
+    char    interpolation_entry_count;
+    char    interpolation;
     int16   num_points;
     int16   u_g;
     uint32  offset <format=hex>;
     uint32  offset2 <format=hex>;
 } record[header.numRecord];
 
+struct entryItem_t{
+    uint32  flag <format=hex, comment="
+0x80000000 not set then immediate value of float else bone track,
+0x1FF00: special,
+0x48000: value must be extracted with mask 0xff00,
+0x100: abs
+0x200: ceil
+0x400: floor
+0x800: round nearest
+0x40000: second flags,
+0x1: add (previous_res + value),
+0x2: minus (previous_res - value),
+0x4: product (previous_res * value),
+0x8: division (previous_res / value) unless value == 0">;
+    union {
+        struct {
+            int16   bone_index;
+            char    animation_track;
+            char    padding;
+        } boneTrackInfo;
+        float value;
+    } entryEnum;
+};
+
+
+
 local int i;
 for( i = 0; i < header.numRecord; i++) {
     FSeek(record[i].offset);
     
-    switch (record[i].entry_type) {
+    switch (record[i].entry_count) {
     case 0:
         break;
     case 1: // Copy
         struct {
-            uint32  flag <format=hex>;
-            int16   bone_index;
-            char    animation_track;
-            char    padding;
+            entryItem_t entryItems[record[i].entry_count];
         } entry<bgcolor=cRed>;
         break;
     case 2: // Scal
         struct {
-            uint32  flag <format=hex>;
-            int16   bone_index;
-            char    animation_track;
-            char    padding;
-            struct {
-                uint32  flag <format=hex, comment="0x4: mul, 0x1: add">;
-                float   val;
-            } coeff;
+            entryItem_t entryItems[record[i].entry_count];
         } entry<bgcolor=cGreen>;
         break;
     case 3: // Usually mul then add
         struct {
-            uint32  flag <format=hex>;
-            int16   bone_index;
-            char    animation_track;
-            char    padding;
-            struct {
-                uint32  flag <format=hex, comment="0x4: mul, 0x1: add">;
-                float   val;
-            } coeffs[2];
+            entryItem_t entryItems[record[i].entry_count];
         } entry<bgcolor=cBlue>;
         break;
-    }
-    if (record[i].interpolation == 4) {
-        FSeek(record[i].offset2);
+    default:
         struct {
-            float p;
-            float dp;
-            float m0;
-            float dm0;
-            float m1;
-            float dm1;
+            entryItem_t entryItems[record[i].entry_count];
+        } entry<bgcolor=cPurple>;
+    }
+    if (record[i].flags & 0x1) {
+        if ((record[i].flags & 0x2) && (record[i].interpolation_entry_count > 0)) {
             struct {
-                float   value;
-                uint16  dummy;
-                uint16  cp;
-                uint16  cm0;
-                uint16  cm1;
-            } points[record[i].num_points];
-        } entry2<bgcolor=cYellow>;
+                entryItem_t entryItems[record[i].interpolation_entry_count];
+            } interpolationEntry<bgcolor=cSilver>;
+        }
+    }
+    if (record[i].flags & 0x1) {
+        FSeek(record[i].offset2);
+        switch (record[i].interpolation) {
+        case 2:
+            struct {
+                struct {
+                    float value;
+                    float p;
+                    float m0;
+                    float m1;
+                } points[record[i].num_points];
+            } interpolation2;
+            break;
+        case 4:
+            struct {
+                float p;
+                float dp;
+                float m0;
+                float dm0;
+                float m1;
+                float dm1;
+                struct {
+                    float   value;
+                    uint16  dummy;
+                    uint16  cp;
+                    uint16  cm0;
+                    uint16  cm1;
+                } points[record[i].num_points];
+            } interpolation4<bgcolor=cYellow>;
+            break;
+        case 6:
+            struct {
+                pghalf p;
+                pghalf dp;
+                pghalf m0;
+                pghalf dm0;
+                pghalf m1;
+                pghalf dm1;
+                struct {
+                    ubyte value; // cast into float and accumulate
+                    ubyte cp;
+                    ubyte cm0;
+                    ubyte cm1;
+                } points[record[i].num_points];
+            } interpolation6;
+            break;
+        }
     }
 }
