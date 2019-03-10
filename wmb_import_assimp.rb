@@ -92,7 +92,9 @@ if $options[:list]
 
   source = target unless source
 
-  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace])
+  property_store = PropertyStore::new
+  property_store.import_fbx_preserve_pivots = Assimp::FALSE
+  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
   puts "Found #{scene.num_meshes} meshes."
   puts "Found #{scene.num_textures} embedded textures."
@@ -185,7 +187,9 @@ if $options[:skeleton]
 
   source = target unless source
 
-  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace])
+  property_store = PropertyStore::new
+  property_store.import_fbx_preserve_pivots = Assimp::FALSE
+  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
   skeleton = find_skeleton(scene)
   skeleton.each_node_with_depth { |n, d|
@@ -654,7 +658,9 @@ if $options[:verbose]
   Assimp::LogStream::verbose(1)
 end
 
-scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs])
+property_store = PropertyStore::new
+property_store.import_fbx_preserve_pivots = Assimp::FALSE
+scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs], props: property_store)
 
 
 common_mapping, bone_mapping = merge_bones(wmb, scene)

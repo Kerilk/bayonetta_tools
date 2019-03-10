@@ -150,7 +150,7 @@ for ( i = 0; i < header.recordNumber; i++) {
                 float p;
                 float dp;
             } values;
-            uint32 cp[records[i].elemNumber];
+            uchar cp[records[i].elemNumber];
         }interpol5;
         break;
 	// same as 4 with reduced precision and relative frame index encoding

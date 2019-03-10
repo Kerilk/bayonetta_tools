@@ -2885,7 +2885,7 @@ typedef    struct {
         uint32  offsetBatchOffsets;
         int32   flags <format=hex,comment="0x80000000: name present">;
         int32   unknownC[4];
-        char    name[32];
+        char    name[32]<comment="'UV_' substring is matched and is used (see loadMesh function)"> ;
         vector  center;
         float   height;
         vector  corner1;
