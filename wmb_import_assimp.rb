@@ -92,7 +92,7 @@ if $options[:list]
 
   source = target unless source
 
-  property_store = PropertyStore::new
+  property_store = Assimp::PropertyStore::new
   property_store.import_fbx_preserve_pivots = Assimp::FALSE
   scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
@@ -187,7 +187,7 @@ if $options[:skeleton]
 
   source = target unless source
 
-  property_store = PropertyStore::new
+  property_store = Assimp::PropertyStore::new
   property_store.import_fbx_preserve_pivots = Assimp::FALSE
   scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
@@ -658,7 +658,7 @@ if $options[:verbose]
   Assimp::LogStream::verbose(1)
 end
 
-property_store = PropertyStore::new
+property_store = Assimp::PropertyStore::new
 property_store.import_fbx_preserve_pivots = Assimp::FALSE
 scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs], props: property_store)
 
