@@ -73,6 +73,10 @@ OptionParser.new do |opts|
     $options[:print_transform] = print
   end
 
+  opts.on("--bone-prefix=STRING", "Change the bone prefix") do |prefix|
+    $options[:bone_prefix] = prefix
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -82,7 +86,11 @@ end.parse!
 
 $mesh_prefix = /mesh_(\d\d)_/
 $batch_prefix = /batch_(\d\d)_/
-$bone_prefix = /bone_(\d\d\d)/
+if $options[:bone_prefix]
+  $bone_prefix = /#{$options[:bone_prefix]}(\d\d\d)/
+else
+  $bone_prefix = /bone_(\d\d\d)/
+end
 $skeleton_prefix = /skeleton/
 
 target = ARGV[0]
