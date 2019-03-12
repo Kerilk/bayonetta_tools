@@ -654,6 +654,7 @@ raise "Invalid file #{target}" unless File::file?(target)
 raise "Invalid file #{source}" unless File::file?(source)
 
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
+Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 
 wmb = WMBFile::load(target)
 
