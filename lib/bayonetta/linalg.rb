@@ -167,9 +167,15 @@ module Bayonetta
 
       def normalize!
         l = Math::sqrt(x*x + y*y + z*z)
-        @data[0] /= l
-        @data[1] /= l
-        @data[2] /= l
+        if l != 0.0
+          @data[0] /= l
+          @data[1] /= l
+          @data[2] /= l
+        else
+          @data[0] = 0.0
+          @data[1] = 0.0
+          @data[2] = 0.0
+        end
         self
       end
 
