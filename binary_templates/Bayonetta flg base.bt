@@ -1,0 +1,35 @@
+struct {
+    int id;
+    uint meshUnknownSubstructFlagsCount;
+    uint meshUnknownSubstructFlagsOffset <format=hex>;
+    uint meshUnknownFlagsCount;
+    uint meshUnknownFlagsOffset <format=hex>;
+    uint meshUnknownSubstructFieldCCount;
+    uint meshUnknownSubstructFieldCOffset <format=hex>;
+    uint reserved[9];
+} header;
+
+if(header.meshUnknownSubstructFlagsCount && header.meshUnknownSubstructFlagsOffset) {
+    FSeek(header.meshUnknownSubstructFlagsOffset);
+    struct {
+        uint meshIndex;
+        uint mask <format=hex>;
+        uint flags <format=hex>;
+    } meshUnknownSubstructFlags[header.meshUnknownSubstructFlagsCount];
+}
+
+if(header.meshUnknownFlagsCount && header.meshUnknownFlagsOffset) {
+    FSeek(header.meshUnknownFlagsOffset);
+    struct {
+        uint meshIndex;
+        uint value <format=hex>;
+    } meshUnknownFlags[header.meshUnknownFlagsCount];
+}
+
+if(header.meshUnknownSubstructFieldCCount && header.meshUnknownSubstructFieldCOffset) {
+    FSeek(header.meshUnknownSubstructFieldCOffset);
+    struct {
+        uint meshIndex;
+        uint value;
+    } meshUnknownSubstructFieldC[header.meshUnknownSubstructFieldCCount];
+}
