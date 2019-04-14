@@ -44,7 +44,7 @@ OptionParser.new do |opts|
 
   opts.on("--remap-bones=BONEMAP", "Remaps specified local bones to global bone indexes") do |bone_map|
     if File.exist?(bone_map)
-      $options[:remap_bones] = YAML::load(bone_map)
+      $options[:remap_bones] = YAML::load_file(bone_map)
     else
       $options[:remap_bones] = eval(bone_map).to_h
     end
