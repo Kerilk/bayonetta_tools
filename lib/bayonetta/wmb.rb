@@ -1622,6 +1622,35 @@ module Bayonetta
       self
     end
 
+    def order_bones
+      arr = @bone_index_translate_table.table.sort
+      old_local_to_new_local = {}
+      arr.each_with_index { |(_, old_local), new_local|
+        old_local_to_new_local[old_local] = new_local
+      }
+      new_local_to_old_local = old_local_to_new_local.invert
+      bones = get_bone_structure
+      new_bones = bones.size.times.collect { |new_bi|
+        b = bones[new_local_to_old_local[new_bi]]
+        b.index = new_bi
+        b
+      }
+      new_bones.each { |b|
+        raise "Invali hierarchy: #{b.parent.index} >= #{b.index} !" if b.parent && b.parent.index >= b.index
+      }
+      set_bone_structure(new_bones)
+      new_table = @bone_index_translate_table.table.collect { |k, v| [k, old_local_to_new_local[v]] }.to_h
+      @bone_index_translate_table.table = new_table
+      @meshes.each_with_index { |m, i|
+        m.batches.each_with_index { |b, j|
+          b.bone_refs.collect! { |bi|
+            old_local_to_new_local[bi]
+          }
+        }
+      }
+      self
+    end
+
     def delete_meshes(list)
       kept_meshes = @meshes.size.times.to_a - list
       @meshes = kept_meshes.collect { |i|

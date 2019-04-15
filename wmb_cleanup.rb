@@ -50,6 +50,10 @@ OptionParser.new do |opts|
     end
   end
 
+  opts.on("--[no-]order-bones", "Order bones in their global numbering if possible") do |order_bones|
+    $options[:order_bones] = order_bones
+  end
+
   opts.on("-v", "--[no-]vertexes", "Cleanup vertexes") do |vertexes|
     $options[:vertexes] = vertexes
   end
@@ -205,6 +209,7 @@ if $options[:set_tpose]
 end
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.remap_bones($options[:remap_bones]) if $options[:remap_bones]
+wmb.order_bones if $options[:order_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
