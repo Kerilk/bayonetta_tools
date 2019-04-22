@@ -2384,13 +2384,22 @@ struct {
 if ( header.offsetUnknownJ ) {
     FSeek( header.offsetUnknownJ );
     struct {
+        byte    innerStructCount;
+        byte    u_a;
+        byte    u_b;
+        byte    u_c;
+        int32   offset;
+        FSeek( header.offsetUnknownJ + offset);
         struct {
-            byte    unknownA[4];
-            int32   unknownB;
-            int16   unknownC[4];
-        } unknownInnerStruct[2];
-        byte    unknownA[4];
-        int32   unknownB;
+            int16   globalBoneIndex;
+            int16   globalIndentifier;
+            int16   otherBoneIndex;
+            int16   structType;
+            byte    numParents;
+            byte    unknownB[3];
+            int32   unknownC;
+        } unknownInnerStruct[innerStructCount];
+
     } unknownStruct;
 }
 
