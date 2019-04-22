@@ -15,6 +15,7 @@ module Bayonetta
     ALIGNMENTS = {
       '.dds' => 0x1000,
       '.gtx' => 0x2000,
+      '.bntx' => 0x2000,
     }
     ALIGNMENTS.default = 0x20
 
@@ -28,6 +29,12 @@ module Bayonetta
         case @id
         when "WTB\0".b
           texture_type = ".dds"
+          if @wtp
+            tex_id = @wtp.read(4)
+            if tex_id == "BNTX"
+              texture_type = ".bntx"
+            end
+          end
           @big = false
         when "\0BTW".b
           texture_type = ".gtx"
@@ -175,7 +182,7 @@ module Bayonetta
     end
 
     def compute_layout
-      if @wtp && @big
+      if @wtp && ( @big || ( @texture_types && @texture_types.size > 0 && @texture_types[0] == ".bntx" ) )
         last_offset = @offset_texture_offsets = 0x40
       else
         last_offset = @offset_texture_offsets = 0x20
@@ -193,12 +200,16 @@ module Bayonetta
         }
         @total_size = last_offset
       else
-        last_offset = @offset_texture_infos = align(last_offset + 4*@num_tex, 0x20)
-        if @big
-          last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
+        unless @texture_types && @texture_types.size > 0 && @texture_types[0] == ".bntx" #Bayo 2 Switch
+          last_offset = @offset_texture_infos = align(last_offset + 4*@num_tex, 0x20)
+          if @big
+            last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
+            last_offset = align(last_offset + 4*@num_tex, 0x20)
+          else #Nier
+            last_offset = align(last_offset + 5*4*@num_tex, 0x20)
+          end
+        else
           last_offset = align(last_offset + 4*@num_tex, 0x20)
-        else #Nier
-          last_offset = align(last_offset + 5*4*@num_tex, 0x20)
         end
         @total_size = last_offset
 
@@ -218,7 +229,7 @@ module Bayonetta
               0
             end
           }
-        else #Nier
+        else #Nier or Bayo 2 Switch
           @texture_offsets = @num_tex.times.collect { |i|
             tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
             offset_wtp = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
@@ -237,6 +248,8 @@ module Bayonetta
         @texture_types.push( ".gtx" )
       when "DDS ".b
         @texture_types.push( ".dds" )
+      when "BNTX".b
+        @texture_types.push( ".bntx" )
       else
         begin
           warn "Determining type by extension!"
@@ -246,6 +259,8 @@ module Bayonetta
             @texture_types.push( ".dds" )
           when ".gtx"
             @texture_types.push( ".gtx" )
+          when ".bntx"
+            @texture_types.push( ".bntx" )
           else
             raise "Unsupported texture type! #{File.extname(p)}"
           end
@@ -344,7 +359,7 @@ module Bayonetta
               f.seek(@offset_mipmap_offsets)
               f.write(@mipmap_offsets.pack("#{uint}*"))
             end
-          else #Nier
+          else #Nier or Bayo 2 Switch
             if @offset_texture_infos != 0
               f.seek(@offset_texture_infos)
               f.write(@texture_infos.pack("#{uint}*"))
@@ -366,7 +381,7 @@ module Bayonetta
                   f_wtp.write(@textures[i].read(@mipmap_length[i]))
                 end
               }
-            else #Nier
+            else #Nier or Bayo 2 Switch
               @texture_offsets.each_with_index { |off, i|
                 f_wtp.seek(off)
                 @textures[i].rewind
