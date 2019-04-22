@@ -1,0 +1,7 @@
+uint count;
+uint offset;
+struct {
+    char name[0x20];
+    uint id<format=hex>;
+    uint unknown[10];
+} entries[count];
