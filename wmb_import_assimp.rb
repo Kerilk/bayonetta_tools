@@ -495,6 +495,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     }
     batch.bones.each { |bone|
       bone_index = bone_refs[bone.name]
+      raise "Missing bone: #{bone.name}!" unless bone_index
       bone.weights.each { |vtxweight|
         vertex_id = vtxweight.vertex_id
         weight = vtxweight.weight
