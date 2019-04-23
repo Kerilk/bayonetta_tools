@@ -293,7 +293,7 @@ end
 
 def update_translate_table(wmb, common_mapping, missing_bones, new_bone_indexes)
   missing_bones_count = new_bone_indexes.length
-  raise "Too many bones to add!" if missing_bones_count > 0x100
+  raise "Too many bones to add: #{missing_bones.inspect}!" if missing_bones_count > 0x100
   (align(missing_bones_count, 0x10) - missing_bones_count).times {
     new_bone_indexes.push(0xfff)
   }
