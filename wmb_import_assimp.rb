@@ -256,7 +256,12 @@ end
 def get_new_bones(wmb, mapping, node_mapping)
   bones_wmb = wmb.get_bone_structure
   if $options[:update_bones]
-    raise "Option --update-bones not yet implemented!"
+    common_bones = mapping.reject { |k,v| v.nil? }
+    common_bones.each { |k, v|
+      p = node_mapping[k].world_transformation * Assimp::Vector3D::new
+      pos = bones_wmb[v].position
+      pos.x, pos.y, pos.z = p.x, p.y, p.z
+    }
   end
 
   mapping[-1] = -1
