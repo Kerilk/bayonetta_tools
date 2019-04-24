@@ -756,6 +756,7 @@
     light_col2: f4_float3_t
 87:
   :size: 88
+  :size_vertex: 48
   :shader: modelshadergrs00_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -937,6 +938,7 @@
     diffuse2: f4_float3_t
 98:
   :size: 88
+  :size_vertex: 48
   :shader: modelshadergrs00_bxxxx
   :layout:
     Color_1: sampler2D_t
@@ -946,6 +948,7 @@
     prefogcolor_enhance: f4_float4_t
 99:
   :size: 88
+  :size_vertex: 48
   :shader: modelshaderbil00_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -955,6 +958,7 @@
     prefogcolor_enhance: f4_float4_t
 100:
   :size: 88
+  :size_vertex: 48
   :shader: modelshaderbil01_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -964,6 +968,7 @@
     prefogcolor_enhance: f4_float4_t
 101:
   :size: 152
+  :size_vertex: 80
   :shader: modelshaderbil02_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -999,6 +1004,7 @@
     light_col2: f4_float3_t
 103:
   :size: 88
+  :size_vertex: 48
   :shader: modelshaderbil03_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -1024,6 +1030,7 @@
     light_col2: f4_float3_t
 105:
   :size: 152
+  :size_vertex: 80
   :shader: modelshaderbil04_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -1420,6 +1427,7 @@
     fogfar: f4_float_t
 126:
   :size: 152
+  :size_vertex: 80
   :shader: modelshaderbil04_bxxxx
   :layout:
     Color_1: sampler2D_t
@@ -1551,6 +1559,7 @@
     light_col2: f4_float3_t
 133:
   :size: 88
+  :size_vertex: 48
   :shader: modelshadergrs00_xxxxa
   :layout:
     Color_1: sampler2D_t
@@ -1560,6 +1569,7 @@
     prefogcolor_enhance: f4_float4_t
 134:
   :size: 88
+  :size_vertex: 48
   :shader: modelshadergrs00_bxxxa
   :layout:
     Color_1: sampler2D_t
@@ -1625,6 +1635,7 @@
     diffuse2: f4_float3_t
 138:
   :size: 152
+  :size_vertex: 80
   :shader: modelshaderbil05_xxxxx
   :layout:
     Color_1: sampler2D_t
@@ -2272,6 +2283,7 @@
     light_col2: f4_float3_t
 175:
   :size: 184
+  :size_vertex: 80
   :shader: modelshaderetc09_bxxxx
   :layout:
     Color_1: sampler2D_t
@@ -2365,6 +2377,7 @@
     light_col2: f4_float3_t
 180:
   :size: 152
+  :size_vertex: 80
   :shader: modelshaderbil04_xxxxa
   :layout:
     Color_1: sampler2D_t
