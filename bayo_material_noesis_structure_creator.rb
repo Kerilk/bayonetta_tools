@@ -10,6 +10,32 @@ global_parameters_list = []
 
 mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
   if props[:shader] && props[:size]
+    if props[:size_vertex]
+      source_vertex = `./fxc.exe /dumpbin /nologo "#{shader_path}\\#{props[:shader]}.vso"`
+      params_vertex = source_vertex.match(/\/\/ Parameters:\r\n(.*)?\/\/ Registers/m)[1]
+      registers_vertex = source_vertex.match(/\/\/ Registers:\r\n(.*)?\/\/\r\n/m)[1]
+
+      type_hash_vertex = {}
+      params_vertex.lines[1..-3].each { |l|
+        type, name = l.match(/\/\/   (.*?) (.*?);/)[1..2]
+        global_parameters_list.push [name, type] unless type.match("float4x")
+        type_hash_vertex[name] = type
+      }
+
+      register_hash_vertex = {}
+      registers_vertex.lines[3..-1].each { |l|
+        name, reg, size = l.match(/\/\/   (.*?)\s+(.*?)\s+(\d*)/)[1..3]
+        register_hash_vertex[name] = [reg, size]
+      }
+
+      parameters_vertex = []
+      register_hash_vertex.each { |name, (reg, size)|
+        reg_number = reg.match(/c(\d*)/)[1]
+        parameters_vertex[reg_number.to_i] = name
+      }
+      parameters_vertex = parameters_vertex[216..-1]
+    end
+
     source = `./fxc.exe /dumpbin /nologo "#{shader_path}\\#{props[:shader]}.pso"`
     params = source.match(/\/\/ Parameters:\r\n(.*)?\/\/ Registers/m)[1]
     registers = source.match(/\/\/ Registers:\r\n(.*)?\/\/\r\n/m)[1]
@@ -49,6 +75,20 @@ mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
       remaining_size -= 4
     end
 
+    if props[:size_vertex]
+      remaining_size_vertex = props[:size_vertex]
+      parameters_vertex.each { |parameter|
+        break if remaining_size_vertex == 0
+        raise "Invalid material size_vertex #{props[:size_vertex]} for material #{num}!" if remaining_size_vertex < 0
+        if parameter
+        else
+          ignored_counter += 1
+        end
+        remaining_size_vertex -= 16
+        remaining_size -= 16
+      }
+    end
+ 
     parameters.each { |parameter|
       break if remaining_size == 0
       raise "Invalid material size #{props[:size]} for material #{num}!" if remaining_size < 0
@@ -109,6 +149,32 @@ func_default_parameters = [-1]*(samplers.size + parameters.size)
 
 mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
   if props[:shader] && props[:size]
+    if props[:size_vertex]
+      source_vertex = `./fxc.exe /dumpbin /nologo "#{shader_path}\\#{props[:shader]}.vso"`
+      params_vertex = source_vertex.match(/\/\/ Parameters:\r\n(.*)?\/\/ Registers/m)[1]
+      registers_vertex = source_vertex.match(/\/\/ Registers:\r\n(.*)?\/\/\r\n/m)[1]
+
+      type_hash_vertex = {}
+      params_vertex.lines[1..-3].each { |l|
+        type, name = l.match(/\/\/   (.*?) (.*?);/)[1..2]
+        global_parameters_list.push [name, type] unless type.match("float4x")
+        type_hash_vertex[name] = type
+      }
+
+      register_hash_vertex = {}
+      registers_vertex.lines[3..-1].each { |l|
+        name, reg, size = l.match(/\/\/   (.*?)\s+(.*?)\s+(\d*)/)[1..3]
+        register_hash_vertex[name] = [reg, size]
+      }
+
+      parameters_vertex = []
+      register_hash_vertex.each { |name, (reg, size)|
+        reg_number = reg.match(/c(\d*)/)[1]
+        parameters_vertex[reg_number.to_i] = name
+      }
+      parameters_vertex = parameters_vertex[216..-1]
+    end
+
     source = `./fxc.exe /dumpbin /nologo "#{shader_path}\\#{props[:shader]}.pso"`
     params = source.match(/\/\/ Parameters:\r\n(.*)?\/\/ Registers/m)[1]
     registers = source.match(/\/\/ Registers:\r\n(.*)?\/\/\r\n/m)[1]
@@ -161,6 +227,22 @@ mats.to_a.sort { |a, b| a[0] <=> b [0] }.each { |num, props|
       offset += 4
       ignored_counter += 1
       remaining_size -= 4
+    end
+
+    if props[:size_vertex]
+      remaining_size_vertex = props[:size_vertex]
+      parameters_vertex.each { |parameter|
+        break if remaining_size_vertex == 0
+        raise "Invalid material size_vertex #{props[:size_vertex]} for material #{num}!" if remaining_size_vertex < 0
+        if parameter
+          func_parameters[func_parameters_pos[parameter.downcase]] = offset
+        else
+          ignored_counter += 1
+        end
+        offset += 16
+        remaining_size_vertex -= 16
+        remaining_size -= 16
+      }
     end
 
     parameters.each { |parameter|
