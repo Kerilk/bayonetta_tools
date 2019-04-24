@@ -760,10 +760,11 @@
   :shader: modelshadergrs00_xxxxx
   :layout:
     Color_1: sampler2D_t
+    test_0: f4_float4_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 88:
   :size: 120
   :shader: modelshaderpls02_bxxxx
@@ -942,42 +943,48 @@
   :shader: modelshadergrs00_bxxxx
   :layout:
     Color_1: sampler2D_t
+    test_0: f4_float4_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 99:
   :size: 88
   :size_vertex: 48
   :shader: modelshaderbil00_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 100:
   :size: 88
   :size_vertex: 48
   :shader: modelshaderbil01_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 101:
   :size: 152
   :size_vertex: 80
   :shader: modelshaderbil02_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
+    lightpos: f4_float4_t
+    lightpos2: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 102:
   :size: 276
   :shader: modelshaderefs03_bxnxx
@@ -1008,10 +1015,11 @@
   :shader: modelshaderbil03_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 104:
   :size: 172
   :shader: modelshaderetc00_bxxmx
@@ -1034,12 +1042,15 @@
   :shader: modelshaderbil04_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
+    lightpos: f4_float4_t
+    lightpos2: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 106:
   :size: 212
   :shader: modelshaderefs04_bxnxx
@@ -1431,12 +1442,15 @@
   :shader: modelshaderbil04_bxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
+    lightpos: f4_float4_t
+    lightpos2: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 127:
   :size: 292
   :shader: modelshaderpls05_bxnxx
@@ -1563,20 +1577,22 @@
   :shader: modelshadergrs00_xxxxa
   :layout:
     Color_1: sampler2D_t
+    test_0: f4_float4_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 134:
   :size: 88
   :size_vertex: 48
   :shader: modelshadergrs00_bxxxa
   :layout:
     Color_1: sampler2D_t
+    test_0: f4_float4_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
     bias: f4_float_t
     fog: f4_float3_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 135:
   :size: 212
   :shader: modelshaderpls06_bxnxx
@@ -1639,12 +1655,15 @@
   :shader: modelshaderbil05_xxxxx
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
+    lightpos: f4_float4_t
+    lightpos2: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 139:
   :size: 172
   :shader: modelshaderefs08_bxxmx
@@ -2287,15 +2306,17 @@
   :shader: modelshaderetc09_bxxxx
   :layout:
     Color_1: sampler2D_t
+    blend: f4_float_t
+    specular: f4_float3_t
+    Spec_Type: f4_float_t
+    Spec_Limit: f4_float_t
+    lightpos: f4_float4_t
     fog: f4_float3_t
     fognear: f4_float_t
     fogfar: f4_float_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
     ingored2: f4_ignored_t
-    Color_1_Offset: f4_float2_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 176:
   :size: 188
   :shader: modelshaderetc10_xxxxx
@@ -2381,12 +2402,15 @@
   :shader: modelshaderbil04_xxxxa
   :layout:
     Color_1: sampler2D_t
+    fognear: f4_float_t
+    fogfar: f4_float_t
+    wave: f4_float4_t
+    lightpos: f4_float4_t
+    lightpos2: f4_float4_t
     bias: f4_float_t
     fog: f4_float3_t
     ingored0: f4_ignored_t
     ingored1: f4_ignored_t
-    finalcolor_enhance: f4_float4_t
-    prefogcolor_enhance: f4_float4_t
 181:
   :size: 212
   :shader: modelshaderpls06_bxnxa

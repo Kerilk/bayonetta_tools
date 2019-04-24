@@ -755,10 +755,11 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float4_t test_0;
+  f4_float_t fognear;
+  f4_float_t fogfar;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_57_values_t;
 
 typedef struct {
@@ -925,36 +926,42 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float4_t test_0;
+  f4_float_t fognear;
+  f4_float_t fogfar;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_62_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_63_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_64_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
+  f4_float4_t lightpos;
+  f4_float4_t lightpos2;
   f4_float_t bias;
   f4_float3_t fog;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_65_values_t;
 
 typedef struct {
@@ -982,10 +989,11 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_67_values_t;
 
 typedef struct {
@@ -1005,12 +1013,15 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
+  f4_float4_t lightpos;
+  f4_float4_t lightpos2;
   f4_float_t bias;
   f4_float3_t fog;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_69_values_t;
 
 typedef struct {
@@ -1380,12 +1391,15 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
+  f4_float4_t lightpos;
+  f4_float4_t lightpos2;
   f4_float_t bias;
   f4_float3_t fog;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_7e_values_t;
 
 typedef struct {
@@ -1504,18 +1518,20 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float4_t test_0;
+  f4_float_t fognear;
+  f4_float_t fogfar;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_85_values_t;
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float4_t test_0;
+  f4_float_t fognear;
+  f4_float_t fogfar;
   f4_float_t bias;
   f4_float3_t fog;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_86_values_t;
 
 typedef struct {
@@ -1573,12 +1589,15 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
+  f4_float4_t lightpos;
+  f4_float4_t lightpos2;
   f4_float_t bias;
   f4_float3_t fog;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_8a_values_t;
 
 typedef struct {
@@ -2183,15 +2202,17 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t blend;
+  f4_float3_t specular;
+  f4_float_t Spec_Type;
+  f4_float_t Spec_Limit;
+  f4_float4_t lightpos;
   f4_float3_t fog;
   f4_float_t fognear;
   f4_float_t fogfar;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
   f4_ignored_t ingored2;
-  f4_float2_t Color_1_Offset;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_af_values_t;
 
 typedef struct {
@@ -2271,12 +2292,15 @@ typedef struct {
 
 typedef struct {
   sampler2D_t Color_1;
+  f4_float_t fognear;
+  f4_float_t fogfar;
+  f4_float4_t wave;
+  f4_float4_t lightpos;
+  f4_float4_t lightpos2;
   f4_float_t bias;
   f4_float3_t fog;
   f4_ignored_t ingored0;
   f4_ignored_t ingored1;
-  f4_float4_t finalcolor_enhance;
-  f4_float4_t prefogcolor_enhance;
 } mat_b4_values_t;
 
 typedef struct {
