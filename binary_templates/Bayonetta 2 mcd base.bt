@@ -84,6 +84,8 @@ wstring read_strStruct(strStruct &str) {
     for(i = 0; i < (str.length - 1)/2; i++) {
         if(str.letters[i].code == 0x8001) {
             s += L' ';
+        } else if (str.letters[i].code == 0x8003) {
+            s += L"<LeftStick>";
         } else {
             s += chars[str.letters[i].code].c;
         }
