@@ -5,8 +5,8 @@ uint offsetCharSet<format=hex>;
 uint charCount;
 uint offsetCharGraphs<format=hex>;
 uint charGraphsCount;
-uint offsetUnknown<format=hex>;
-uint unknownCount;
+uint offsetSpecialGraphs<format=hex>;
+uint specialGraphsCount;
 uint offsetUsedEvents<format=hex>;
 uint usedEventCount;
 } header;
@@ -19,7 +19,7 @@ typedef struct {
 
 FSeek(header.offsetCharSet);
 struct {
-    short uA;
+    short languageFlags;
     wchar_t c;
     uint index;
 } chars[header.charCount];
@@ -28,6 +28,8 @@ wstring letter_Read(letter &let) {
     wstring s = L"";
     if(let.code <= 0x8000) {
         s += chars[let.code].c;
+    } else if (let.code == 0x8003) {
+        s += L"<LeftStick>";
     } else {
         s += L' ';
     }
@@ -43,7 +45,7 @@ local uint pos3;
 struct {
     uint paragraphsOffset<format=hex>;
     uint paragraphCount;
-    uint uA;
+    uint sequenceNumber<comment="UnknownUsage">;
     uint eventId<format=hex>;
     pos = FTell();
     FSeek(paragraphsOffset);
@@ -51,20 +53,20 @@ struct {
         struct {
             uint stringsOffset<format=hex>;
             int stringCount;
-            int u_b;
-            int u_c;
-            short u_d;
-            short u_e;
+            float belowSpacing;
+            float horizontalSpacing;
+            short languageFlags;
+            short padding<hidden=true>;
             pos2 = FTell();
             FSeek(stringsOffset);
             for(j = 0; j <stringCount; j++) {
                 struct strStruct{
                     uint stringOffset<format=hex>;
                     uint u_a;
-                    uint u_b;
+                    uint u_b<comment="same as length">;
                     uint length;
-                    float u_d;
-                    uint u_e;
+                    float belowSpacing;
+                    float horizontalSpacing;
                     pos3 = FTell();
                     FSeek(stringOffset);
                     letter letters[(length-1)/2];
@@ -102,21 +104,23 @@ struct {
     float v2;
     float width;
     float height;
-    float unknown[3];
+    float u_a;
+    float belowSpacing;
+    float horizontalSpacing;
 } charGraphs[header.charGraphsCount];
 
-FSeek(header.offsetUnknown);
+FSeek(header.offsetSpecialGraphs);
 struct {
     uint u_a;
-    float u_b;
-    float u_c;
-    float u_d;
-    uint u_e;
-} unknown[header.unknownCount];
+    float width;
+    float height;
+    float belowSpacing;
+    float horizontalSpacing;
+} specialGraphs[header.specialGraphsCount];
 
 FSeek(header.offsetUsedEvents);
 struct {
     uint eventID<format=hex>;
     uint envenIndex;
     char name[32];
-} usedEvents[header.usedEventCount];
+} usedEvents[header.usedEventCount]<comment="Ordered by eventID">;
