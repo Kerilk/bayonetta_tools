@@ -16,10 +16,11 @@ typedef struct {
     short positionOffset;
 }letter<read=letter_Read>;
 
+typedef short lang<comment="0x1: subtitle, 0x2: Japanese alphabet, 0x4: Latin alphabet, 0x10: unknown (always on)">;
 
 FSeek(header.offsetCharSet);
 struct {
-    short languageFlags;
+    lang languageFlags;
     wchar_t c;
     uint index;
 } chars[header.charCount];
@@ -45,7 +46,7 @@ local uint pos3;
 struct {
     uint paragraphsOffset<format=hex>;
     uint paragraphCount;
-    uint sequenceNumber<comment="UnknownUsage">;
+    uint sequenceNumber<comment="Unknown usage">;
     uint eventId<format=hex>;
     pos = FTell();
     FSeek(paragraphsOffset);
@@ -55,16 +56,16 @@ struct {
             int stringCount;
             float belowSpacing;
             float horizontalSpacing;
-            short languageFlags;
+            lang languageFlags;
             short padding<hidden=true>;
             pos2 = FTell();
             FSeek(stringsOffset);
             for(j = 0; j <stringCount; j++) {
                 struct strStruct{
                     uint stringOffset<format=hex>;
-                    uint u_a;
-                    uint u_b<comment="same as length">;
+                    uint u_a<comment="always found 0">;
                     uint length;
+                    uint length2<comment="always same as length">;
                     float belowSpacing;
                     float horizontalSpacing;
                     pos3 = FTell();
@@ -111,7 +112,7 @@ struct {
 
 FSeek(header.offsetSpecialGraphs);
 struct {
-    uint u_a;
+    uint languageFlags;
     float width;
     float height;
     float belowSpacing;
