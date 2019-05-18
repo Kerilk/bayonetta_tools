@@ -2,7 +2,7 @@ uint count;
 uint offset;
 struct {
     char name[0x20];
-    uint id<format=hex>;
+    uint ID<format=hex>;
     uint type<comment="1: speech, 2: silence">;
     uint lineNumberPerGroup;
     uint lastGroupStop;
@@ -13,4 +13,4 @@ struct {
     uint group2Start;
     uint group2Stop;
     uint group3Start;
-} entries[count];
+} events[count];

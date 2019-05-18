@@ -1,14 +1,14 @@
 struct {
-uint offsetEvents<format=hex>;
-uint eventCount;
-uint offsetCharSet<format=hex>;
-uint charCount;
-uint offsetCharGraphs<format=hex>;
-uint charGraphsCount;
-uint offsetSpecialGraphs<format=hex>;
-uint specialGraphsCount;
-uint offsetUsedEvents<format=hex>;
-uint usedEventCount;
+    uint offsetEvents<format=hex>;
+    uint eventCount;
+    uint offsetCharSet<format=hex>;
+    uint charCount;
+    uint offsetCharGraphs<format=hex>;
+    uint charGraphsCount;
+    uint offsetSpecialGraphs<format=hex>;
+    uint specialGraphsCount;
+    uint offsetUsedEvents<format=hex>;
+    uint usedEventCount;
 } header;
 
 typedef struct {
@@ -38,8 +38,6 @@ wstring letter_Read(letter &let) {
 }
 
 FSeek(header.offsetEvents);
-local int i;
-local int j;
 local uint pos;
 local uint pos2;
 local uint pos3;
@@ -47,41 +45,39 @@ struct {
     uint paragraphsOffset<format=hex>;
     uint paragraphCount;
     uint sequenceNumber<comment="Unknown usage">;
-    uint eventId<format=hex>;
+    uint eventID<format=hex>;
     pos = FTell();
     FSeek(paragraphsOffset);
-    for(i = 0; i <paragraphCount; i++) {    
-        struct {
-            uint stringsOffset<format=hex>;
-            int stringCount;
+    struct {
+        uint stringsOffset<format=hex>;
+        int stringCount;
+        float belowSpacing;
+        float horizontalSpacing;
+        lang languageFlags;
+        short padding<hidden=true>;
+        pos2 = FTell();
+        FSeek(stringsOffset);
+        struct strng{
+            uint stringOffset<format=hex>;
+            uint u_a<comment="always found 0">;
+            uint length;
+            uint length2<comment="always same as length">;
             float belowSpacing;
             float horizontalSpacing;
-            lang languageFlags;
-            short padding<hidden=true>;
-            pos2 = FTell();
-            FSeek(stringsOffset);
-            for(j = 0; j <stringCount; j++) {
-                struct strStruct{
-                    uint stringOffset<format=hex>;
-                    uint u_a<comment="always found 0">;
-                    uint length;
-                    uint length2<comment="always same as length">;
-                    float belowSpacing;
-                    float horizontalSpacing;
-                    pos3 = FTell();
-                    FSeek(stringOffset);
-                    letter letters[(length-1)/2];
-                    ushort terminator;
-                    FSeek(pos3);
-                }str<read=read_strStruct>;
+            pos3 = FTell();
+            FSeek(stringOffset);
+            if ((length-1)/2>0) {
+                letter letters[(length-1)/2];
             }
-            FSeek(pos2);
-        } paragraph;
-    }
+            ushort terminator;
+            FSeek(pos3);
+        }strs[stringCount]<optimize=false,read=read_strng>;
+        FSeek(pos2);
+    } paragraph[paragraphCount]<optimize=false>;
     FSeek(pos);
 } events[header.eventCount]<optimize=false>;
 
-wstring read_strStruct(strStruct &str) {
+wstring read_strng(strng &str) {
     wstring s = L"";
     int i = 0;
     for(i = 0; i < (str.length - 1)/2; i++) {
@@ -122,6 +118,6 @@ struct {
 FSeek(header.offsetUsedEvents);
 struct {
     uint eventID<format=hex>;
-    uint envenIndex;
+    uint enventIndex;
     char name[32];
 } usedEvents[header.usedEventCount]<comment="Ordered by eventID">;
