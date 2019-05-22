@@ -1,0 +1,26 @@
+LittleEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("WTB\0", id, 4) == 0, "Wrong file type");
+FSeek(0);
+struct {
+    char    id[4]; //WTB\0
+    int32   unknown;
+    int32   numTex;
+    uint32  offsetTextureOffsets <format=hex>;
+    uint32  offsetTextureSizes <format=hex>;
+    uint32  offsetTextureFlags <format=hex>;
+    uint32  offsetTextureIdx <format=hex>;
+    uint32  offsetTextureInfo <format=hex>;
+} header;
+
+FSeek( header.offsetTextureOffsets );
+uint32  textureOffsets[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureSizes );
+int32  textureSizes[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureFlags );
+uint32  textureFlags[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureIdx );
+uint32  textureIdx[header.numTex] <format=hex>;

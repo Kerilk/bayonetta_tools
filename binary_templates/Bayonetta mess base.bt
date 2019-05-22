@@ -11,7 +11,7 @@ struct {
     uint    size;
     pos = FTell();
     FSeek(offset+4);
-    short message[size/2];
+    short message[size/2]<comment="0xfff: code point, 0x1000: local code point else common, 0x8000: special (code point 0: carriage return, 2: endline)">;
     FSeek(pos);
 } records[header.recordCount]<optimize=false>;
 

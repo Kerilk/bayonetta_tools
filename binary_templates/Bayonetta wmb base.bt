@@ -2466,7 +2466,7 @@ typedef struct {
 struct {
 	char    id[4]; //WMB
     int32   unknownA;
-    int32   vertexFormat <comment="0x8000000 && 0x10 => vertex ex data, 0x40000000: vertex data present, 0x8000000(compressed mapping/normals): size +=12, 0x20(position2): size+= 12, 0x10(bone): size += 8, 0x8(normal): size += 12(float) or 4(compressed), 0x4(mapping): size += numMapping*(4(half) or 8(float)), 0x2(color): size += 4, 0x1(tangents): size += 4  ">;
+    int32   vertexFormat <format=hex,comment="0x8000000 && 0x10 => vertex ex data, 0x40000000: vertex data present, 0x8000000(compressed mapping/normals): size +=12, 0x20(position2): size+= 12, 0x10(bone): size += 8, 0x8(normal): size += 12(float) or 4(compressed), 0x4(mapping): size += numMapping*(4(half) or 8(float)), 0x2(color): size += 4, 0x1(tangents): size += 4  ">;
     int32   numVertexes;
     char    numMapping <comment="vertexFormat & 0x4 && numMapping == 2 => exSize += 4\n, vertexFormat & 0x2 => exSize += 4,\n vertexFormat & 0x20 => exSize += 12">;
     char    vertexExData;
