@@ -79,18 +79,20 @@ struct {
 
 struct entryItem_t{
     uint32  flag <format=hex, comment="
-0x80000000 not set then immediate value of float else bone track,
-0x1FF00: special,
-0x48000: value must be extracted with mask 0xff00,
-0x100: abs
-0x200: ceil
-0x400: floor
-0x800: round nearest
-0x40000: second flags,
+0x80000000 not set then immediate value of float, else bone track,
+0x8000: split flags if second flags present,
+0x1FF00: special, must stack flags and value,
+0x20000: apply stacked flags
+0x40000: stack second flags and 0.0f,
+0x80000: apply second stacked flags
 0x1: add (previous_res + value),
 0x2: minus (previous_res - value),
 0x4: product (previous_res * value),
-0x8: division (previous_res / value) unless value == 0">;
+0x8: division (previous_res / value) unless value == 0,
+0x100: abs
+0x200: ceil
+0x400: floor
+0x800: round nearest">;
     union {
         struct {
             int16   bone_index;
@@ -133,7 +135,7 @@ for( i = 0; i < header.numRecord; i++) {
     if (record[i].flags & 0x1) {
         if ((record[i].flags & 0x2) && (record[i].interpolation_entry_count > 0)) {
             struct {
-                entryItem_t entryItems[record[i].interpolation_entry_count];
+                entryItem_t interpolationEntryItems[record[i].interpolation_entry_count];
             } interpolationEntry<bgcolor=cSilver>;
         }
     }
