@@ -38,7 +38,7 @@ typedef struct {
 
 typedef uint32 sampler2D_t <format=hex, comment="0x80000000: special,
 0x90000000: sampler > 0xff => truncate to 1 byte else search in sampler Cache,
-0xA0000000: search samplerID >> 16 in special sampler cache and truncate ID to 1 byte ,
+0xA0000000: search ((samplerID >> 16) & 0xff) level sampler cache and truncate ID to 1 byte ,
 0x80000000: truncate to 1 byte and look inside level specific samplers
 ">;
 typedef uint32 samplerCUBE_t <format=hex>;
