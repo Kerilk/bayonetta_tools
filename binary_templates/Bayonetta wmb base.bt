@@ -3242,7 +3242,7 @@ typedef struct {
             int32   unknownF[7];
         }
     } batchHeader;
-    if ((batchHeader.flags & 0x8000) || (batchHeader.flags & 0x80) || (header.vertexFormat & 0x10) ) {
+    if (batchHeader.hasBoneRefs) {
         int32 numBoneRefs;
         if(numBoneRefs > 0) {
             uchar boneRefs[numBoneRefs];

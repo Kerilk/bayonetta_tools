@@ -777,10 +777,10 @@ module Bayonetta
     class BatchHeader < DataConverter
       register_field :batch_id, :s #Bayo 2
       register_field :mesh_id, :s
-      register_field :u_b, :S
+      register_field :flags, :S
       register_field :ex_mat_id, :s
       register_field :material_id, :C
-      register_field :u_d, :c
+      register_field :has_bone_refs, :C
       register_field :u_e1, :C
       register_field :u_e2, :C
       register_field :vertex_start, :L
@@ -794,10 +794,10 @@ module Bayonetta
       def initialize
         @batch_id = 0
         @mesh_id = 0
-        @u_b = 0x8001
+        @flags = 0x8001
         @ex_mat_id = 0
         @material_id = 0
-        @u_d = 1
+        @has_bone_refs = 1
         @u_e1 = 0
         @u_e2 = 0
         @vertex_start = 0
@@ -812,9 +812,9 @@ module Bayonetta
 
     class Batch < DataConverter
       register_field :header, BatchHeader
-      register_field :num_bone_ref, :l, condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
-      register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
-      register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0 && !(..\..\is_bayo2?)'
+      register_field :num_bone_ref, :l, condition: 'header\has_bone_refs != 0'
+      register_field :bone_refs, :C, count: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
+      register_field :unknown, :F, count: 4, condition: 'header\has_bone_refs == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
       def initialize
@@ -826,7 +826,7 @@ module Bayonetta
 
       def duplicate(positions, vertexes, vertexes_ex)
         b = Batch::new
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           b.header = @header.dup
           b.num_bone_ref = @num_bone_ref
           b.bone_refs = @bone_refs.dup
@@ -900,7 +900,7 @@ module Bayonetta
       end
 
       def cleanup_bone_refs(vertexes)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
@@ -916,7 +916,7 @@ module Bayonetta
       end
 
       def add_ancestors_bone_refs(vertexes, bones)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
@@ -936,7 +936,7 @@ module Bayonetta
       end
 
       def add_previous_bone_refs(vertexes, bones)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           last_bone = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.max

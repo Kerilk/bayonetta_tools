@@ -213,7 +213,7 @@ def merge_meshes(wmb1, wmb2)
       b.header.mesh_id = m.header.id
       if !wmb1.is_bayo2? && wmb2.is_bayo2?
         b.header.batch_id = 0x0
-        b.header.u_b = 0x8001
+        b.header.flags = 0x8001
         if b.header.u_e1 == 0x10
           b.header.u_e1 = 0x0
         elsif b.header.u_e1 == 0x30
