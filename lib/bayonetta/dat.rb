@@ -78,7 +78,7 @@ module Bayonetta
 
         @files = @file_number.times.collect { |i|
           f.seek(@file_offsets[i])
-          of = StringIO::new( f.read(@file_sizes[i]), "rb")
+          of = StringIO::new( f.read(@file_sizes[i]), "r+b")
         }
         f.close if file_name_input
         @layout = @file_names.dup
