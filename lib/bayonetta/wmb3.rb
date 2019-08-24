@@ -80,7 +80,7 @@ module Bayonetta
         uint32 :vertex_group_index
         uint32 :mesh_index
         uint32 :material_index
-        int32 :u_a
+        int32 :call_tree_node_index
         uint32 :mesh_material_index
         int32 :u_b
       end
@@ -95,6 +95,13 @@ module Bayonetta
       register_field :header, Header
       string :name, offset: 'header\offset_name'
       register_field :batch_infos, BatchInfo, count: 'header\num_batch_infos', offset: 'header\offset_batch_infos'
+    end
+
+    class ColTreeNode < DataConverter
+      register_field :p1, Position
+      register_field :p2, Position
+      int32 :left
+      int32 :right
     end
 
     class Batch < DataConverter
@@ -194,26 +201,20 @@ module Bayonetta
       class Indices < DataConverter
 
         def self.convert(input, output, input_big, output_big, parent, index)
-          u_b = parent.__parent.header.u_b
-          case u_b
-          when 0xa, 0x8
+          flags = parent.__parent.header.flags
+          if flags & 0x8 != 0
             return IIndices::convert(input, output, input_big, output_big, parent, index)
-          when 0x2
-            return SIndices::convert(input, output, input_big, output_big, parent, index)
           else
-            raise "Unknow u_b: #{u_b}!"
+            return SIndices::convert(input, output, input_big, output_big, parent, index)
           end
         end
 
         def self.load(input, input_big, parent, index)
-          u_b = parent.__parent.header.u_b
-          case u_b
-          when 0xa, 0x8
+          flags = parent.__parent.header.flags
+          if flags & 0x8 != 0
             return IIndices::load(input, input_big, parent, index)
-          when 0x2
-            return SIndices::load(input, input_big, parent, index)
           else
-            raise "Unknow u_b: #{u_b}!"
+            return SIndices::load(input, input_big, parent, index)
           end
         end
 
@@ -252,6 +253,10 @@ module Bayonetta
       register_field :t_position, Position
     end
 
+    class Unknown1 < DataConverter
+      uint32 :data, count: 6
+    end
+
     class InfoPair < DataConverter
       uint32 :offset
       uint32 :number
@@ -265,7 +270,7 @@ module Bayonetta
       uint32 :id
       uint32 :version
       int32  :u_a
-      int16  :u_b
+      int16  :flags
       int16  :u_c
       float  :bounding_box, count: 6
       info_pair :info_bones
@@ -273,13 +278,13 @@ module Bayonetta
       info_pair :info_vertex_groups
       info_pair :info_batches
       info_pair :info_lods
-      info_pair :info_u_d
+      info_pair :info_col_tree_nodes
       info_pair :info_bone_map
       info_pair :info_bone_sets
       info_pair :info_materials
       info_pair :info_meshes
       info_pair :info_mesh_material_pairs
-      info_pair :info_u_e
+      info_pair :info_unknown1
     end
 
     register_field :header, Header
@@ -293,6 +298,8 @@ module Bayonetta
                    offset: 'header\info_batches\offset'
     register_field :lods, Lod, count: 'header\info_lods\number', sequence: true,
                    offset: 'header\info_lods\offset + __iterator * 20'
+    register_field :col_tree_nodes, ColTreeNode, count: 'header\info_col_tree_nodes\number',
+                   offset: 'header\info_col_tree_nodes\offset'
     uint32         :bone_map, count: 'header\info_bone_map\number',
                    offset: 'header\info_bone_map\offset'
     register_field :bone_sets, BoneSet, count: 'header\info_bone_sets\number', sequence: true,
@@ -304,6 +311,8 @@ module Bayonetta
     register_field :mesh_material_pairs, MeshMaterialPair,
                    count: 'header\info_mesh_material_pairs\number',
                    offset: 'header\info_mesh_material_pairs\offset'
+    register_field :unknow1, Unknown1, count: 'header\info_unknown1\number',
+                   offset: 'header\info_unknown1\offset'
 
     def was_big?
       @__was_big

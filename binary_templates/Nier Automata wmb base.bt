@@ -34,7 +34,7 @@ struct {
 	char    id[4]; //WMB3
     uint32  version<format=hex>;
     int32   unknownA;
-    int16   unknownCount;
+    int16   flags <comment="0x8 indices int32 else int16">;
     int16   unknownTerminator;
     struct  {
         float x, y, z;
@@ -223,12 +223,10 @@ if( header.offsetVertexGroups != 0 ) {
             } vertexesExData[numVertexes];
         }
         FSeek(indexBufferOffset);
-        if(header.unknownCount == 10 || header.unknownCount == 8) {
+        if(header.flags & 0x8) {
             uint32 indexes[numIndexes];
-        } else if (header.unknownCount == 2) {
-            uint16 indexes[numIndexes];
         } else {
-            Printf("Unknown unknownCount %d!!!\n", header.unknownCount);
+            uint16 indexes[numIndexes];
         }
         FSeek(pos);
     } vertexGroups[header.numVertexGroups] <optimize=false>;

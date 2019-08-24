@@ -83,8 +83,6 @@
     - :tangents_t
   - - :mapping
     - :mapping_t
-  - - :bone_infos
-    - :bone_infos_t
   - - :mapping2
     - :mapping_t
   - - :color
