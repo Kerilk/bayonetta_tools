@@ -113,12 +113,12 @@ if( header.offsetVertexGroups != 0 ) {
         uint32  vertexExDataSize;
         uint32  unknownSize[2];
         int32   numVertexes;
-        int32   vertexExDataFlags <format=binary>;
+        int32   vertexFlags <format=binary>;
         int32   indexBufferOffset <format=hex>;
         int32   numIndexes;
         local uint32 pos = FTell();
         FSeek(vertexOffset);
-        if( vertexExDataFlags == 0xb ) {
+        if( vertexFlags == 0xb ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -134,7 +134,7 @@ if( header.offsetVertexGroups != 0 ) {
                 normal_t    normal;
                 mapping_t   mapping3;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x7 ) {
+        } else if( vertexFlags == 0x7 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -148,7 +148,7 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping2;
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xa ) {
+        } else if( vertexFlags == 0xa ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -163,7 +163,7 @@ if( header.offsetVertexGroups != 0 ) {
                 ubyteList   color;
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x5 ) {
+        } else if( vertexFlags == 0x5 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -177,7 +177,7 @@ if( header.offsetVertexGroups != 0 ) {
                 normal_t    normal;
                 mapping_t   mapping3;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x4 ) {
+        } else if( vertexFlags == 0x4 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -190,7 +190,7 @@ if( header.offsetVertexGroups != 0 ) {
             struct {
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xe ) {
+        } else if( vertexFlags == 0xe ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -205,7 +205,7 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping3;
                 mapping_t   mapping4;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xc ) {
+        } else if( vertexFlags == 0xc ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
