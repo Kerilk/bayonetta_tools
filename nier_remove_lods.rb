@@ -1,5 +1,6 @@
 #!ruby
 require 'yaml'
+require 'fileutils'
 require_relative 'lib/bayonetta'
 
 module Bayonetta
@@ -54,43 +55,48 @@ wmb_block = lambda { |path, f|
   patched
 }
 
-dat_block = lambda { |path, f|
+dat_block = lambda { |path|
   puts "Processing #{path}"
+  original_verbosity = $VERBOSE
+  $VERBOSE = nil
   begin
-    d = Bayonetta::DATFile::new(f)
+    `ruby dat_extractor.rb #{path} 2>&1`
   rescue
+    $VERBOSE = original_verbosity
     warn "could not open #{path}!"
     next
   end
-  wmbs = d.each.collect.select { |n, df|
-    File.extname(n) == ".wmb" && df.size > 0
-  }
+  $VERBOSE = original_verbosity
+  dat_dir_path = File::join( File::dirname(path), File.basename(path, File.extname(path)) ) + File.extname(path).gsub(".","_")
+  next unless File.directory?(dat_dir_path)
+  wmbs = Dir.glob("#{dat_dir_path}/*.wmb")
+  p wmbs
   patched = false
-  wmbs.each { |n, wf|
-    res = wmb_block.call("#{path}/#{n}", wf)
-    patched = true if res
+  wmbs.each { |wmb_path|
+    File::open(wmb_path, "r+b") { |wf|
+      res = wmb_block.call(wmb_path, wf)
+      patched = true if res
+    }
   }
   if patched
     dir_path = File::join(File::dirname(path),"dat_output")
     Dir.mkdir(dir_path) unless Dir.exist?(dir_path)
     file_path = File::join(dir_path, File::basename(path))
     puts "\tWriting #{file_path}..."
-    d.dump(file_path)
+    `ruby dat_creator.rb #{dat_dir_path}`
+    FileUtils.cp(File.join(dat_dir_path, "dat_output", File::basename(path)), dir_path)
   end
+  FileUtils.remove_dir(dat_dir_path)
 }
 
 path = ARGV[0]
 if File::directory?(path)
   dats = Dir.glob("#{ARGV[0]}/**/*.dtt")
   dats.each { |path|
-    File::open(path, "rb") { |f|
-       dat_block.call(path, f)
-    }
+    dat_block.call(path)
   }
 elsif File::exist?(path)
-  File::open(path, "rb") { |f|
-    dat_block.call(path, f)
-  }
+  dat_block.call(path)
 else
   raise "Invalid file or directory: #{ARGV[0]}!"
 end
