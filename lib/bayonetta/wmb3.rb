@@ -366,8 +366,36 @@ module Bayonetta
       self
     end
 
+    def delete_batches(batch_list)
+      if @lods && @batches
+        batch_indexes = @header.info_batches.number.times.to_a
+        batch_indexes -= batch_list
+        batch_index_map = batch_indexes.each_with_index.to_h
+        @batches = batch_indexes.collect { |index|
+          @batches[index]
+        }
+        @header.info_batches.number = @batches.size
+        @lods.each { |lod|
+          if lod.batch_infos
+            new_batch_infos = []
+            lod.batch_infos.each_with_index { |batch_info, index|
+              unless batch_list.include?(lod.header.batch_start + index)
+                new_batch_infos.push batch_info
+              end
+              lod.batch_infos = new_batch_infos
+              lod.header.num_batch_infos = lod.batch_infos.size
+            }
+          end
+        }
+        @lods.each { |lod|
+          if lod.batch_infos
+            lod.header.batch_start = batch_index_map[lod.header.batch_start]
+          end
+        }
+      end
+    end
+
     def recompute_layout
-      puts "Recomputing"
       last_offset = 0x88
 
       if @header.info_bones.number > 0

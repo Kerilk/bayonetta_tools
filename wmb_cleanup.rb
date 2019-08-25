@@ -102,6 +102,10 @@ OptionParser.new do |opts|
     $options[:delete_meshes] = eval(mesh_list).to_a
   end
 
+  opts.on("--delete-batches=BATCHLIST", "Delete specified batches (WMB3)") do |batch_list|
+    $options[:delete_batches] = eval(batch_list).to_a
+  end
+
   opts.on("--split-meshes=MESHLIST", "Split the selected meshes into meshes containing only one batch") do |split_meshes|
     $options[:split_meshes] = eval(split_meshes).to_a
   end
@@ -183,7 +187,11 @@ wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.move_meshes($options[:move_meshes]) if $options[:move_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
-wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
+if $options[:delete_meshes]
+  wmb.delete_meshes($options[:delete_meshes])
+elsif $options[:delete_batches]
+  wmb.delete_batches($options[:delete_batches])
+end
 wmb.cleanup_bone_refs if $options[:bone_refs]
 wmb.add_ancestors_bone_refs if $options[:submodel_bone_refs]
 wmb.add_previous_bone_refs if $options[:previous_bone_refs]
