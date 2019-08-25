@@ -314,6 +314,58 @@ module Bayonetta
     register_field :unknown1, Unknown1, count: 'header\info_unknown1\number',
                    offset: 'header\info_unknown1\offset'
 
+    def delete_meshes(list)
+      kept_meshes = @meshes.size.times.to_a - list
+      new_mesh_map = kept_meshes.each_with_index.to_h
+      if @meshes
+        @meshes = kept_meshes.collect { |i|
+          @meshes[i]
+        }
+        @header.info_meshes.number = @meshes.size
+      end
+      if @mesh_material_pairs
+        @mesh_material_pairs = @mesh_material_pairs.select { |pair|
+          ! list.include?(pair.mesh_index)
+        }
+        @header.info_mesh_material_pairs.number = @mesh_material_pairs.size
+        @mesh_material_pairs.each { |pair|
+          pair.mesh_index = new_mesh_map[pair.mesh_index]
+        }
+      end
+      if @lods && @batches
+        batch_indexes = @header.info_batches.number.times.to_a
+        filtered_batches = Set::new
+        @lods.each { |lod|
+          if lod.batch_infos
+            lod.batch_infos.each_with_index { |batch_info, index|
+              if list.include?(batch_info.mesh_index)
+                filtered_batches.add( index + lod.header.batch_start )
+              end
+            }
+            lod.batch_infos = lod.batch_infos.select { |batch_info|
+              ! list.include?(batch_info.mesh_index)
+            }
+            lod.header.num_batch_infos = lod.batch_infos.size
+            lod.batch_infos.each { |batch_info|
+              batch_info.mesh_index = new_mesh_map[batch_info.mesh_index]
+            }
+          end
+        }
+        batch_indexes -= filtered_batches.to_a
+        batch_index_map = batch_indexes.each_with_index.to_h
+        @batches = batch_indexes.collect { |index|
+          @batches[index]
+        }
+        @header.info_batches.number = @batches.size
+        @lods.each { |lod|
+          if lod.batch_infos
+            lod.header.batch_start = batch_index_map[lod.header.batch_start]
+          end
+        }
+      end
+      self
+    end
+
     def recompute_layout
       puts "Recomputing"
       last_offset = 0x88
