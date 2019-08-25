@@ -311,8 +311,178 @@ module Bayonetta
     register_field :mesh_material_pairs, MeshMaterialPair,
                    count: 'header\info_mesh_material_pairs\number',
                    offset: 'header\info_mesh_material_pairs\offset'
-    register_field :unknow1, Unknown1, count: 'header\info_unknown1\number',
+    register_field :unknown1, Unknown1, count: 'header\info_unknown1\number',
                    offset: 'header\info_unknown1\offset'
+
+    def recompute_layout
+      puts "Recomputing"
+      last_offset = 0x88
+
+      if @header.info_bones.number > 0
+        last_offset = @header.info_bones.offset = align(last_offset, 0x10)
+        last_offset += @bones.first.size * @header.info_bones.number
+      else
+        @header.info_bones.offset = 0x0
+      end
+
+      if @header.info_bones.number > 0
+        last_offset = @header.info_bone_index_translate_table.offset = align(last_offset, 0x10)
+        last_offset += @bone_index_translate_table.size
+      else
+        @header.info_bone_index_translate_table.offset = 0x0
+      end
+
+      if @header.info_vertex_groups.number > 0
+        last_offset = @header.info_vertex_groups.offset = align(last_offset, 0x4)
+        last_offset += @vertex_groups.first.header.size * @header.info_vertex_groups.number
+        @vertex_groups.each { |vg|
+          if vg.header.num_vertexes > 0
+            last_offset = vg.header.offset_vertexes = align(last_offset, 0x10)
+            last_offset += vg.header.vertex_size * vg.header.num_vertexes
+            if vg.header.vertex_ex_data_size > 0
+              last_offset = vg.header.offset_vertexes_ex_data = align(last_offset, 0x10)
+              last_offset += vg.header.vertex_ex_data_size * vg.header.num_vertexes
+            end
+          end
+          if vg.header.num_indices > 0
+            last_offset = vg.header.offset_indices = align(last_offset, 0x10)
+            last_offset += (@header.flags & 0x8 > 0 ? 4 : 2) * vg.header.num_indices
+          end
+        }
+      else
+        @header.info_vertex_groups.offset = 0x0
+      end
+
+      if @header.info_batches.number > 0
+        last_offset = @header.info_batches.offset = align(last_offset, 0x4)
+        last_offset += @batches.first.size * @header.info_batches.number
+      else
+        @header.info_batches.offset = 0x0
+      end
+
+      if @header.info_lods.number > 0
+        last_offset = @header.info_lods.offset = align(last_offset, 0x4)
+        last_offset += @lods.first.header.size * @header.info_lods.number
+        @lods.each { |lod|
+          if lod.header.num_batch_infos > 0
+            lod.header.offset_batch_infos = last_offset
+            last_offset += lod.batch_infos.first.size * lod.header.num_batch_infos
+          end
+          lod.header.offset_name = last_offset
+          last_offset += lod.name.size
+        }
+      else
+        @header.info_lods.offset = 0x0
+      end
+
+      if @header.info_mesh_material_pairs.number > 0
+        last_offset = @header.info_mesh_material_pairs.offset = align(last_offset, 0x10)
+        last_offset += @mesh_material_pairs.first.size * @header.info_mesh_material_pairs.number
+      else
+        @header.info_mesh_material_pairs.offset = 0x0
+      end
+
+      if @header.info_col_tree_nodes.number > 0
+        last_offset = @header.info_col_tree_nodes.offset = align(last_offset, 0x10)
+        last_offset += @col_tree_nodes.first.size * @header.info_col_tree_nodes.number
+      else
+        @header.info_col_tree_nodes.offset = 0x0
+      end
+
+      if @header.info_bone_sets.number > 0
+        last_offset = @header.info_bone_sets.offset = align(last_offset, 0x10)
+        last_offset += 0x8 * @header.info_bone_sets.number
+        @bone_sets.each { |bone_set|
+          last_offset = bone_set.offset_bone_indices = align(last_offset, 0x10)
+          last_offset += 0x2 * bone_set.num_bone_indices
+        }
+      else
+        @header.info_bone_sets.offset = 0x0
+      end
+
+      if @header.info_bone_map.number > 0
+        last_offset = @header.info_bone_map.offset = align(last_offset, 0x10)
+        last_offset += 0x4 * @header.info_bone_map.number
+      else
+        @header.info_bone_map.offset = 0x0
+      end
+
+      if @header.info_meshes.number > 0
+        last_offset = @header.info_meshes.offset = align(last_offset, 0x4)
+        last_offset += @meshes.first.header.size * @header.info_meshes.number
+        @meshes.each { |mesh|
+          mesh.header.offset_name = last_offset
+          last_offset += mesh.name.size
+          if mesh.header.num_materials > 0
+            mesh.header.offset_materials = last_offset
+            last_offset += 0x2 * mesh.header.num_materials
+          else
+            mesh.header.offset_materials = 0x0
+          end
+          if mesh.header.num_bones_indices > 0
+            mesh.header.offset_bones_indices = last_offset
+            last_offset += 0x2 * mesh.header.num_bones_indices
+          else
+            mesh.header.offset_bones_indices = 0x0
+          end
+        }
+      else
+        @header.info_meshes.offset = 0x0
+      end
+
+      if @header.info_materials.number > 0
+        last_offset = @header.info_materials.offset = align(last_offset, 0x10)
+        last_offset += @materials.first.header.size * @header.info_materials.number
+        @materials.each { |material|
+          material.header.offset_name = last_offset
+          last_offset += material.name.size
+          material.header.offset_shader_name = last_offset
+          last_offset += material.shader_name.size
+          material.header.offset_technique_name = last_offset
+          last_offset += material.technique_name.size
+          if material.header.num_textures > 0
+            material.header.offset_textures = last_offset
+            last_offset += 0x8 * material.header.num_textures
+            material.textures.each { |texture|
+              texture.offset_name = last_offset
+              last_offset += texture.name.size
+            }
+          else
+            material.header.offset_textures = 0x0
+          end
+          if material.header.num_parameters_groups > 0
+            last_offset = material.header.offset_parameters_groups = align(last_offset, 0x10)
+            last_offset += 0xC * material.header.num_parameters_groups
+            material.parameters_groups.each { |parameter_group|
+              last_offset = parameter_group.offset_parameters = align(last_offset, 0x10)
+              last_offset += 0x4 * parameter_group.num_parameters
+            }
+          else
+            material.header.offset_parameters_group = 0x0
+          end
+          if material.header.num_variables > 0
+            last_offset = material.header.offset_variables = align(last_offset, 0x10)
+            last_offset += 0x8 * material.header.num_variables
+            material.variables.each { |variable|
+              variable.offset_name = last_offset
+              last_offset += variable.name.size
+            }
+          else
+            material.header.offset_variables = 0x0
+          end
+        }
+      else
+        @header.info_materials.offset = 0x0
+      end
+
+      if @header.info_unknown1.number > 0
+        last_offset = @header.info_unknown1.offset = align(last_offset, 0x4)
+        last_offset += @unknown1.first.size * @header.info_unknown1.number
+      else
+        @header.info_unknown1.offset = 0x0
+      end
+
+    end
 
     def was_big?
       @__was_big

@@ -278,7 +278,7 @@ if( header.offsetColTreeNodes != 0 ) {
         vector  p2;
         int32   left;
         int32   right;
-    } callTreeNodes[header.numColTreeNodes];
+    } colTreeNodes[header.numColTreeNodes];
 }
 
 if( header.offsetBoneMap != 0 ) {
@@ -289,7 +289,7 @@ if( header.offsetBoneMap != 0 ) {
 if( header.offsetBoneSets != 0 ) {
     FSeek( header.offsetBoneSets );
     struct {
-        uint32  offsetBoneSet;
+        uint32  offsetBoneSet <format=hex>;
         uint32  numBoneIndexes;
         local uint32 pos = FTell();
         FSeek(offsetBoneSet);

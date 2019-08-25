@@ -216,8 +216,8 @@ wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.cleanup_textures(input_file, $options[:overwrite]) if $options[:textures]
 unless wmb.class == WMB3File
   wmb.renumber_batches
-  wmb.recompute_layout
 end
+wmb.recompute_layout
 if $options[:overwrite]
   wmb.dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
 else
