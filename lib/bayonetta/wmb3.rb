@@ -314,6 +314,48 @@ module Bayonetta
     register_field :unknown1, Unknown1, count: 'header\info_unknown1\number',
                    offset: 'header\info_unknown1\offset'
 
+    def cleanup_vertexes
+      vertex_usage, index_usage = get_vertex_index_usage
+      @vertex_groups.each_with_index { |vertex_group, vertex_group_index|
+        new_vertex_map = vertex_usage[vertex_group_index].uniq.sort.each_with_index.to_h
+        vertex_group.vertexes = new_vertex_map.keys.collect { |i|
+          vertex_group.vertexes[i]
+        }
+        vertex_group.vertexes_ex_data = new_vertex_map.keys.collect { |i|
+          vertex_group.vertexes_ex_data[i]
+        }
+        vertex_group.header.num_vertexes = vertex_group.vertexes.size
+
+        new_index_map = index_usage[vertex_group_index].uniq.sort.each_with_index.to_h
+        vertex_group.indices.values = new_index_map.keys.collect { |i|
+          new_vertex_map[vertex_group.indices.values[i]]
+        }
+        vertex_group.header.num_indices = vertex_group.indices.values.size
+        @batches.select { |batch| batch.vertex_group_index == vertex_group_index }.each { |batch|
+          batch.vertex_start = new_vertex_map[batch.vertex_start]
+          batch.index_start = new_index_map[batch.index_start]
+          if batch.vertex_start != 0
+            ((batch.index_start)...(batch.index_start + batch.num_indices)).each { |i|
+              vertex_group.indices.values[i] = vertex_group.indices.values[i] - batch.vertex_start
+            }
+          end
+        }
+      }
+    end
+
+    def get_vertex_index_usage
+      vertex_usage = Hash::new { |h, k| h[k] = [] }
+      index_usage = Hash::new { |h, k| h[k] = [] }
+      @batches.each { |batch|
+        index_range = (batch.index_start)...(batch.index_start + batch.num_indices)
+        index_usage[batch.vertex_group_index] += index_range.to_a
+        vertex_usage[batch.vertex_group_index] += @vertex_groups[batch.vertex_group_index].indices.values[index_range].collect { |vertex|
+          vertex + batch.vertex_start
+        }
+      }
+      return [vertex_usage, index_usage]
+    end
+
     def delete_meshes(list)
       kept_meshes = @meshes.size.times.to_a - list
       new_mesh_map = kept_meshes.each_with_index.to_h
