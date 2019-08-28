@@ -1959,6 +1959,16 @@ module Bayonetta
       }
     end
 
+    def revert_triangles( mesh_list )
+      mesh_list.each { |mesh_index|
+        @meshes[mesh_index].batches.each { |b|
+          b.set_triangles( b.triangles.collect { |n1, n2, n3|
+            [n1, n3, n2]
+          })
+        }
+      }
+    end
+
     def cleanup_vertexes
       used_vertex_indexes = []
       @meshes.each { |m|

@@ -78,6 +78,10 @@ OptionParser.new do |opts|
     $options[:strips] = strips
   end
 
+  opts.on("--revert-triangles=MESHLIST", "Revert traiangle faces") do |revert|
+    $options[:revert] = eval(revert).to_a
+  end
+
   opts.on("-e", "--swap-endianness", "Swap endianness") do |swap|
     $options[:swap] = swap
   end
@@ -199,6 +203,7 @@ wmb.cleanup_bones if $options[:bones]
 wmb.recompute_relative_positions if $options[:recompute_relative_positions]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.remove_triangle_strips if $options[:strips]
+wmb.revert_triangles($options[:revert]) if $options[:revert]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
