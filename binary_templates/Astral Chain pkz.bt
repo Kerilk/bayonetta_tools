@@ -1,0 +1,22 @@
+LittleEndian();
+
+// Thanks demonslayerx8
+struct {
+    char    id[4];
+    int32   unknown;
+    uint64  size <format=hex>;
+    uint32  numFiles;
+    uint32  offsetFileDescriptors;
+    uint64  lengthFileNameTable;
+} header;
+
+struct {
+    uint64  offsetName <format=hex>;
+    uint64  size <format=hex>;
+    uint64  offset <format=hex>;
+    uint64  compressedSize <format=hex>;
+    local uint64 pos = FTell();
+    FSeek(offsetName + header.offsetFileDescriptors + header.numFiles * 0x20 );
+    string name;
+    FSeek(pos);
+} fileDescriptors[header.numFiles]<optimize=false>;
