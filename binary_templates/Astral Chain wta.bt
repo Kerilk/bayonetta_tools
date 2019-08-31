@@ -25,12 +25,78 @@ uint32  textureFlags[header.numTex] <format=hex>;
 FSeek( header.offsetTextureIdx );
 uint32  textureIdx[header.numTex] <format=hex>;
 
-FSeek( header.offsetTextureInfo );
+//thx Aboood40091
+
+typedef enum {
+    T_1D,
+    T_2D,
+    T_3D,
+    T_Cube,
+    T_1D_Array,
+    T_2D_Array,
+    T_2D_Mulitsample,
+    T_2D_Multisample_Array,
+    T_Cube_Array
+} texture_type_t;
+
+typedef enum {
+    R4_G4 = 1,
+    R8,
+    R4_G4_B4_A4,
+    A4_B4_G4_R4,
+    R5_G5_B5_A1,
+    A1_B5_G5_R5,
+    R5_G6_B5,
+    B5_G6_R5,
+    R8_G8,
+    R8_G8_B8_A8 = 0xb,
+    B8_G8_R8_A8,
+    R10_G10_B10_A2 = 0xe,
+    BC1 = 0x1a,
+    BC2,
+    BC3,
+    BC4,
+    BC5,
+    BC6,
+    BC7,
+    ASTC_4x4 = 0x2d,
+    ASTC_5x4,
+    ASTC_5x5,
+    ASTC_6x5,
+    ASTC_6x6,
+    ASTC_8x5,
+    ASTC_8x6,
+    ASTC_8x8,
+    ASTC_10x5,
+    ASTC_10x6,
+    ASTC_10x8,
+    ASTC_10x10,
+    ASTC_12x10,
+    ASTC_12x12,
+    B5_G5_R5_A1
+} texture_format_t;
+
+typedef enum {
+    S_UNORM = 1,
+    S_SNORM = 2,
+    S_FLOAT = 5,
+    S_SRGB = 6,
+    S_UFLOAT = 0xa
+} texture_color_space_t;
+
+FSeek( header.offsetTextureInfo );//ASTC_10x10_UNORM thanks demonslayerx8@xentax
 struct {
-    char FOURCC[4];
-    char unknown[4]
-    char data[0xc];
-    uint32 offsetData<format=hex>;
-    uint32 numMipMap;
-    char data2[0x20];
+    char    FOURCC[4];
+    uint32  u_a<format=hex>;
+    uint64  textureSize<format=hex>;
+    texture_format_t  bntx_format<format=hex>;
+    uint32  numMipMap;
+    texture_type_t  texture_type;
+    uint32  u_b<format=hex>;
+    uint32  width;
+    uint32  height;
+    uint32  depth;
+    uint32  u_d;
+    uint32  u_e;
+    uint32  u_f<format=hex>;
 } textureInfo[header.numTex];
