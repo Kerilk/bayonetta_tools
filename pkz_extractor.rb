@@ -15,7 +15,6 @@ ARGV.each { |filename|
   pkz = Bayonetta::PKZFile::load(f)
 
   name_table_offset = pkz.header.offset_file_descriptors + pkz.header.num_files * 0x20
-  puts name_table_offset
   pkz.file_descriptors.each { |d|
     f.seek(d.offset_name + name_table_offset)
     name = f.read(16).tr("\x00","")
