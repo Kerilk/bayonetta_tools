@@ -16,6 +16,7 @@ module Bayonetta
       '.dds' => 0x1000,
       '.gtx' => 0x2000,
       '.bntx' => 0x2000,
+      '.xt1' => 0x1000
     }
     ALIGNMENTS.default = 0x20
 
@@ -51,6 +52,14 @@ module Bayonetta
         @offset_texture_flags = f.read(4).unpack(uint).first
         @offset_texture_idx = f.read(4).unpack(uint).first
         @offset_texture_infos = f.read(4).unpack(uint).first
+        if @offset_texture_infos != 0 && @wtp && @num_tex > 0
+          off = f.tell
+          f.seek(@offset_texture_infos)
+          if f.read(4) == "XT1\0".b
+            texture_type = ".xt1"
+          end
+          f.seek(off)
+        end
         if @wtp && @big
           @offset_mipmap_offsets = f.read(4).unpack(uint).first
           if @offset_mipmap_offsets != 0
@@ -119,7 +128,14 @@ module Bayonetta
             of
           }
           @wtp = true
-	elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 # Nier PC
+        elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 && @offset_texture_infos != 0 # Astral Chain Switch
+          @textures = @texture_offsets.each_with_index.collect { |off, i|
+            f.seek(@offset_texture_infos + i*0x38)
+            @wtp.seek(off)
+            StringIO::new( f.read( 0x38 ) + @wtp.read(@texture_sizes[i]), "rb" )
+          }
+          @wtp = true
+        elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 # Nier PC
           @wtp.rewind
           @textures = @texture_offsets.each_with_index.collect { |off, i|
             of = StringIO::new("", "w+b")
@@ -205,6 +221,8 @@ module Bayonetta
           if @big
             last_offset = @offset_mipmap_offsets = align(last_offset + 0xc0*@num_tex, 0x20)
             last_offset = align(last_offset + 4*@num_tex, 0x20)
+          elsif @texture_types[0] == ".xt1" #Astral chain
+            last_offset = align(last_offset + 0x38*@num_tex, 0x10)
           else #Nier
             last_offset = align(last_offset + 5*4*@num_tex, 0x20)
           end
@@ -229,6 +247,12 @@ module Bayonetta
               0
             end
           }
+        elsif @texture_types[0] == ".xt1" #Astral chain
+          @texture_offsets = @num_tex.times.collect { |i|
+            tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
+            offset_wtp = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
+            tmp
+          }
         else #Nier or Bayo 2 Switch
           @texture_offsets = @num_tex.times.collect { |i|
             tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
@@ -244,6 +268,8 @@ module Bayonetta
       id = file.read(4)
       file.rewind
       case id
+      when "XT1\0".b
+        @texture_types.push( ".xt1" )
       when "Gfx2".b
         @texture_types.push( ".gtx" )
       when "DDS ".b
@@ -261,6 +287,8 @@ module Bayonetta
             @texture_types.push( ".gtx" )
           when ".bntx"
             @texture_types.push( ".bntx" )
+          when ".xt1"
+            @texture_types.push( ".xt1" )
           else
             raise "Unsupported texture type! #{File.extname(p)}"
           end
@@ -291,6 +319,8 @@ module Bayonetta
         else
           @mipmap_length.push( 0x0 )
         end
+      elsif @texture_types.last == ".xt1"
+        @texture_sizes[-1] = file.size - 0x38
       end
       @num_tex += 1
       self
@@ -359,6 +389,12 @@ module Bayonetta
               f.seek(@offset_mipmap_offsets)
               f.write(@mipmap_offsets.pack("#{uint}*"))
             end
+          elsif @texture_types.first == ".xt1" #Astral Chain
+            @textures.each_with_index { |f_t, i|
+              f.seek(@offset_texture_infos + i*0x38)
+              f_t.rewind
+              f.write( f_t.read(0x38) )
+            }
           else #Nier or Bayo 2 Switch
             if @offset_texture_infos != 0
               f.seek(@offset_texture_infos)
@@ -380,6 +416,13 @@ module Bayonetta
                   @textures[i].seek(0x20*4+0x9c+@data_length[i])
                   f_wtp.write(@textures[i].read(@mipmap_length[i]))
                 end
+              }
+            elsif @texture_types.first == ".xt1"  #Astral Chain
+              @texture_offsets.each_with_index { |off, i|
+                f_wtp.seek(off)
+                @textures[i].seek(0x38)
+                f_wtp.write( @textures[i].read )
+                @textures[i].rewind
               }
             else #Nier or Bayo 2 Switch
               @texture_offsets.each_with_index { |off, i|
