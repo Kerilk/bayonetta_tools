@@ -52,7 +52,7 @@ module Bayonetta
         @offset_texture_flags = f.read(4).unpack(uint).first
         @offset_texture_idx = f.read(4).unpack(uint).first
         @offset_texture_infos = f.read(4).unpack(uint).first
-        if @offset_texture_infos != 0 && @wtp && @num_tex > 0
+        if @offset_texture_infos != 0 && @num_tex > 0
           off = f.tell
           f.seek(@offset_texture_infos)
           if f.read(4) == "XT1\0".b
@@ -90,7 +90,21 @@ module Bayonetta
 
         @texture_infos = []
 
-        if !@wtp && @offset_texture_offsets != 0 && @offset_texture_sizes != 0
+        if !@wtp && texture_type == ".xt1" # Astral Chain Switch
+          @textures = @texture_offsets.each_with_index.collect { |off, i|
+            f.seek(@offset_texture_infos + i*0x38)
+            tex_header = f.read( 0x38 )
+            f.seek(off)
+            StringIO::new( tex_header << f.read(@texture_sizes[i]), "rb" )
+          }
+        elsif @wtp && texture_type == ".xt1" # Astral Chain Switch
+          @textures = @texture_offsets.each_with_index.collect { |off, i|
+            f.seek(@offset_texture_infos + i*0x38)
+            @wtp.seek(off)
+            StringIO::new( f.read( 0x38 ) + @wtp.read(@texture_sizes[i]), "rb" )
+          }
+          @wtp = true
+        elsif !@wtp && @offset_texture_offsets != 0 && @offset_texture_sizes != 0
           @textures = @texture_offsets.each_with_index.collect { |off, i|
             f.seek( off )
             StringIO::new( f.read( @texture_sizes[i] ), "rb" )
@@ -126,13 +140,6 @@ module Bayonetta
             of.write("\x42\x4C\x4B\x7B\x00\x00\x00\x20\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
             of.close_write
             of
-          }
-          @wtp = true
-        elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 && @offset_texture_infos != 0 # Astral Chain Switch
-          @textures = @texture_offsets.each_with_index.collect { |off, i|
-            f.seek(@offset_texture_infos + i*0x38)
-            @wtp.seek(off)
-            StringIO::new( f.read( 0x38 ) + @wtp.read(@texture_sizes[i]), "rb" )
           }
           @wtp = true
         elsif @wtp && !@big && @offset_texture_offsets != 0 && @offset_texture_sizes != 0 # Nier PC
@@ -209,6 +216,11 @@ module Bayonetta
         last_offset = @offset_texture_idx = align(last_offset + 4*@num_tex, 0x20)
       end
       unless @wtp
+        last_offset = last_offset + 4*@num_tex
+        if @texture_types[0] == ".xt1" #Astral chain wtb
+          last_offset = @offset_texture_infos = align(last_offset, 0x20)
+          last_offset = align(last_offset + 0x38*@num_tex, 0x10)
+        end
         @texture_offsets = @num_tex.times.collect { |i|
           tmp = align(last_offset, ALIGNMENTS[@texture_types[i]])
           last_offset = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
@@ -247,7 +259,7 @@ module Bayonetta
               0
             end
           }
-        elsif @texture_types[0] == ".xt1" #Astral chain
+        elsif @texture_types[0] == ".xt1" #Astral chain wta
           @texture_offsets = @num_tex.times.collect { |i|
             tmp = align(offset_wtp, ALIGNMENTS[@texture_types[i]])
             offset_wtp = align(tmp + @texture_sizes[i], ALIGNMENTS[@texture_types[i]])
@@ -372,12 +384,24 @@ module Bayonetta
         end
 
         unless @wtp
-          @texture_offsets.each_with_index { |off, i|
-            f.seek(off)
-            @textures[i].rewind
-            f.write( @textures[i].read )
-            @textures[i].rewind
-          }
+          if @texture_types.first == ".xt1" #Astral Chain
+            @textures.each_with_index { |f_t, i|
+              f.seek(@offset_texture_infos + i*0x38)
+              f_t.rewind
+              f.write( f_t.read(0x38) )
+              f.seek(@texture_offsets[i])
+              f.write( f_t.read )
+              f_t.rewind
+            }
+
+          else
+            @texture_offsets.each_with_index { |off, i|
+              f.seek(off)
+              @textures[i].rewind
+              f.write( @textures[i].read )
+              @textures[i].rewind
+            }
+          end
         else
           if @big
             @textures.each_with_index { |f_t, i|
