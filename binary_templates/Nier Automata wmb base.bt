@@ -221,6 +221,17 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping4;
                 mapping_t   mapping5;
             } vertexesExData[numVertexes];
+        } else if( vertexFlags == 0x1 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
         }
         FSeek(indexBufferOffset);
         if(header.flags & 0x8) {
