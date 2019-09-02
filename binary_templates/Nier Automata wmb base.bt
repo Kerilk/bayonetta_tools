@@ -232,6 +232,15 @@ if( header.offsetVertexGroups != 0 ) {
             struct {
                 normal_t    normal;
             } vertexesExData[numVertexes];
+        } else if( vertexFlags == 0x0 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                normal_t    normal;
+            } vertexes[numVertexes];
+        } else {
+            Warning("Unknown vertex format vertexSize %d vertexExDataSize %d vertexFlags %d!\n", vertexSize, vertexExDataSize, vertexFlags);
         }
         FSeek(indexBufferOffset);
         if(header.flags & 0x8) {
