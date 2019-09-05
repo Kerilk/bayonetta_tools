@@ -67,7 +67,6 @@ if( header.offsetVertexGroups != 0 ) {
         uint32  vertexExDataSize;
         uint32  unknownSize[2];
         int32   numVertexes;
-        //int32   vertexExDataFlags <format=binary>;
         int32   indexBufferOffset <format=hex>;
         int32   numIndexes;
         local uint32 pos = FTell();
@@ -292,7 +291,7 @@ if( header.offsetMeshes != 0 ) {
         ushort  batchGroupIndex3[numBatchGroupIndex3];
         FSeek(offsetBatchGroupIndex4);
         ushort  batchGroupIndex4[numBatchGroupIndex4];
-
+        FSeek(offsetMaterials);
         ushort  materials[numMaterials];
         FSeek(pos);
     } meshes[header.numMeshes] <optimize=false>;
