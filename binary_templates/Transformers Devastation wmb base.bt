@@ -70,19 +70,61 @@ if( header.offsetVertexGroups != 0 ) {
         int32   indexBufferOffset <format=hex>;
         int32   numIndexes;
         local uint32 pos = FTell();
-        FSeek(vertexOffset);
-        struct {
-            vector      position;
-            mapping_t   mapping;
-            tangents_t  tangents;
-        } vertexes[numVertexes];
-        FSeek(vertexExDataOffset);
-        struct {
-            normal_t    normal;
-            ubyteList   boneIndex;
-            ubyteList   boneWeight;
-            ubyteList   color;
-        } vertexesExData[numVertexes];
+        if( vertexSize == 20 && vertexExDataSize == 20 && header.vertexFormat == 0x10137) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+                ubyteList   color;
+            } vertexesExData[numVertexes];
+        } else if( vertexSize == 20 && vertexExDataSize == 24 && header.vertexFormat == 0x10337) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+                ubyteList   color;
+                mapping_t   mapping2;
+            } vertexesExData[numVertexes];
+        } else if ( vertexSize == 24 && vertexExDataSize == 8 && header.vertexFormat == 0x10107) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+                ubyteList   color;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else if ( vertexSize == 28 && vertexExDataSize == 8 && header.vertexFormat == 0x10307) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+                ubyteList   color;
+                mapping_t   mapping2;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        }
         FSeek(indexBufferOffset);
         uint16 indexes[numIndexes];
         FSeek(pos);
@@ -105,75 +147,27 @@ if( header.offsetBatchGroups != 0 ) {
     FSeek( header.offsetBatchGroups ) ;
 
     struct {
-        uint32  offsetBatchGroup0 <format=hex>;
-        uint32  batchCount0;
-        uint32  offsetBatchGroup1 <format=hex>;
-        uint32  batchCount1;
-        uint32  offsetBatchGroup2 <format=hex>;
-        uint32  batchCount2;
-        uint32  offsetBatchGroup3 <format=hex>;
-        uint32  batchCount3;
-        uint32  offsetBatchGroup4 <format=hex>;
-        uint32  batchCount4;
-        FSeek(offsetBatchGroup0);
         struct {
-            uint32  batchIndex;
-            uint32  meshIndex;
-            ushort  materialIndex;
-            ushort  boneSetIndex;
-            uint32  unknown;
-        } batchGroup0[ batchCount0 ];
-        FSeek(offsetBatchGroup1);
-        struct {
-            uint32  batchIndex;
-            uint32  meshIndex;
-            ushort  materialIndex;
-            ushort  boneSetIndex;
-            uint32  unknown;
-        } batchGroup1[ batchCount1 ];
-        FSeek(offsetBatchGroup2);
-        struct {
-            uint32  batchIndex;
-            uint32  meshIndex;
-            ushort  materialIndex;
-            ushort  boneSetIndex;
-            uint32  unknown;
-        } batchGroup2[ batchCount2 ];
-        FSeek(offsetBatchGroup3);
-        struct {
-            uint32  batchIndex;
-            uint32  meshIndex;
-            ushort  materialIndex;
-            ushort  boneSetIndex;
-            uint32  unknown;
-        } batchGroup2[ batchCount3 ];
-        FSeek(offsetBatchGroup4);
-        struct {
-            uint32  batchIndex;
-            uint32  meshIndex;
-            ushort  materialIndex;
-            ushort  boneSetIndex;
-            uint32  unknown;
-        } batchGroup4[ batchCount4 ];
-        /*uint32  offsetName <format=hex>;
-        int32   lodLevel;
-        uint32  batchStart;
-        uint32  offsetBatchInfos <format=hex>;
-        uint32  numBatchInfos;
-        local uint32 pos = FTell();
-        FSeek(offsetName);
-        string  name;
-        FSeek(offsetBatchInfos);
-        struct {
-            uint32  vertexGroupIndex;
-            uint32  meshIndex;
-            uint32  materialIndex;
-            int32   unknown0;
-            uint32  meshMatPairIndex;
-            int32   unknown1;
-        } batchInfos[ numBatchInfos ];
-        FSeek(pos);*/
-    } batchGroups;//[ header.numLods ] <optimize=false>;
+            uint32  offsetBatchGroup <format=hex>;
+            uint32  batchCount;
+        } groups[5];
+        local int i;
+        for (i = 0; i < 5; i++) {
+            struct {
+                local int a;
+                if(groups[i].offsetBatchGroup) {
+                    FSeek(groups[i].offsetBatchGroup);
+                    struct {
+                        uint32  batchIndex;
+                        uint32  meshIndex;
+                        ushort  materialIndex;
+                        short   boneSetIndex;
+                        uint32  unknown;
+                    } batchInfos[groups[i].batchCount];
+                }
+            } batchGroup;
+        }
+    } batchGroups;
 }
 
 if( header.offsetBones != 0 ) {
@@ -265,32 +259,26 @@ if( header.offsetMeshes != 0 ) {
             float x, y, z;
             float u, v, w;
         } boundingBox;
-        uint32  offsetBatchGroupIndex0 <format=hex>;
-        uint32  numBatchGroupIndex0;
-        uint32  offsetBatchGroupIndex1 <format=hex>;
-        uint32  numBatchGroupIndex1;
-        uint32  offsetBatchGroupIndex2 <format=hex>;
-        uint32  numBatchGroupIndex2;
-        uint32  offsetBatchGroupIndex3 <format=hex>;
-        uint32  numBatchGroupIndex3;
-        uint32  offsetBatchGroupIndex4 <format=hex>;
-        uint32  numBatchGroupIndex4;
+        struct {
+            uint32  offsetBatchGroupIndex <format=hex>;
+            uint32  numBatchGroupIndex;
+        } groups[5];
         uint32  offsetMaterials <format=hex>;
         uint32  numMaterials;
 
         local uint32 pos = FTell();
         FSeek(nameOffset);
         string  name;
-        FSeek(offsetBatchGroupIndex0);
-        ushort  batchGroupIndex0[numBatchGroupIndex0];
-        FSeek(offsetBatchGroupIndex1);
-        ushort  batchGroupIndex1[numBatchGroupIndex1];
-        FSeek(offsetBatchGroupIndex2);
-        ushort  batchGroupIndex2[numBatchGroupIndex2];
-        FSeek(offsetBatchGroupIndex3);
-        ushort  batchGroupIndex3[numBatchGroupIndex3];
-        FSeek(offsetBatchGroupIndex4);
-        ushort  batchGroupIndex4[numBatchGroupIndex4];
+        local int i;
+        for( i = 0; i < 5; i++ ) {
+            struct {
+                local int a;
+                if( groups[i].offsetBatchGroupIndex ) {
+                    FSeek(groups[i].offsetBatchGroupIndex);
+                    ushort batchGroupIndices[groups[i].numBatchGroupIndex];
+                }
+            } batchGroups;
+        }
         FSeek(offsetMaterials);
         ushort  materials[numMaterials];
         FSeek(pos);
