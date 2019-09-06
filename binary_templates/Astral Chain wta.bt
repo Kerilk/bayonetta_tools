@@ -84,15 +84,15 @@ typedef enum {
     S_UFLOAT = 0xa
 } texture_color_space_t;
 
-FSeek( header.offsetTextureInfo );//ASTC_10x10_UNORM thanks demonslayerx8@xentax
+FSeek( header.offsetTextureInfo );//thanks demonslayerx8@xentax, minmode
 struct {
     char    FOURCC[4];
     uint32  u_a<format=hex>;
     uint64  textureSize<format=hex>;
-    texture_format_t  bntx_format<format=hex>;
+    uint32  headerSize<format=hex>;
     uint32  numMipMap;
     texture_type_t  texture_type;
-    uint32  u_b<format=hex>;
+    uint32  format<format=hex,comment="42, 46: dxt1; 43, 47: dxt3; 44, 48: dxt5; 79, 87: astc4x4, 80, 8e, astc8x8">;
     uint32  width;
     uint32  height;
     uint32  depth;
