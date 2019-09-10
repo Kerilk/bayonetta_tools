@@ -2014,7 +2014,7 @@ module Bayonetta
         batches.merge blist[1..-1]
       }
       batches.each { |b|
-        new_batch = b.duplicate(@vertexes, @vertexes_ex_data)
+        new_batch = b.duplicate(@positions, @vertexes, @vertexes_ex_data)
         b.header = new_batch.header
         b.indices = new_batch.indices
       }
