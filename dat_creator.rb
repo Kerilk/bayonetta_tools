@@ -16,8 +16,14 @@ d = Bayonetta::DATFile::new(nil, big)
 d.layout = YAML::load_file(".metadata/layout.yaml")
 
 d.layout.each { |fname|
-  d.push(fname, File::new(fname, "rb") )
+  File::open(fname, "rb") { |f|
+    d.push(fname, StringIO.new(f.read,"rb") )
+  }
 }
+
+if File::exist?(".metadata/hash_map.yaml")
+  d.hash_map = YAML::load_file(".metadata/hash_map.yaml")
+end
 
 extension = ".dat"
 extension = YAML::load_file(".metadata/extension.yaml")

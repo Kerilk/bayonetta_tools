@@ -53,6 +53,11 @@ ARGV.each { |filename|
   File::open("big.yaml","w") { |fl|
     fl.print YAML::dump( dat.big )
   }
+  if dat.hash_map
+    File::open("hash_map.yaml", "w") { |fl|
+      fl.print YAML::dump( dat.hash_map )
+    }
+  end
   # clean up
   Dir.chdir(save_pwd)
 }

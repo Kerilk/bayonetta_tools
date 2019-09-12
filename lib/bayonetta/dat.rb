@@ -5,6 +5,7 @@ module Bayonetta
     include Alignment
     attr_reader :big
     attr_accessor :layout
+    attr_accessor :hash_map
 
     ALIGNMENTS = {
       'wmb' => 0x1000,
@@ -59,6 +60,7 @@ module Bayonetta
         @file_extensions_offset = f.read(4).unpack(uint).first
         @file_names_offset = f.read(4).unpack(uint).first
         @file_sizes_offset = f.read(4).unpack(uint).first
+        @hash_map_offset = f.read(4).unpack(uint).first
 
         f.seek(@file_offsets_offset)
         @file_offsets = f.read(4*@file_number).unpack("#{uint}*")
@@ -76,6 +78,25 @@ module Bayonetta
         f.seek(@file_sizes_offset)
         @file_sizes = f.read(4*@file_number).unpack("#{uint}*")
 
+        if @hash_map_offset != 0
+          @hash_map = {}
+          f.seek(@hash_map_offset)
+          @pre_hash_shift = f.read(4).unpack(uint).first
+          @hash_map[:pre_hash_shift] = @pre_hash_shift
+          bin_offsets_offset, hashes_offset, file_indices_offset = f.read(12).unpack("#{uint}*")
+          f.seek(@hash_map_offset + bin_offsets_offset)
+          @bin_offsets = f.read(2*(1<<(31 - @pre_hash_shift))).unpack("#{get_short}*")
+          f.seek(@hash_map_offset + hashes_offset)
+          @hashes = f.read(4*@file_number).unpack("#{uint}*")
+          f.seek(@hash_map_offset + file_indices_offset)
+          @indices = f.read(2*@file_number).unpack("#{get_ushort}*")
+          @hash_map[:hashes] = @indices.zip(@hashes).sort { |(i1 ,h1), (i2, h2)|
+            i1 <=> i2
+          }.collect { |i, h|
+            h
+          }
+        end
+
         @files = @file_number.times.collect { |i|
           f.seek(@file_offsets[i])
           of = StringIO::new( f.read(@file_sizes[i]), "rb")
@@ -85,6 +106,7 @@ module Bayonetta
       else
         @id = "DAT\x00".b
         @layout = nil
+        @hash_map = nil
         @file_number = 0
         @file_offsets_offset = 0
         @file_extensions_offset = 0
@@ -97,7 +119,6 @@ module Bayonetta
         @file_names = []
         @file_sizes = []
         @files = []
-
       end
     end
 
@@ -122,6 +143,7 @@ module Bayonetta
       @file_sizes_offset = 0
       @file_offsets = []
       @layout = nil
+      @hash_map = nil
       self
     end
 
@@ -168,7 +190,39 @@ module Bayonetta
       @file_name_length = max_file_name_length + 1
       @file_sizes_offset = @file_names_offset + 4 + @file_name_length * @file_number
       @file_sizes_offset = align(@file_sizes_offset, 4)
-      files_offset = @file_sizes_offset + 4 * @file_number
+      if @hash_map
+        @hash_map_offset = @file_sizes_offset + 4 * @file_number
+        bins = Hash::new { |h, k| h[k] = [] }
+        raise "Invalid hashes" unless @file_number == @hash_map[:hashes].length
+        @hash_map[:hashes].each_with_index { |h, i|
+          bin_index = h >> @hash_map[:pre_hash_shift]
+          bins[bin_index].push [h, i]
+        }
+        @bin_offsets = []
+        @hashes = []
+        @indices = []
+        bin_offset = 0
+        bin_count = (1 << (31 - @hash_map[:pre_hash_shift]))
+        bin_count.times { |i|
+          if bins.has_key?(i)
+            @bin_offsets.push bin_offset
+            bin_offset += bins[i].size
+            bins[i].each { |h, ind|
+              @hashes.push h
+              @indices.push ind
+            }
+          else
+            @bin_offsets.push -1
+          end
+        }
+        @pre_hash_shift = @hash_map[:pre_hash_shift]
+        @bin_offsets_offset = @hash_map_offset + 0x10
+        @hashes_offset = @bin_offsets_offset + bin_count * 2
+        @file_indices_offset = @hashes_offset + @file_number * 4
+        files_offset = @file_indices_offset +  @file_number * 2
+      else
+        files_offset = @file_sizes_offset + 4 * @file_number
+      end
       @files_offsets = @file_number.times.collect { |i|
         tmp = align(files_offset, ALIGNMENTS[@file_extensions[i]])
         files_offset = align(tmp + @file_sizes[i], ALIGNMENTS[@file_extensions[i]])
@@ -190,6 +244,7 @@ module Bayonetta
         f.write([@file_extensions_offset].pack(uint))
         f.write([@file_names_offset].pack(uint))
         f.write([@file_sizes_offset].pack(uint))
+        f.write([@hash_map_offset].pack(uint)) if @hash_map
 
         f.seek(@file_offsets_offset)
         f.write(@files_offsets.pack("#{uint}*"))
@@ -207,6 +262,19 @@ module Bayonetta
 
         f.seek(@file_sizes_offset)
         f.write(@file_sizes.pack("#{uint}*"))
+        if @hash_map
+          f.seek(@hash_map_offset)
+          f.write([@pre_hash_shift].pack(uint))
+          f.write([@bin_offsets_offset - @hash_map_offset].pack(uint))
+          f.write([@hashes_offset - @hash_map_offset].pack(uint))
+          f.write([@file_indices_offset - @hash_map_offset].pack(uint))
+          f.seek(@bin_offsets_offset)
+          f.write(@bin_offsets.pack("#{get_short}*"))
+          f.seek(@hashes_offset)
+          f.write(@hashes.pack("#{uint}*"))
+          f.seek(@file_indices_offset)
+          f.write(@indices.pack("#{get_ushort}*"))
+        end
 
         @files_offsets.each_with_index { |off, i|
           f.seek(off)
