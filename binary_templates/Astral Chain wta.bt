@@ -97,6 +97,6 @@ struct {
     uint32  height;
     uint32  depth;
     uint32  u_d;
-    uint32  u_e;
+    uint32  blockHeightLog2;
     uint32  u_f<format=hex>;
 } textureInfo[header.numTex];
