@@ -289,50 +289,6 @@ def merge_materials(wmb1, wmb2, tex_map)
   wmb1.materials_offsets += new_materials_offsets
 end
 
-def recompute_layout(wmb1, wmb2)
-  last_offset = wmb1.header.offset_vertexes
-  last_offset += wmb1.header.num_vertexes * 32
-  last_offset = wmb1.header.offset_vertexes_ex_data = align(last_offset, 0x20)
-  last_offset += wmb1.header.num_vertexes * wmb1.header.vertex_ex_data_size * 4
-  last_offset = wmb1.header.offset_bone_hierarchy = align(last_offset, 0x20)
-  last_offset += 2*wmb1.header.num_bones
-  last_offset = wmb1.header.offset_bone_relative_position = align(last_offset, 0x20)
-  last_offset += 12*wmb1.header.num_bones
-  last_offset = wmb1.header.offset_bone_position = align(last_offset, 0x20)
-  last_offset += 12*wmb1.header.num_bones
-  last_offset = wmb1.header.offset_bone_index_translate_table = align(last_offset, 0x20)
-  last_offset += wmb1.bone_index_translate_table.size
-  if wmb1.header.offset_u_j > 0x0
-    last_offset = wmb1.header.offset_u_j = align(last_offset, 0x20)
-    last_offset += wmb1.u_j.size
-  end
-  if wmb1.header.offset_bone_symmetries > 0x0
-    last_offset = wmb1.header.offset_bone_symmetries = align(last_offset, 0x20)
-    last_offset += 2*wmb1.header.num_bones
-  end
-  if wmb1.header.offset_bone_flags > 0x0
-    last_offset = wmb1.header.offset_bone_flags = align(last_offset, 0x20)
-    last_offset += wmb1.header.num_bones
-  end
-  if wmb1.header.offset_shader_names > 0x0
-    last_offset = wmb1.header.offset_shader_names = align(last_offset, 0x20)
-    last_offset += wmb1.header.num_materials * 16
-  end
-  if wmb1.header.offset_tex_infos > 0x0
-    last_offset = wmb1.header.offset_tex_infos = align(last_offset, 0x20)
-    last_offset += 4 + wmb1.tex_infos.num_tex_infos * 8
-  end
-
-  last_offset = wmb1.header.offset_materials_offsets = align(last_offset, 0x20)
-  last_offset += 4*wmb1.header.num_materials
-  last_offset = wmb1.header.offset_materials = align(last_offset, 0x20)
-  last_offset += wmb1.materials.collect(&:size).reduce(&:+)
-  last_offset = wmb1.header.offset_meshes_offsets = align(last_offset, 0x20)
-  last_offset += 4*wmb1.header.num_meshes
-  last_offset = wmb1.header.offset_meshes = align(last_offset, 0x20)
-
-end
-
 def get_texture_map(tex1, tex2)
   offset = tex1.each.count
   tex_map = {}
@@ -479,7 +435,7 @@ merge_meshes(wmb1, wmb2)
 
 wmb1.recompute_relative_positions if $options[:update_bones]
 
-recompute_layout(wmb1, wmb2)
+wmb1.recompute_layout
 
 File::open("wmb_output/#{File::basename(input_file2,".wmb")}_#{File::basename(input_file1,".wmb")}_bone_map.yaml", "w") { |f|
   f.write YAML::dump(common_mapping)
