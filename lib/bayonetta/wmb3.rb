@@ -736,7 +736,9 @@ module Bayonetta
       if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
         input = input_name
       else
-        input = File.open(input_name, "rb")
+        File.open(input_name, "rb") { |f|
+          input = StringIO::new(f.read, "rb")
+        }
       end
       wmb = self::new
       wmb.instance_variable_set(:@__was_big, false)
@@ -749,7 +751,7 @@ module Bayonetta
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
-        output = File.open(output_name, "wb")
+        output = StringIO::new("", "wb")#File.open(output_name, "wb")
       end
       output.rewind
 
@@ -757,7 +759,14 @@ module Bayonetta
       __dump_fields
       __unset_dump_type
 
-      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+
+      unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output.rewind
+        File.open(output_name, "wb") { |f|
+          f.write output.string
+        }
+        output.close
+      end
       self
     end
   end
