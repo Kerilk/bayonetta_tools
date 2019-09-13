@@ -803,12 +803,6 @@ module Bayonetta
         self
       end
 
-      def __size(position = 0, parent = nil, index = nil)
-        sz = @header.offset_indices
-        sz += @header.num_indices * 2
-        sz
-      end
-
       def triangles
         inds = @indices.collect{ |i| i + @header.vertex_offset }
         if @header.primitive_type == 4
