@@ -1,0 +1,286 @@
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector<read=vectorRead>;
+
+string vectorRead( vector &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+typedef struct {
+    hfloat u;
+    hfloat v;
+} mapping_t<read=mapping_tRead>;
+
+string mapping_tRead( mapping_t &value ) {
+    string s;
+    SPrintf(s, "u: %f, v: %f", value.u, value.v);
+    return s;
+}
+
+string ubyteListRead( ubyteList &value ) {
+    string s;
+    SPrintf(s, "%3d, %3d, %3d, %3d", value.val[0], value.val[1], value.val[2], value.val[3]);
+    return s;
+}
+
+struct {
+	char    id[4]; //WMB3
+    uint32  version<format=hex>;
+    int32   unknownA;
+    int32   vertexFormat<format=hex>;
+    int16   unknownCount;
+    int16   unknownTerminator;
+    struct  {
+        float x, y, z;
+        float u, v, w;
+    } boundingBox;
+    uint32  offsetVertexGroups <format=hex>;
+    uint32  numVertexGroups;
+    uint32  offsetBatches <format=hex>;
+    uint32  numBatches;
+    uint32  offsetBatchGroups <format=hex>;
+    uint32  offsetBones <format=hex>;
+    uint32  numBones;
+    uint32  offsetBoneIndexTranslateTable <format=hex>;
+    uint32  boneTranslateTableSize <format=hex>;
+    uint32  offsetBoneSets <format=hex>;
+    uint32  numBoneSets;
+    uint32  offsetMaterials <format=hex>;
+    uint32  numMaterials;
+    uint32  offsetTextureIDs <format=hex>;
+    uint32  numTextureIDs;
+    uint32  offsetMeshes <format=hex>;
+    uint32  numMeshes;
+} header;
+
+if( header.offsetVertexGroups != 0 ) {
+    FSeek( header.offsetVertexGroups );
+    struct {
+        uint32  vertexOffset <format=hex>;
+        uint32  vertexExDataOffset <format=hex>;
+        uint32  unknownOffset[2] <format=hex>;
+        uint32  vertexSize;
+        uint32  vertexExDataSize;
+        uint32  unknownSize[2];
+        int32   numVertexes;
+        int32   indexBufferOffset <format=hex>;
+        int32   numIndexes;
+        local uint32 pos = FTell();
+        if( vertexSize == 20 && vertexExDataSize == 20 && header.vertexFormat == 0x10137) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+                ubyteList   color;
+            } vertexesExData[numVertexes];
+        } else if( vertexSize == 20 && vertexExDataSize == 24 && header.vertexFormat == 0x10337) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+                ubyteList   color;
+                mapping_t   mapping2;
+            } vertexesExData[numVertexes];
+        } else if ( vertexSize == 24 && vertexExDataSize == 8 && header.vertexFormat == 0x10107) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+                ubyteList   color;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else if ( vertexSize == 28 && vertexExDataSize == 8 && header.vertexFormat == 0x10307) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+                ubyteList   color;
+                mapping_t   mapping2;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        }
+        FSeek(indexBufferOffset);
+        uint16 indexes[numIndexes];
+        FSeek(pos);
+    } vertexGroups[header.numVertexGroups] <optimize=false>;
+}
+
+if( header.offsetBatches != 0 ) {
+    FSeek( header.offsetBatches );
+
+    struct {
+        uint32  vertexGroupIndex;
+        uint32  vertexStart;
+        uint32  indexStart;
+        uint32  numVertexes;
+        uint32  numIndexes;
+    } batches[ header.numBatches ];
+}
+
+if( header.offsetBatchGroups != 0 ) {
+    FSeek( header.offsetBatchGroups ) ;
+
+    struct {
+        struct {
+            uint32  offsetBatchGroup <format=hex>;
+            uint32  batchCount;
+        } groups[5];
+        local int i;
+        for (i = 0; i < 5; i++) {
+            struct {
+                local int a;
+                if(groups[i].offsetBatchGroup) {
+                    FSeek(groups[i].offsetBatchGroup);
+                    struct {
+                        uint32  batchIndex;
+                        uint32  meshIndex;
+                        ushort  materialIndex;
+                        short   boneSetIndex;
+                        uint32  unknown;
+                    } batchInfos[groups[i].batchCount];
+                }
+            } batchGroup;
+        }
+    } batchGroups;
+}
+
+if( header.offsetBones != 0 ) {
+    FSeek( header.offsetBones );
+    struct {
+        short   gloabl_id;
+        short   local_id;
+        short   parentIndex;
+        short   dummy;
+        vector  localPosition;
+        vector  position;
+    } bones[header.numBones];
+}
+if( header.offsetBoneIndexTranslateTable != 0 ) {
+    FSeek( header.offsetBoneIndexTranslateTable );
+    struct {
+        int16 firstLevel[16];
+        local int i;
+        local int j = 0;
+        for (i = 0; i < 16; i++) {
+            if ( firstLevel[i] != -1 ) { 
+                j += 1;
+            }
+        } 
+        int16 secondLevel[j*16];
+        local int k = 0;
+        for (i = 0; i < j*16; i++) {
+            if ( secondLevel[i] != -1 ) {
+                k += 1;
+            }
+        }
+        int16 thirdLevel[k*16];
+    } boneIndexTranslateTable;
+}
+
+
+if( header.offsetBoneSets != 0 ) {
+    FSeek( header.offsetBoneSets );
+    struct {
+        uint32  offsetBoneSet <format=hex>;
+        uint32  numBoneIndexes;
+        local uint32 pos = FTell();
+        FSeek(offsetBoneSet);
+        uchar   boneIndexes[numBoneIndexes];
+        FSeek(pos);
+    } boneSets[header.numBoneSets] <optimize = false>;
+}
+
+if( header.offsetTextureIDs != 0 ) {
+    FSeek( header.offsetTextureIDs );
+    uint32   textureIDs[header.numTextureIDs] <format=hex>;
+}
+
+
+if( header.offsetMaterials != 0 ) {
+    FSeek( header.offsetMaterials );
+    struct {
+        uint32  offsetShaderName <format=hex>;
+        uint32  offsetTextures <format=hex>;
+        uint32  offsetUnknown <format=hex>;
+        uint32  offsetParameters <format=hex>;
+        uint16  num;
+        uint16  numTextures;
+        uint16  numUnknown;
+        uint16  numParameters;
+        local uint32 pos = FTell();
+        FSeek( offsetShaderName );
+        string shaderName;
+        FSeek( offsetTextures );
+        struct {
+            uint32  offsetName <format=hex>;
+            uint32  textureIndex;
+            local uint32 pos2 = FTell();
+            FSeek(offsetName);
+            string name;
+            FSeek(pos2);
+        } textures[numTextures] <optimize=false>;
+        FSeek(offsetParameters);
+        float   parameters[numParameters];
+        FSeek(pos);
+    } materials[header.numMaterials] <optimize = false>;
+}
+
+if( header.offsetMeshes != 0 ) {
+    FSeek( header.offsetMeshes );
+    struct {
+        uint32 nameOffset <format=hex>;
+        struct  {
+            float x, y, z;
+            float u, v, w;
+        } boundingBox;
+        struct {
+            uint32  offsetBatchGroupIndex <format=hex>;
+            uint32  numBatchGroupIndex;
+        } groups[5];
+        uint32  offsetMaterials <format=hex>;
+        uint32  numMaterials;
+
+        local uint32 pos = FTell();
+        FSeek(nameOffset);
+        string  name;
+        local int i;
+        for( i = 0; i < 5; i++ ) {
+            struct {
+                local int a;
+                if( groups[i].offsetBatchGroupIndex ) {
+                    FSeek(groups[i].offsetBatchGroupIndex);
+                    ushort batchGroupIndices[groups[i].numBatchGroupIndex];
+                }
+            } batchGroups;
+        }
+        FSeek(offsetMaterials);
+        ushort  materials[numMaterials];
+        FSeek(pos);
+    } meshes[header.numMeshes] <optimize=false>;
+}

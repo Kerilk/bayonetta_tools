@@ -2,13 +2,17 @@ struct {
     char    id[4];
     uint32  numModels;
     uint32  offsetTextures;
-    char    unknown[4];
+    char    tag[4]<comment="should be 1, 0, 0, 0">;
 } header;
 struct {
     char    name[16];
     uint32  offset;
-    float   transform[9];
-    int16   unknownA[42];
+    float   translate[3];
+    float   rotate[3];
+    float   scale[3];
+    int16   unknownA[8];
+    int32   flags<format=hex,comment="0x80000000: objectId 1 else 0">;
+    int16   unknownB[32];
 } modelDescriptors[header.numModels];
 local int i;
 local uint32 offset;

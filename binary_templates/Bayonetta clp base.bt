@@ -33,9 +33,9 @@ struct {
     int16 no;
     int16 noUp;
     int16 noDown;
-    int16 noSide;
-    int16 noPoly;
-    int16 noFix;
+    int16 noSide <comment="0xFFF bone number, rest flag 0x8000 references parent of target bone">;
+    int16 noPoly <comment="0xFFF bone number, rest flag 0x8000 references parent of target bone">;
+    int16 noFix <comment="Fix is potentially in second actor, 0xFFF bone number, rest flag 0x8000">;
     float rotLimit;
     struct {
         float x;

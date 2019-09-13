@@ -1,0 +1,50 @@
+#define game 0;
+
+typedef struct {
+    hfloat   nx;
+    hfloat   ny;
+    hfloat   nz;
+    hfloat   dummy;
+} normal_t<read=normal_tRead>;
+
+
+string normal_tRead( normal_t &value ) {
+    string s;
+    double fx = value.nx;
+    double fy = value.ny;
+    double fz = value.nz;
+    double nrm = Sqrt(fx*fx + fy*fy + fz*fz);
+    SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
+    return s;
+}
+
+typedef struct  {
+    ubyte val[4];
+} ubyteList<read=ubyteListRead>;
+
+float tangentRead( uchar value) {
+    float v;
+    v = value;
+    v -= 127.0;
+    v /= 127.0;
+    return v;
+}
+
+typedef ubyteList tangents_t<read=tangents_tRead>;
+
+string tangents_tRead(tangents_t &value) {
+    string s;
+    float tx = tangentRead(value.val[0]);
+    float ty = tangentRead(value.val[1]);
+    float tz = tangentRead(value.val[2]);
+    float d = tangentRead(value.val[3]);
+    float nrm = Sqrt(tx*tx + ty*ty + tz*tz);
+    SPrintf(s, "tx: %f, ty: %f, tz: %f, sign: %f, nrm: %f", tx, ty, tz, d, nrm);
+    return s;
+}
+
+LittleEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("WMB3", id, 4) == 0, "Wrong file type");
+FSeek(0);
+#include "Transformers Devastation wmb base.bt"

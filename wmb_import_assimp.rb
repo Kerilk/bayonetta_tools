@@ -73,6 +73,10 @@ OptionParser.new do |opts|
     $options[:print_transform] = print
   end
 
+  opts.on("--bone-prefix=STRING", "Change the bone prefix") do |prefix|
+    $options[:bone_prefix] = prefix
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -82,7 +86,11 @@ end.parse!
 
 $mesh_prefix = /mesh_(\d\d)_/
 $batch_prefix = /batch_(\d\d)_/
-$bone_prefix = /bone_(\d\d\d)/
+if $options[:bone_prefix]
+  $bone_prefix = /#{$options[:bone_prefix]}(\d\d\d)/
+else
+  $bone_prefix = /bone_(\d\d\d)/
+end
 $skeleton_prefix = /skeleton/
 
 target = ARGV[0]
@@ -92,7 +100,9 @@ if $options[:list]
 
   source = target unless source
 
-  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace])
+  property_store = Assimp::PropertyStore::new
+  property_store.import_fbx_preserve_pivots = Assimp::FALSE
+  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
   puts "Found #{scene.num_meshes} meshes."
   puts "Found #{scene.num_textures} embedded textures."
@@ -185,7 +195,9 @@ if $options[:skeleton]
 
   source = target unless source
 
-  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace])
+  property_store = Assimp::PropertyStore::new
+  property_store.import_fbx_preserve_pivots = Assimp::FALSE
+  scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace], props: property_store)
 
   skeleton = find_skeleton(scene)
   skeleton.each_node_with_depth { |n, d|
@@ -244,7 +256,12 @@ end
 def get_new_bones(wmb, mapping, node_mapping)
   bones_wmb = wmb.get_bone_structure
   if $options[:update_bones]
-    raise "Option --update-bones not yet implemented!"
+    common_bones = mapping.reject { |k,v| v.nil? }
+    common_bones.each { |k, v|
+      p = node_mapping[k].world_transformation * Assimp::Vector3D::new
+      pos = bones_wmb[v].position
+      pos.x, pos.y, pos.z = p.x, p.y, p.z
+    }
   end
 
   mapping[-1] = -1
@@ -281,7 +298,7 @@ end
 
 def update_translate_table(wmb, common_mapping, missing_bones, new_bone_indexes)
   missing_bones_count = new_bone_indexes.length
-  raise "Too many bones to add!" if missing_bones_count > 0x100
+  raise "Too many bones to add: #{missing_bones.inspect}!" if missing_bones_count > 0x100
   (align(missing_bones_count, 0x10) - missing_bones_count).times {
     new_bone_indexes.push(0xfff)
   }
@@ -483,6 +500,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     }
     batch.bones.each { |bone|
       bone_index = bone_refs[bone.name]
+      raise "Missing bone: #{bone.name}!" unless bone_index
       bone.weights.each { |vtxweight|
         vertex_id = vtxweight.vertex_id
         weight = vtxweight.weight
@@ -642,6 +660,7 @@ raise "Invalid file #{target}" unless File::file?(target)
 raise "Invalid file #{source}" unless File::file?(source)
 
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
+Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 
 wmb = WMBFile::load(target)
 
@@ -654,7 +673,9 @@ if $options[:verbose]
   Assimp::LogStream::verbose(1)
 end
 
-scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs])
+property_store = Assimp::PropertyStore::new
+property_store.import_fbx_preserve_pivots = Assimp::FALSE
+scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs], props: property_store)
 
 
 common_mapping, bone_mapping = merge_bones(wmb, scene)

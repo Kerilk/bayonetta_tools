@@ -44,10 +44,14 @@ OptionParser.new do |opts|
 
   opts.on("--remap-bones=BONEMAP", "Remaps specified local bones to global bone indexes") do |bone_map|
     if File.exist?(bone_map)
-      $options[:remap_bones] = YAML::load(bone_map)
+      $options[:remap_bones] = YAML::load_file(bone_map)
     else
       $options[:remap_bones] = eval(bone_map).to_h
     end
+  end
+
+  opts.on("--[no-]order-bones", "Order bones in their global numbering if possible") do |order_bones|
+    $options[:order_bones] = order_bones
   end
 
   opts.on("-v", "--[no-]vertexes", "Cleanup vertexes") do |vertexes|
@@ -66,8 +70,16 @@ OptionParser.new do |opts|
     $options[:fix] = fix
   end
 
+  opts.on("--copy-uv1to2=MESHLIST", "Copy the first UV mapping to the second one") do |copy_uv|
+    $options[:copy_uv] = eval(copy_uv).to_a
+  end
+
   opts.on("--[no-]remove-triangle-strips", "Remove triangle strips and replace by triangles") do |strips|
     $options[:strips] = strips
+  end
+
+  opts.on("--revert-triangles=MESHLIST", "Revert traiangle faces") do |revert|
+    $options[:revert] = eval(revert).to_a
   end
 
   opts.on("-e", "--swap-endianness", "Swap endianness") do |swap|
@@ -92,6 +104,14 @@ OptionParser.new do |opts|
 
   opts.on("-m", "--delete-meshes=MESHLIST", "Delete specified meshes") do |mesh_list|
     $options[:delete_meshes] = eval(mesh_list).to_a
+  end
+
+  opts.on("--delete-batches=BATCHLIST", "Delete specified batches (WMB3)") do |batch_list|
+    $options[:delete_batches] = eval(batch_list).to_a
+  end
+
+  opts.on("--split-meshes=MESHLIST", "Split the selected meshes into meshes containing only one batch") do |split_meshes|
+    $options[:split_meshes] = eval(split_meshes).to_a
   end
 
   opts.on("-d", "--delete-bones=BONELIST", "Delete specified bones") do |bone_list|
@@ -166,11 +186,16 @@ wmb = WMBFile::load(input_file)
 wmb.scale($options[:scale]) if $options[:scale]
 wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]
+wmb.split_meshes($options[:split_meshes]) if $options[:split_meshes]
 wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.move_meshes($options[:move_meshes]) if $options[:move_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
-wmb.delete_meshes($options[:delete_meshes]) if $options[:delete_meshes]
+if $options[:delete_meshes]
+  wmb.delete_meshes($options[:delete_meshes])
+elsif $options[:delete_batches]
+  wmb.delete_batches($options[:delete_batches])
+end
 wmb.cleanup_bone_refs if $options[:bone_refs]
 wmb.add_ancestors_bone_refs if $options[:submodel_bone_refs]
 wmb.add_previous_bone_refs if $options[:previous_bone_refs]
@@ -178,9 +203,11 @@ wmb.cleanup_bones if $options[:bones]
 wmb.recompute_relative_positions if $options[:recompute_relative_positions]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.remove_triangle_strips if $options[:strips]
+wmb.revert_triangles($options[:revert]) if $options[:revert]
 wmb.cleanup_vertexes if $options[:vertexes]
 wmb.remove_batch_vertex_offsets if $options[:offsets]
 wmb.fix_ex_data if $options[:fix]
+wmb.copy_uv12($options[:copy_uv]) if $options[:copy_uv]
 wmb.reverse_tangents_byte_order($options[:reverse_tangents]) if $options[:reverse_tangents]
 if $options[:set_pose]
   exp_name = input_file.gsub(".wmb", ".exp")
@@ -195,14 +222,15 @@ if $options[:set_tpose]
 end
 wmb.delete_bones($options[:delete_bones]) if $options[:delete_bones]
 wmb.remap_bones($options[:remap_bones]) if $options[:remap_bones]
+wmb.order_bones if $options[:order_bones]
 wmb.cleanup_materials if $options[:cleanup_mat]
 wmb.cleanup_material_sizes if $options[:cleanup_mat_sizes]
 wmb.maximize_material_sizes if $options[:maximize_mat_sizes]
 wmb.cleanup_textures(input_file, $options[:overwrite]) if $options[:textures]
 unless wmb.class == WMB3File
   wmb.renumber_batches
-  wmb.recompute_layout
 end
+wmb.recompute_layout
 if $options[:overwrite]
   wmb.dump(input_file, $options[:swap] ? !wmb.was_big? : wmb.was_big? )
 else

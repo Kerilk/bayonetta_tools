@@ -1,0 +1,7 @@
+int numAttachPoints;
+
+struct {
+    int sourceBone;
+    int targetBone;
+    int option;
+} attachPoints[numAttachPoints];

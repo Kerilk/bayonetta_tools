@@ -1,0 +1,37 @@
+struct {
+    char id[4];
+    unsigned int flags;
+    unsigned int unknown;
+    unsigned int offsetRecords;
+} header;
+
+FSeek(header.offsetRecords);
+struct {
+    unsigned int recordCount;
+    struct {
+        short id;
+        short entryIndex;
+        short entryCount;
+        unsigned short offsetEntries;
+    } records[recordCount];
+} records;
+local int i;
+struct {
+    for(i = 0; i < records.recordCount; i++) {
+        FSeek(records.records[i].offsetEntries+0x14);
+        struct {
+            struct {
+                short u_a;
+                short u_b;
+                short u_c;
+                short u_d;
+                short u_e;
+                short u_f;
+                short u_g;
+                short u_h;
+                short u_i;
+                short u_j;
+            } entries[records.records[i].entryCount];
+        } entryGroup;
+    }
+} entries;

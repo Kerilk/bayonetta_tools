@@ -1,0 +1,46 @@
+struct {
+    uint    codePointsOffset<format=hex>;
+    uint    recordCount;
+    int     u_b;
+} header;
+
+local   uint pos;
+struct {
+    uint    id;
+    uint    offset<format=hex>;
+    uint    size;
+    pos = FTell();
+    FSeek(offset+4);
+    short message[size/2]<comment="0xfff: code point, 0x1000: local code point else common, 0x8000: special (code point 0: carriage return, 2: endline)">;
+    FSeek(pos);
+} records[header.recordCount]<optimize=false>;
+
+
+FSeek(header.codePointsOffset);
+struct {
+    int     codePointsSizeOffset<format=hex>;
+    uint    wtbOffset<format=hex>;
+    int     codePointCounts;
+
+} codePointsHeader;
+
+struct {
+    int     code;
+    float   coords[4];
+} codePoints[codePointsHeader.codePointCounts];
+
+FSeek(header.codePointsOffset+codePointsHeader.codePointsSizeOffset);
+
+struct {
+    int     codePointCounts;
+    int     u_a;
+    int     u_b;
+    int     u_c;
+} codePointsSizeHeader;
+
+struct {
+    int     code;
+    float   sizeX;
+    float   sizey;
+    int     u_a;
+} codePointSize[codePointsSizeHeader.codePointCounts];

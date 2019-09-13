@@ -34,7 +34,7 @@ struct {
 	char    id[4]; //WMB3
     uint32  version<format=hex>;
     int32   unknownA;
-    int16   unknownCount;
+    int16   flags <comment="0x8 indices int32 else int16">;
     int16   unknownTerminator;
     struct  {
         float x, y, z;
@@ -50,8 +50,8 @@ struct {
     uint32  numBatches;
     uint32  offsetLods <format=hex>;
     uint32  numLods;
-    uint32  offsetUnknown0 <format=hex>;
-    uint32  numUnknown0;
+    uint32  offsetColTreeNodes <format=hex>;
+    uint32  numColTreeNodes;
     uint32  offsetBoneMap <format=hex>;
     uint32  boneMapSize;
     uint32  offsetBoneSets <format=hex>;
@@ -62,8 +62,8 @@ struct {
     uint32  numMeshes;
     uint32  offsetMeshMaterial <format=hex>;
     uint32  numMeshMaterial;
-    uint32  offsetUnknown1 <format=hex>;
-    uint32  numUnknown1;
+    uint32  offsetUnknown0 <format=hex>;
+    uint32  numUnknown0;
 } header;
 
 if( header.offsetBones != 0 ) {
@@ -113,12 +113,12 @@ if( header.offsetVertexGroups != 0 ) {
         uint32  vertexExDataSize;
         uint32  unknownSize[2];
         int32   numVertexes;
-        int32   vertexExDataFlags <format=binary>;
+        int32   vertexFlags <format=binary>;
         int32   indexBufferOffset <format=hex>;
         int32   numIndexes;
         local uint32 pos = FTell();
         FSeek(vertexOffset);
-        if( vertexExDataFlags == 0xb ) {
+        if( vertexFlags == 0xb ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -134,7 +134,7 @@ if( header.offsetVertexGroups != 0 ) {
                 normal_t    normal;
                 mapping_t   mapping3;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x7 ) {
+        } else if( vertexFlags == 0x7 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -148,7 +148,7 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping2;
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xa ) {
+        } else if( vertexFlags == 0xa ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -163,7 +163,7 @@ if( header.offsetVertexGroups != 0 ) {
                 ubyteList   color;
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x5 ) {
+        } else if( vertexFlags == 0x5 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -177,7 +177,7 @@ if( header.offsetVertexGroups != 0 ) {
                 normal_t    normal;
                 mapping_t   mapping3;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0x4 ) {
+        } else if( vertexFlags == 0x4 ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -190,7 +190,7 @@ if( header.offsetVertexGroups != 0 ) {
             struct {
                 normal_t    normal;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xe ) {
+        } else if( vertexFlags == 0xe ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -205,7 +205,7 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping3;
                 mapping_t   mapping4;
             } vertexesExData[numVertexes];
-        } else if( vertexExDataFlags == 0xc ) {
+        } else if( vertexFlags == 0xc ) {
             struct {
                 vector      position;
                 tangents_t  tangents;
@@ -221,14 +221,32 @@ if( header.offsetVertexGroups != 0 ) {
                 mapping_t   mapping4;
                 mapping_t   mapping5;
             } vertexesExData[numVertexes];
+        } else if( vertexFlags == 0x1 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                mapping_t   mapping2;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else if( vertexFlags == 0x0 ) {
+            struct {
+                vector      position;
+                tangents_t  tangents;
+                mapping_t   mapping;
+                normal_t    normal;
+            } vertexes[numVertexes];
+        } else {
+            Warning("Unknown vertex format vertexSize %d vertexExDataSize %d vertexFlags %d!\n", vertexSize, vertexExDataSize, vertexFlags);
         }
         FSeek(indexBufferOffset);
-        if(header.unknownCount == 10) {
+        if(header.flags & 0x8) {
             uint32 indexes[numIndexes];
-        } else if (header.unknownCount == 2) {
-            uint16 indexes[numIndexes];
         } else {
-            Printf("Unknown unknownCount %d!!!\n", header.unknownCount);
+            uint16 indexes[numIndexes];
         }
         FSeek(pos);
     } vertexGroups[header.numVertexGroups] <optimize=false>;
@@ -265,12 +283,22 @@ if( header.offsetLods != 0 ) {
             uint32  vertexGroupIndex;
             uint32  meshIndex;
             uint32  materialIndex;
-            int32   unknown0;
+            int32   colTreeNodeIndex;
             uint32  meshMatPairIndex;
-            int32   unknown1;
+            int32   indexToUnknown1;
         } batchInfos[ numBatchInfos ];
         FSeek(pos);
     } lods[ header.numLods ] <optimize=false>;
+}
+
+if( header.offsetColTreeNodes != 0 ) {
+    FSeek( header.offsetColTreeNodes );
+    struct {
+        vector  p1;
+        vector  p2;
+        int32   left;
+        int32   right;
+    } colTreeNodes[header.numColTreeNodes];
 }
 
 if( header.offsetBoneMap != 0 ) {
@@ -281,7 +309,7 @@ if( header.offsetBoneMap != 0 ) {
 if( header.offsetBoneSets != 0 ) {
     FSeek( header.offsetBoneSets );
     struct {
-        uint32  offsetBoneSet;
+        uint32  offsetBoneSet <format=hex>;
         uint32  numBoneIndexes;
         local uint32 pos = FTell();
         FSeek(offsetBoneSet);
@@ -372,4 +400,11 @@ if( header.offsetMeshMaterial != 0 ) {
         uint32  meshId;
         uint32  materialId;
     } meshMaterial[header.numMeshMaterial];
+}
+
+if( header.offsetUnknown0 != 0 ) {
+    FSeek( header.offsetUnknown0 );
+    struct {
+        uint really[6]<format=hex>;
+    } unknown0[header.numUnknown0];
 }

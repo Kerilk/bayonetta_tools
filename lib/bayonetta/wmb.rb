@@ -720,10 +720,10 @@ module Bayonetta
     class BatchHeader < LibBin::DataConverter
       register_field :batch_id, :s #Bayo 2
       register_field :mesh_id, :s
-      register_field :u_b, :S
+      register_field :flags, :S
       register_field :ex_mat_id, :s
       register_field :material_id, :C
-      register_field :u_d, :c
+      register_field :has_bone_refs, :C
       register_field :u_e1, :C
       register_field :u_e2, :C
       register_field :vertex_start, :L
@@ -737,10 +737,10 @@ module Bayonetta
       def initialize
         @batch_id = 0
         @mesh_id = 0
-        @u_b = 0x8001
+        @flags = 0x8001
         @ex_mat_id = 0
         @material_id = 0
-        @u_d = 1
+        @has_bone_refs = 1
         @u_e1 = 0
         @u_e2 = 0
         @vertex_start = 0
@@ -755,9 +755,9 @@ module Bayonetta
 
     class Batch < LibBin::DataConverter
       register_field :header, BatchHeader
-      register_field :num_bone_ref, :l, condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
-      register_field :bone_refs, :C, count: 'num_bone_ref', condition: '(header\u_b & 0x8000) != 0 || ..\..\is_bayo2?'
-      register_field :unknown, :F, count: 4, condition: '(header\u_b & 0x8000) == 0 && !(..\..\is_bayo2?)'
+      register_field :num_bone_ref, :l, condition: 'header\has_bone_refs != 0'
+      register_field :bone_refs, :C, count: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
+      register_field :unknown, :F, count: 4, condition: 'header\has_bone_refs == 0'
       register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
 
       def initialize
@@ -769,7 +769,7 @@ module Bayonetta
 
       def duplicate(positions, vertexes, vertexes_ex)
         b = Batch::new
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           b.header = @header.dup
           b.num_bone_ref = @num_bone_ref
           b.bone_refs = @bone_refs.dup
@@ -843,7 +843,7 @@ module Bayonetta
       end
 
       def cleanup_bone_refs(vertexes)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
@@ -859,7 +859,7 @@ module Bayonetta
       end
 
       def add_ancestors_bone_refs(vertexes, bones)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           new_bone_refs_list = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.sort
@@ -879,7 +879,7 @@ module Bayonetta
       end
 
       def add_previous_bone_refs(vertexes, bones)
-        if (header.u_b & 0x8000) != 0 || (header.u_b & 0x80)
+        if header.has_bone_refs != 0
           bone_refs_map = @bone_refs.each_with_index.collect { |b, i| [i, b] }.to_h
           used_bone_refs_indexes = vertex_indices.collect { |vi| vertexes[vi].bone_infos.get_indexes }.flatten.uniq
           last_bone = used_bone_refs_indexes.collect{ |i| bone_refs_map[i] }.uniq.max
@@ -1419,6 +1419,7 @@ module Bayonetta
           b.relative_position.z,
           0.0, 0.0, 0.0,
           0.0,
+          1.0, 1.0, 1.0,
           1.0, 1.0, 1.0 ]
       }
       pose.each { |b, ts|
@@ -1432,10 +1433,22 @@ module Bayonetta
       if exp
         exp.apply(tracks, table)
       end
-      matrices = tracks.collect { |ts|
+      matrices = tracks.each_with_index.collect { |ts, bi|
+        if @header.offset_bone_flags > 0x0
+          order = @bone_flags[bi]
+        else
+          order = nil
+        end
         m = Linalg::get_translation_matrix(*ts[0..2])
-        m = m * Linalg::get_rotation_matrix(*ts[3..5])
-        m = m * Linalg::get_scaling_matrix(*ts[7..9])
+        pi = @bone_hierarchy[bi]
+        if pi != -1
+          parent_cumulative_scale = tracks[pi][10..12]
+          m = m * Linalg::get_inverse_scaling_matrix(*parent_cumulative_scale)
+          3.times { |i| ts[10+i] *= parent_cumulative_scale[i] }
+        end
+        3.times { |i|  ts[10+i] *= ts[7+i] }
+        m = m * Linalg::get_rotation_matrix(*ts[3..5], order: order)
+        m = m * Linalg::get_scaling_matrix(*ts[10..12])
       }
       multiplied_matrices = []
       inverse_bind_pose = bones.collect { |b|
@@ -1469,18 +1482,19 @@ module Bayonetta
           i = bone_refs[bi]
           vertex_matrix = vertex_matrix + multiplied_matrices[i] * (bw.to_f/255.to_f)
         }
+        normal_matrix = vertex_matrix.inverse.transpose
         vp = get_vertex_field(:position, vi)
         new_vp = vertex_matrix * Linalg::Vector::new(vp.x, vp.y, vp.z)
         vp.x = new_vp.x
         vp.y = new_vp.y
         vp.z = new_vp.z
         n = get_vertex_field(:normal, vi)
-        new_n = vertex_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)
+        new_n = (normal_matrix * Linalg::Vector::new(n.x, n.y, n.z, 0.0)).normalize
         n.x = new_n.x
         n.y = new_n.y
         n.z = new_n.z
         t = get_vertex_field(:tangents, vi)
-        new_t = vertex_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)
+        new_t = (normal_matrix * Linalg::Vector::new(t.x, t.y, t.z, 0.0)).normalize
         t.x = new_t.x
         t.y = new_t.y
         t.z = new_t.z
@@ -1551,11 +1565,61 @@ module Bayonetta
       self
     end
 
+    def order_bones
+      arr = @bone_index_translate_table.table.sort
+      old_local_to_new_local = {}
+      arr.each_with_index { |(_, old_local), new_local|
+        old_local_to_new_local[old_local] = new_local
+      }
+      new_local_to_old_local = old_local_to_new_local.invert
+      bones = get_bone_structure
+      new_bones = bones.size.times.collect { |new_bi|
+        b = bones[new_local_to_old_local[new_bi]]
+        b.index = new_bi
+        b
+      }
+      new_bones.each { |b|
+        raise "Invali hierarchy: #{b.parent.index} >= #{b.index} !" if b.parent && b.parent.index >= b.index
+      }
+      set_bone_structure(new_bones)
+      new_table = @bone_index_translate_table.table.collect { |k, v| [k, old_local_to_new_local[v]] }.to_h
+      @bone_index_translate_table.table = new_table
+      @meshes.each_with_index { |m, i|
+        m.batches.each_with_index { |b, j|
+          b.bone_refs.collect! { |bi|
+            old_local_to_new_local[bi]
+          }
+        }
+      }
+      self
+    end
+
     def delete_meshes(list)
       kept_meshes = @meshes.size.times.to_a - list
       @meshes = kept_meshes.collect { |i|
         @meshes[i]
       }
+      @header.num_meshes = @meshes.size
+      self
+    end
+
+    def split_meshes(list)
+      kept_meshes = @meshes.size.times.to_a - list
+      split_meshes = @meshes.size.times.to_a - kept_meshes
+      new_meshes = []
+      split_meshes.each { |i|
+        @meshes[i].batches.each_with_index { |b, j|
+          new_mesh = @meshes[i].dup
+          new_mesh.header = @meshes[i].header.dup
+          new_mesh.header.name = @meshes[i].header.name.tr("\x00","") + ("_%02d" % j)
+          new_mesh.batches = [b]
+          new_meshes.push new_mesh
+        }
+      }
+      @meshes = kept_meshes.collect { |i|
+        @meshes[i]
+      }
+      @meshes += new_meshes
       @header.num_meshes = @meshes.size
       self
     end
@@ -1740,7 +1804,7 @@ module Bayonetta
       raise "Unsupported for Bayonetta 2!" if @shader_names
       @materials.each { |m|
          type = m.type
-         if $material_db.key?(type)
+         if $material_db.key?(type) && $material_db[type][:size]
            size = $material_db[type][:size]
          else
            warn "Unknown material type #{m.type}!"
@@ -1754,7 +1818,7 @@ module Bayonetta
 
     def maximize_material_sizes
       raise "Unsupported for Bayonetta 2!" if @shader_names
-      max_size_mat = $material_db.max_by { |k, v|
+      max_size_mat = $material_db.select { |k, v| v[:size] }.max_by { |k, v|
         v[:size]
       }
       max_data_number = (max_size_mat[1][:size] - 4)/4
@@ -1838,6 +1902,16 @@ module Bayonetta
       }
     end
 
+    def revert_triangles( mesh_list )
+      mesh_list.each { |mesh_index|
+        @meshes[mesh_index].batches.each { |b|
+          b.set_triangles( b.triangles.collect { |n1, n2, n3|
+            [n1, n3, n2]
+          })
+        }
+      }
+    end
+
     def cleanup_vertexes
       used_vertex_indexes = []
       @meshes.each { |m|
@@ -1883,7 +1957,7 @@ module Bayonetta
         batches.merge blist[1..-1]
       }
       batches.each { |b|
-        new_batch = b.duplicate(@vertexes, @vertexes_ex_data)
+        new_batch = b.duplicate(@positions, @vertexes, @vertexes_ex_data)
         b.header = new_batch.header
         b.indices = new_batch.indices
       }
@@ -2008,6 +2082,18 @@ module Bayonetta
           @vertexes_ex_data[i].mapping2.u = v.mapping.u
           @vertexes_ex_data[i].mapping2.v = v.mapping.v
         end
+      }
+    end
+
+    def copy_uv12(mesh_list)
+      raise "No UV2 in model!" unless @vertexes_ex_data[0].respond_to?(:mapping2)
+      mesh_list.each { |i|
+        @meshes[i].batches.each { |b|
+          b.vertex_indices.each { |vi|
+            @vertexes_ex_data[vi].mapping2.u = @vertexes[vi].mapping.u
+            @vertexes_ex_data[vi].mapping2.v = @vertexes[vi].mapping.v
+          }
+        }
       }
     end
 

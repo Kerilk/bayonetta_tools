@@ -8,7 +8,7 @@ input_dir = ARGV[0]
 
 files  = Dir.entries(input_dir)
 Dir.chdir(ARGV[0])
-files.select! { |f| File.file?(f) && [".gtx", ".dds"].include?( File.extname(f) ) }
+files.select! { |f| File.file?(f) && [".gtx", ".dds", ".bntx", ".xt1"].include?( File.extname(f) ) }
 files.sort!
 puts files
 Dir.mkdir("wtx_output") unless Dir.exist?("wtx_output")

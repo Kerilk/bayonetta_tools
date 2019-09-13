@@ -1,10 +1,11 @@
 struct {
     char    id[4];
     uint32  fileNumber;
-    uint32  fileOffsetsOffset;
-    uint32  fileExtensionsOffset;
-    uint32  fileNamesOffset;
-    uint32  fileSizesOffset;
+    uint32  fileOffsetsOffset <format=hex>;
+    uint32  fileExtensionsOffset <format=hex>;
+    uint32  fileNamesOffset <format=hex>;
+    uint32  fileSizesOffset <format=hex>;
+    uint32  hashMapOffset <format=hex>;
 } header;
 
 FSeek(header.fileOffsetsOffset);
@@ -23,6 +24,29 @@ struct {
 
 FSeek(header.fileSizesOffset);
 uint32 fileSizes[header.fileNumber];
+
+/*
+    Used to search for a given hash: find index of hash inside "hashes" list.
+    Skip to bucketOffsets[hash >> preHashShift] to start searching.
+    File is fileIndices[index];
+*/
+if(header.hashMapOffset) {
+    FSeek(header.hashMapOffset);
+    struct {
+        struct {
+            uint32  preHashShift;
+            uint32  bucketOffsetsOffset <format=hex>;
+            uint32  hashesOffset <format=hex>;
+            uint32  fileIndicesOffset <format=hex>;
+        } hashMapHeader;
+        FSeek(header.hashMapOffset + hashMapHeader.bucketOffsetsOffset);
+        short bucketOffsets[1<<(31-hashMapHeader.preHashShift)];
+        FSeek(header.hashMapOffset + hashMapHeader.hashesOffset);
+        uint32 hashes[header.fileNumber] <format=hex>;
+        FSeek(header.hashMapOffset + hashMapHeader.fileIndicesOffset);
+        uint16 fileIndices[header.fileNumber];
+    } hashMap;
+}
 
 local int i;
 for (i = 0; i < header.fileNumber; i++) {
