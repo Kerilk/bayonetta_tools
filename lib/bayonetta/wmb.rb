@@ -218,6 +218,7 @@ module Bayonetta
     register_field :x, :half
     register_field :y, :half
     register_field :z, :half
+    register_field :dummy, :half
   end
 
   class Normal < LibBin::DataConverter
