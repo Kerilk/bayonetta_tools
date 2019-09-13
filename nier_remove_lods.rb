@@ -4,7 +4,7 @@ require 'fileutils'
 require_relative 'lib/bayonetta'
 
 module Bayonetta
-  class WMB3FilePartial < DataConverter
+  class WMB3FilePartial < LibBin::DataConverter
     register_field :header, WMB3File::Header
     register_field :lods, WMB3File::Lod, count: 'header\info_lods\number', sequence: true,
                    offset: 'header\info_lods\offset + __iterator * 20'
