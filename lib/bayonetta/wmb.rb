@@ -687,7 +687,7 @@ module Bayonetta
       register_field :material_data, :L,
         count: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
 
-      def size(position = 0, parent = nil, index = nil)
+      def __size(position = 0, parent = nil, index = nil)
         return 2 + 2 + @material_data.length * 4
       end
     end
@@ -803,7 +803,7 @@ module Bayonetta
         self
       end
 
-      def size(position = 0, parent = nil, index = nil)
+      def __size(position = 0, parent = nil, index = nil)
         sz = @header.offset_indices
         sz += @header.num_indices * 2
         sz
@@ -935,12 +935,12 @@ module Bayonetta
         @batches = []
       end
 
-      def size(position = 0, parent = nil, index = nil)
+      def __size(position = 0, parent = nil, index = nil)
         sz = @header.offset_batch_offsets
         sz += @header.num_batch * 4
         sz = align(sz, 0x20)
         @header.num_batch.times { |i|
-           sz += @batches[i].size
+           sz += @batches[i].__size
            sz = align(sz, 0x20)
         }
         sz
@@ -953,7 +953,7 @@ module Bayonetta
         @header.num_batch.times { |j|
           off = align(off, 0x20)
           @batch_offsets.push off
-          off += @batches[j].size
+          off += @batches[j].__size
         }
       end
 
@@ -2187,14 +2187,14 @@ module Bayonetta
       @materials_offsets = []
       @header.num_materials.times { |i|
         @materials_offsets.push off
-        off += @materials[i].size
+        off += @materials[i].__size
         off =  align(off, 0x4)
       }
 
       last_offset += 4*@header.num_materials
       last_offset = @header.offset_materials = align(last_offset, 0x20)
 
-      last_offset +=  @materials.collect(&:size).reduce(&:+)
+      last_offset +=  @materials.collect(&:__size).reduce(&:+)
       last_offset = @header.offset_meshes_offsets = align(last_offset, 0x20)
 
       off = 0
@@ -2202,7 +2202,7 @@ module Bayonetta
       @header.num_meshes.times { |i|
         @meshes[i].recompute_layout
         @meshes_offsets.push off
-        off += @meshes[i].size
+        off += @meshes[i].__size
         off = align(off, 0x20)
       }
 

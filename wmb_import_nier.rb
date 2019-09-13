@@ -201,7 +201,7 @@ end
 
 def merge_materials(wmb1, wmb2, tex_map)
   new_mat_offset = wmb1.header.num_materials
-  mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.size
+  mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.__size
   new_materials_offsets = []
   new_materials = []
 

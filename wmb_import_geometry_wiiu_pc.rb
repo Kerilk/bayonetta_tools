@@ -203,7 +203,7 @@ end
 
 def merge_meshes(wmb1, wmb2)
   new_vertex_offset = wmb1.header.num_vertexes - wmb2.header.num_vertexes
-  mesh_offset = align(wmb1.meshes_offsets.last + wmb1.meshes.last.size, 0x20)
+  mesh_offset = align(wmb1.meshes_offsets.last + wmb1.meshes.last.__size, 0x20)
   new_meshes_offset = wmb2.meshes_offsets.collect { |e|
     e + mesh_offset
   }
@@ -234,7 +234,7 @@ end
 
 def merge_materials(wmb1, wmb2, tex_map)
   new_mat_offset = wmb1.header.num_materials
-  mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.size
+  mat_offset = wmb1.materials_offsets.last + wmb1.materials.last.__size
   new_materials_offsets = []
   new_materials = []
   if wmb2.tex_infos then #Bayo 2
@@ -258,7 +258,7 @@ def merge_materials(wmb1, wmb2, tex_map)
   else #Bayo 1
     wmb2.materials.each_with_index { |e, i|
       new_materials_offsets.push(mat_offset)
-      mat_offset += e.size
+      mat_offset += e.__size
       m = WMBFile::Material::new
       m.type = e.type
       m.flag = e.flag

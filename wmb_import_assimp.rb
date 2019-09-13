@@ -615,7 +615,7 @@ def merge_materials(wmb, scene, tex)
   new_tex_list = get_new_tex_list(scene)
   new_tex_map = new_tex_list.each_with_index.collect { |t, i| [t, i+old_tex_count] }.to_h
 
-  mat_offset = wmb.materials_offsets.last + wmb.materials.last.size
+  mat_offset = wmb.materials_offsets.last + wmb.materials.last.__size
   new_materials = []
   new_materials_offsets = []
   scene.materials.each_with_index { |mat, i|
