@@ -1111,7 +1111,9 @@ module Bayonetta
       if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
         input = input_name
       else
-        input = File.open(input_name, "rb")
+        File.open(input_name, "rb") { |f|
+          input = StringIO::new(f.read, "rb")
+        }
       end
       input_big = validate_endianness(input)
 
@@ -1142,6 +1144,7 @@ module Bayonetta
         input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
         return WMB3File::load(input_name)
       end
+      input = StringIO::new(input.read, "rb")
       input_big = validate_endianness(input)
 
       wmb = self::new
@@ -1186,7 +1189,7 @@ module Bayonetta
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
-        output = File.open(output_name, "wb")
+        output = StringIO::new("", "wb")
       end
       output.rewind
 
@@ -1201,7 +1204,12 @@ module Bayonetta
         output.write("\x00")
       end
 
-      output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+      unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        File.open(output_name, "wb") { |f|
+          f.write output.string
+        }
+        output.close
+      end
       self
     end
 

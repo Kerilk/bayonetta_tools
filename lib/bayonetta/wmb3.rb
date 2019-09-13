@@ -761,7 +761,6 @@ module Bayonetta
 
 
       unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
-        output.rewind
         File.open(output_name, "wb") { |f|
           f.write output.string
         }
