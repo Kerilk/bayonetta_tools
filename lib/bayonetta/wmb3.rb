@@ -442,21 +442,21 @@ module Bayonetta
 
       if @header.info_bones.number > 0
         last_offset = @header.info_bones.offset = align(last_offset, 0x10)
-        last_offset += @bones.first.size * @header.info_bones.number
+        last_offset += @bones.first.__size * @header.info_bones.number
       else
         @header.info_bones.offset = 0x0
       end
 
       if @header.info_bones.number > 0
         last_offset = @header.info_bone_index_translate_table.offset = align(last_offset, 0x10)
-        last_offset += @bone_index_translate_table.size
+        last_offset += @bone_index_translate_table.__size
       else
         @header.info_bone_index_translate_table.offset = 0x0
       end
 
       if @header.info_vertex_groups.number > 0
         last_offset = @header.info_vertex_groups.offset = align(last_offset, 0x4)
-        last_offset += @vertex_groups.first.header.size * @header.info_vertex_groups.number
+        last_offset += @vertex_groups.first.header.__size * @header.info_vertex_groups.number
         @vertex_groups.each { |vg|
           if vg.header.num_vertexes > 0
             last_offset = vg.header.offset_vertexes = align(last_offset, 0x10)
@@ -477,18 +477,18 @@ module Bayonetta
 
       if @header.info_batches.number > 0
         last_offset = @header.info_batches.offset = align(last_offset, 0x4)
-        last_offset += @batches.first.size * @header.info_batches.number
+        last_offset += @batches.first.__size * @header.info_batches.number
       else
         @header.info_batches.offset = 0x0
       end
 
       if @header.info_lods.number > 0
         last_offset = @header.info_lods.offset = align(last_offset, 0x4)
-        last_offset += @lods.first.header.size * @header.info_lods.number
+        last_offset += @lods.first.header.__size * @header.info_lods.number
         @lods.each { |lod|
           if lod.header.num_batch_infos > 0
             lod.header.offset_batch_infos = last_offset
-            last_offset += lod.batch_infos.first.size * lod.header.num_batch_infos
+            last_offset += lod.batch_infos.first.__size * lod.header.num_batch_infos
           end
           lod.header.offset_name = last_offset
           last_offset += lod.name.size
@@ -499,14 +499,14 @@ module Bayonetta
 
       if @header.info_mesh_material_pairs.number > 0
         last_offset = @header.info_mesh_material_pairs.offset = align(last_offset, 0x10)
-        last_offset += @mesh_material_pairs.first.size * @header.info_mesh_material_pairs.number
+        last_offset += @mesh_material_pairs.first.__size * @header.info_mesh_material_pairs.number
       else
         @header.info_mesh_material_pairs.offset = 0x0
       end
 
       if @header.info_col_tree_nodes.number > 0
         last_offset = @header.info_col_tree_nodes.offset = align(last_offset, 0x10)
-        last_offset += @col_tree_nodes.first.size * @header.info_col_tree_nodes.number
+        last_offset += @col_tree_nodes.first.__size * @header.info_col_tree_nodes.number
       else
         @header.info_col_tree_nodes.offset = 0x0
       end
@@ -531,7 +531,7 @@ module Bayonetta
 
       if @header.info_meshes.number > 0
         last_offset = @header.info_meshes.offset = align(last_offset, 0x4)
-        last_offset += @meshes.first.header.size * @header.info_meshes.number
+        last_offset += @meshes.first.header.__size * @header.info_meshes.number
         @meshes.each { |mesh|
           mesh.header.offset_name = last_offset
           last_offset += mesh.name.size
@@ -554,7 +554,7 @@ module Bayonetta
 
       if @header.info_materials.number > 0
         last_offset = @header.info_materials.offset = align(last_offset, 0x10)
-        last_offset += @materials.first.header.size * @header.info_materials.number
+        last_offset += @materials.first.header.__size * @header.info_materials.number
         @materials.each { |material|
           material.header.offset_name = last_offset
           last_offset += material.name.size
@@ -599,7 +599,7 @@ module Bayonetta
 
       if @header.info_unknown1.number > 0
         last_offset = @header.info_unknown1.offset = align(last_offset, 0x4)
-        last_offset += @unknown1.first.size * @header.info_unknown1.number
+        last_offset += @unknown1.first.__size * @header.info_unknown1.number
       else
         @header.info_unknown1.offset = 0x0
       end
