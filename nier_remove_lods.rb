@@ -17,7 +17,7 @@ module Bayonetta
       end
       wmb = self::new
       wmb.instance_variable_set(:@__was_big, false)
-      wmb.load(input, false)
+      wmb.__load(input, false)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
       wmb
     end
