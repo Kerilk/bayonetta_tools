@@ -2748,7 +2748,7 @@ if ( header.exMatInfo[1] ) {
     FSeek( header.exMatInfo[1] );
     int32 numTexIDs;
     struct { 
-        uint32  TexID;
+        uint32  TexID<format=hex>;
         int32   type;
     } texIDs[numTexIDs];
 }
