@@ -21,24 +21,44 @@ module Bayonetta
       subclass.instance_variable_set(:@fields, @fields.dup)
     end
 
-    def self.convert(input, output, input_big, output_big, parent, index)
-      h = self::new
-      if is_bayo2?(parent) && input_big
-        h.__convert(input, output, false, output_big, parent, index)
+    def self.convert(input, output, input_big, output_big, parent, index, length)
+      if length
+        length.times.collect {
+          h = self::new
+          if is_bayo2?(parent) && input_big
+            h.__convert(input, output, false, output_big, parent, index)
+          else
+            h.__convert(input, output, input_big, output_big, parent, index)
+          end
+        }
       else
-        h.__convert(input, output, input_big, output_big, parent, index)
+        h = self::new
+        if is_bayo2?(parent) && input_big
+          h.__convert(input, output, false, output_big, parent, index)
+        else
+          h.__convert(input, output, input_big, output_big, parent, index)
+        end
       end
-      h
     end
 
-    def self.load(input, input_big, parent, index)
-      h = self::new
-      if is_bayo2?(parent) && input_big
-        h.__load(input, false, parent, index)
+    def self.load(input, input_big, parent, index, length)
+      if length
+        length.times.collect {
+          h = self::new
+          if is_bayo2?(parent) && input_big
+            h.__load(input, false, parent, index)
+          else
+            h.__load(input, input_big, parent, index)
+          end
+        }
       else
-        h.__load(input, input_big, parent, index)
+        h = self::new
+        if is_bayo2?(parent) && input_big
+          h.__load(input, false, parent, index)
+        else
+          h.__load(input, input_big, parent, index)
+        end
       end
-      h
     end
 
     def __dump(output, output_big, parent = nil, index = nil)
@@ -495,7 +515,7 @@ module Bayonetta
   end
 
   class BoneIndexTranslateTable < LibBin::DataConverter
-    register_field :offsets, :s, count: 16
+    register_field :offsets, :s, length: 16
     #attr_accessor :second_levels
     #attr_accessor :third_levels
     attr_reader :table
@@ -549,6 +569,7 @@ module Bayonetta
         @third_levels = nil
       end
       __unset_convert_type
+      self
     end
 
     def __load(input, input_big, parent, index, level = 1)
@@ -579,6 +600,7 @@ module Bayonetta
         @third_levels = nil
       end
       __unset_load_type
+      self
     end
 
     def decode
@@ -671,13 +693,13 @@ module Bayonetta
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
     class UnknownStruct < LibBin::DataConverter
-      register_field :u_a1, :C, count: 4
+      register_field :u_a1, :C, length: 4
       register_field :u_b1, :L
-      register_field :u_c1, :s, count: 4
-      register_field :u_a2, :C, count: 4
+      register_field :u_c1, :s, length: 4
+      register_field :u_a2, :C, length: 4
       register_field :u_b2, :L
-      register_field :u_c2, :s, count: 4
-      register_field :u_a3, :C, count: 4
+      register_field :u_c2, :s, length: 4
+      register_field :u_a3, :C, length: 4
       register_field :u_b3, :L
     end
 
@@ -685,7 +707,7 @@ module Bayonetta
       register_field :type, :s
       register_field :flag, :S
       register_field :material_data, :L,
-        count: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
+        length: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
 
       def __size(position = 0, parent = nil, index = nil)
         return 2 + 2 + @material_data.length * 4
@@ -733,7 +755,7 @@ module Bayonetta
       register_field :offset_indices, :L
       register_field :num_indices, :l
       register_field :vertex_offset, :l
-      register_field :u_f, :l, count: 7
+      register_field :u_f, :l, length: 7
 
       def initialize
         @batch_id = 0
@@ -757,9 +779,9 @@ module Bayonetta
     class Batch < LibBin::DataConverter
       register_field :header, BatchHeader
       register_field :num_bone_ref, :l, condition: 'header\has_bone_refs != 0'
-      register_field :bone_refs, :C, count: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
-      register_field :unknown, :F, count: 4, condition: 'header\has_bone_refs == 0'
-      register_field :indices, :S, count: 'header\num_indices', offset: '__position + header\offset_indices'
+      register_field :bone_refs, :C, length: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
+      register_field :unknown, :F, length: 4, condition: 'header\has_bone_refs == 0'
+      register_field :indices, :S, length: 'header\num_indices', offset: '__position + header\offset_indices'
 
       def initialize
         @header = BatchHeader::new
@@ -898,9 +920,9 @@ module Bayonetta
       register_field :u_a2, :s
       register_field :offset_batch_offsets, :L
       register_field :u_b, :L
-      register_field :u_c, :l, count: 4
+      register_field :u_c, :l, length: 4
       string         :name, 32
-      register_field :mat, :F, count: 12
+      register_field :mat, :F, length: 12
 
       def initialize
         @id = 0
@@ -918,7 +940,7 @@ module Bayonetta
 
     class Mesh < LibBin::DataConverter
       register_field :header, MeshHeader
-      register_field :batch_offsets, :L, count: 'header\num_batch',
+      register_field :batch_offsets, :L, length: 'header\num_batch',
                      offset: '__position + header\offset_batch_offsets'
       register_field :batches, Batch, count: 'header\num_batch', sequence: true,
                      offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
@@ -962,7 +984,7 @@ module Bayonetta
     end
 
     class ShaderName < LibBin::DataConverter
-      register_field :name, :c, count: 16
+      register_field :name, :c, length: 16
     end
 
     class TexInfo < LibBin::DataConverter
@@ -972,7 +994,7 @@ module Bayonetta
 
     class TexInfos < LibBin::DataConverter
       register_field :num_tex_infos, :l
-      register_field :tex_infos, TexInfo, count: 'num_tex_infos'
+      register_field :tex_infos, TexInfo, length: 'num_tex_infos'
     end
 
     class WMBFileHeader < LibBin::DataConverter
@@ -986,7 +1008,7 @@ module Bayonetta
       register_field :offset_positions, :l
       register_field :offset_vertexes, :L
       register_field :offset_vertexes_ex_data, :L
-      register_field :u_g, :l, count: 4
+      register_field :u_g, :l, length: 4
       register_field :num_bones, :l
       register_field :offset_bone_hierarchy, :L
       register_field :offset_bone_relative_position, :L
@@ -1010,25 +1032,25 @@ module Bayonetta
     end
 
     register_field :header, WMBFileHeader
-    register_field :positions, Position, count: 'header\num_vertexes', offset: 'header\offset_positions'
-    register_field :vertexes, 'get_vertex_types[0]', count: 'header\num_vertexes', offset: 'header\offset_vertexes'
-    register_field :vertexes_ex_data, 'get_vertex_types[1]', count: 'header\num_vertexes',
+    register_field :positions, Position, length: 'header\num_vertexes', offset: 'header\offset_positions'
+    register_field :vertexes, 'get_vertex_types[0]', length: 'header\num_vertexes', offset: 'header\offset_vertexes'
+    register_field :vertexes_ex_data, 'get_vertex_types[1]', length: 'header\num_vertexes',
                    offset: 'header\offset_vertexes_ex_data'
-    register_field :bone_hierarchy, :s, count: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
-    register_field :bone_relative_positions, Position, count: 'header\num_bones',
+    register_field :bone_hierarchy, :s, length: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
+    register_field :bone_relative_positions, Position, length: 'header\num_bones',
                    offset: 'header\offset_bone_relative_position'
-    register_field :bone_positions, Position, count: 'header\num_bones', offset: 'header\offset_bone_position'
+    register_field :bone_positions, Position, length: 'header\num_bones', offset: 'header\offset_bone_position'
     register_field :bone_index_translate_table, BoneIndexTranslateTable,
                    offset: 'header\offset_bone_index_translate_table'
     register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
-    register_field :bone_symmetries, :s, count: 'header\num_bones', offset: 'header\offset_bone_symmetries'
-    register_field :bone_flags, :c, count: 'header\num_bones', offset: 'header\offset_bone_flags'
-    register_field :shader_names, ShaderName, count: 'header\num_materials', offset: 'header\offset_shader_names'
+    register_field :bone_symmetries, :s, length: 'header\num_bones', offset: 'header\offset_bone_symmetries'
+    register_field :bone_flags, :c, length: 'header\num_bones', offset: 'header\offset_bone_flags'
+    register_field :shader_names, ShaderName, length: 'header\num_materials', offset: 'header\offset_shader_names'
     register_field :tex_infos, TexInfos, offset: 'header\offset_tex_infos'
-    register_field :materials_offsets, :L, count: 'header\num_materials', offset: 'header\offset_materials_offsets'
+    register_field :materials_offsets, :L, length: 'header\num_materials', offset: 'header\offset_materials_offsets'
     register_field :materials, Material, count: 'header\num_materials', sequence: true,
                    offset: 'header\offset_materials + materials_offsets[__iterator]'
-    register_field :meshes_offsets, :L, count: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
+    register_field :meshes_offsets, :L, length: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
     register_field :meshes, Mesh, count: 'header\num_meshes', sequence: true,
                    offset: 'header\offset_meshes + meshes_offsets[__iterator]'
 

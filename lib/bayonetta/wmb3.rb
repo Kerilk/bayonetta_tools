@@ -9,7 +9,7 @@ module Bayonetta
     class Mesh < LibBin::DataConverter
       class Header < LibBin::DataConverter
         uint32 :offset_name
-        float  :bounding_box, count: 6
+        float  :bounding_box, length: 6
         uint32 :offset_materials
         uint32 :num_materials
         uint32 :offset_bones_indices
@@ -17,8 +17,8 @@ module Bayonetta
       end
       register_field :header, Header
       string :name, offset: 'header\offset_name'
-      uint16 :materials, count: 'header\num_materials', offset: 'header\offset_materials'
-      uint16 :bone_indices, count: 'header\num_bones_indices', offset: 'header\offset_bones_indices'
+      uint16 :materials, length: 'header\num_materials', offset: 'header\offset_materials'
+      uint16 :bone_indices, length: 'header\num_bones_indices', offset: 'header\offset_bones_indices'
     end
 
     class Material < LibBin::DataConverter
@@ -33,7 +33,7 @@ module Bayonetta
         int32 :index
         uint32 :offset_parameters
         uint32 :num_parameters
-        float :parameters, count: 'num_parameters', offset: 'offset_parameters'
+        float :parameters, length: 'num_parameters', offset: 'offset_parameters'
       end
 
       class Texture < LibBin::DataConverter
@@ -43,7 +43,7 @@ module Bayonetta
       end
 
       class Header < LibBin::DataConverter
-        uint16 :date, count: 4
+        uint16 :date, length: 4
         uint32 :offset_name
         uint32 :offset_shader_name
         uint32 :offset_technique_name
@@ -71,7 +71,7 @@ module Bayonetta
     class BoneSet < LibBin::DataConverter
       uint32 :offset_bone_indices
       uint32 :num_bone_indices
-      int16 :bone_indices, count: 'num_bone_indices', offset: 'offset_bone_indices'
+      int16 :bone_indices, length: 'num_bone_indices', offset: 'offset_bone_indices'
     end
 
     class Lod < LibBin::DataConverter
@@ -94,7 +94,7 @@ module Bayonetta
       end
       register_field :header, Header
       string :name, offset: 'header\offset_name'
-      register_field :batch_infos, BatchInfo, count: 'header\num_batch_infos', offset: 'header\offset_batch_infos'
+      register_field :batch_infos, BatchInfo, length: 'header\num_batch_infos', offset: 'header\offset_batch_infos'
     end
 
     class ColTreeNode < LibBin::DataConverter
@@ -191,30 +191,47 @@ module Bayonetta
       end
 
       class IIndices < LibBin::DataConverter
-        uint32 :values, count: '..\header\num_indices', offset: '..\header\offset_indices'
+        uint32 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
       end
 
       class SIndices < LibBin::DataConverter
-        uint16 :values, count: '..\header\num_indices', offset: '..\header\offset_indices'
+        uint16 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
       end
 
       class Indices < LibBin::DataConverter
 
-        def self.convert(input, output, input_big, output_big, parent, index)
+        def self.convert(input, output, input_big, output_big, parent, index, length)
           flags = parent.__parent.header.flags
           if flags & 0x8 != 0
-            return IIndices::convert(input, output, input_big, output_big, parent, index)
+            if length
+              return length.times.collect { IIndices::convert(input, output, input_big, output_big, parent, index) }
+            else
+              return IIndices::convert(input, output, input_big, output_big, parent, index)
+            end
           else
-            return SIndices::convert(input, output, input_big, output_big, parent, index)
+            if length
+              return length.times.collect { SIndices::convert(input, output, input_big, output_big, parent, index) }
+
+            else
+              return SIndices::convert(input, output, input_big, output_big, parent, index)
+            end
           end
         end
 
-        def self.load(input, input_big, parent, index)
+        def self.load(input, input_big, parent, index, length)
           flags = parent.__parent.header.flags
           if flags & 0x8 != 0
-            return IIndices::load(input, input_big, parent, index)
+            if length
+              return length.times.collect { IIndices::load(input, input_big, parent, index) }
+            else
+              return IIndices::load(input, input_big, parent, index)
+            end
           else
-            return SIndices::load(input, input_big, parent, index)
+            if length
+              return length.times.collect { SIndices::load(input, input_big, parent, index) }
+            else
+              return SIndices::load(input, input_big, parent, index)
+            end
           end
         end
 
@@ -235,8 +252,8 @@ module Bayonetta
         uint32 :num_indices
       end
       register_field :header, Header
-      register_field :vertexes, 'get_vertex_types[0]', count: 'header\num_vertexes', offset: 'header\offset_vertexes'
-      register_field :vertexes_ex_data, 'get_vertex_types[1]', count: 'header\num_vertexes',
+      register_field :vertexes, 'get_vertex_types[0]', length: 'header\num_vertexes', offset: 'header\offset_vertexes'
+      register_field :vertexes_ex_data, 'get_vertex_types[1]', length: 'header\num_vertexes',
                      offset: 'header\offset_vertexes_ex_data'
       register_field :indices, Indices
     end
@@ -254,7 +271,7 @@ module Bayonetta
     end
 
     class Unknown1 < LibBin::DataConverter
-      uint32 :data, count: 6
+      uint32 :data, length: 6
     end
 
     class InfoPair < LibBin::DataConverter
@@ -263,8 +280,8 @@ module Bayonetta
     end
 
     class Header < LibBin::DataConverter
-      def self.info_pair(field, count: nil, offset: nil, sequence: false, condition: nil)
-        register_field(field, InfoPair, count: count, offset: offset, sequence: sequence, condition: condition)
+      def self.info_pair(field, length: nil, count: nil, offset: nil, sequence: false, condition: nil)
+        register_field(field, InfoPair, length: length, count: count, offset: offset, sequence: sequence, condition: condition)
       end
 
       uint32 :id
@@ -272,7 +289,7 @@ module Bayonetta
       int32  :u_a
       int16  :flags
       int16  :u_c
-      float  :bounding_box, count: 6
+      float  :bounding_box, length: 6
       info_pair :info_bones
       info_pair :info_bone_index_translate_table
       info_pair :info_vertex_groups
@@ -288,19 +305,19 @@ module Bayonetta
     end
 
     register_field :header, Header
-    register_field :bones, Bone, count: 'header\info_bones\number',
+    register_field :bones, Bone, length: 'header\info_bones\number',
                    offset: 'header\info_bones\offset'
     register_field :bone_index_translate_table, BoneIndexTranslateTable,
                    offset: 'header\info_bone_index_translate_table\offset'
     register_field :vertex_groups, VertexGroup, count: 'header\info_vertex_groups\number',
                    sequence: true, offset: 'header\info_vertex_groups\offset + __iterator * 48'
-    register_field :batches, Batch, count: 'header\info_batches\number',
+    register_field :batches, Batch, length: 'header\info_batches\number',
                    offset: 'header\info_batches\offset'
     register_field :lods, Lod, count: 'header\info_lods\number', sequence: true,
                    offset: 'header\info_lods\offset + __iterator * 20'
-    register_field :col_tree_nodes, ColTreeNode, count: 'header\info_col_tree_nodes\number',
+    register_field :col_tree_nodes, ColTreeNode, length: 'header\info_col_tree_nodes\number',
                    offset: 'header\info_col_tree_nodes\offset'
-    uint32         :bone_map, count: 'header\info_bone_map\number',
+    uint32         :bone_map, length: 'header\info_bone_map\number',
                    offset: 'header\info_bone_map\offset'
     register_field :bone_sets, BoneSet, count: 'header\info_bone_sets\number', sequence: true,
                    offset: 'header\info_bone_sets\offset + __iterator * 8'
@@ -309,9 +326,9 @@ module Bayonetta
     register_field :meshes, Mesh, count: 'header\info_meshes\number', sequence: true,
                    offset: 'header\info_meshes\offset + __iterator * 44'
     register_field :mesh_material_pairs, MeshMaterialPair,
-                   count: 'header\info_mesh_material_pairs\number',
+                   length: 'header\info_mesh_material_pairs\number',
                    offset: 'header\info_mesh_material_pairs\offset'
-    register_field :unknown1, Unknown1, count: 'header\info_unknown1\number',
+    register_field :unknown1, Unknown1, length: 'header\info_unknown1\number',
                    offset: 'header\info_unknown1\offset'
 
     def cleanup_vertexes
