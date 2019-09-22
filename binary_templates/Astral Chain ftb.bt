@@ -1,0 +1,9 @@
+LittleEndian();
+
+struct {
+    char    id[4];
+    uint    count;
+    struct {
+        string  s;
+    } strins[count]<optimize=false>;
+} header;

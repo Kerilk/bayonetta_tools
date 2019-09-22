@@ -1,0 +1,9 @@
+LittleEndian();
+
+short glyphCount;
+
+struct {
+    short a;
+    short b;
+    short c;
+} glyph[glyphCount];

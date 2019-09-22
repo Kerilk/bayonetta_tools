@@ -1,0 +1,78 @@
+LittleEndian();
+
+struct {
+    char    id[4]; //"PTD\0"
+    uint32  u_count;
+    uint32  u_b;
+} header;
+
+struct {
+    uint32 count;
+    uint32 offset<format=hex>;
+    uint32 count2;
+    uint32 offset2<format=hex>;
+} indexes;
+
+FSeek(indexes.offset);
+struct  {
+    struct {
+        local uint struct_start = FTell();
+        uint32  hash<format=hex>;
+        uint32  relative_offset<format=hex>;
+        uint32  count;
+        uint32  size<format=hex>;
+        local uint pos = FTell();
+        FSeek(struct_start + relative_offset);
+        struct {
+            char c;
+            char f;
+        } chars[count];
+        FSeek(pos);
+    } strings[indexes.count]<optimize = false>;
+} list;
+
+FSeek(indexes.offset2);
+struct {
+    uint32 hash<format=hex>;
+    uint32 count1;
+    uint32 relative_offset1;
+    uint32 count2;
+    uint32 relative_offset2;
+} str2;
+
+FSeek(indexes.offset2 + str2.relative_offset1 );
+struct {
+    local uint struct_start = FTell();
+    uint32 hash<format=hex>;
+    uint32 count;
+    uint32 relative_offset;
+    local uint pos = FTell();
+    FSeek(struct_start + relative_offset);
+    uint32 hashes[count]<format=hex>;
+    FSeek(pos);
+} u_str_1[str2.count1]<optimize = false>;
+
+FSeek(indexes.offset2 + str2.relative_offset2 );
+struct {
+    local uint struct_start = FTell();
+    uint32 hash<format=hex>;
+    uint32 count;
+    uint32 relative_offset;
+    local uint pos = FTell();
+    FSeek(struct_start + relative_offset);
+    struct {
+        local uint struct_start2 = FTell();
+        uint32  hash<format=hex>;
+        uint32  relative_offset<format=hex>;
+        uint32  count;
+        uint32  size<format=hex>;
+        local uint pos2 = FTell();
+        FSeek(struct_start2 + relative_offset);
+        struct {
+            char c;
+            char f;
+        } chars[count];
+        FSeek(pos2);
+    } strings[count]<optimize = false>;
+    FSeek(pos);
+} u_str_2[str2.count2]<optimize = false>;
