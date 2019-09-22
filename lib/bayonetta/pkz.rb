@@ -49,7 +49,7 @@ module Bayonetta
       input_big = is_big?(input)
       pkz = self::new
       pkz.instance_variable_set(:@__was_big, input_big)
-      pkz.load(input, input_big)
+      pkz.__load(input, input_big)
       input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
 
       pkz
