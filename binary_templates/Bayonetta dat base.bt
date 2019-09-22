@@ -9,7 +9,7 @@ struct {
 } header;
 
 FSeek(header.fileOffsetsOffset);
-uint32 fileOffsets[header.fileNumber];
+uint32 fileOffsets[header.fileNumber] <format=hex>;
 
 FSeek(header.fileExtensionsOffset);
 struct {

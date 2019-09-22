@@ -49,7 +49,7 @@ yaml_wtx_block = lambda{ |big, f|
 yaml_dat_block = lambda { |path|
   h = {}
   begin
-    d = Bayonetta::DATFile::new(path)
+    d = Bayonetta::DATFile::load(path)
     d.each.select { |name, f|
       [".wta", ".wtb"].include? File.extname(name)
     }.each { |name, f|
@@ -75,7 +75,7 @@ wtx_block = lambda { |big, file_path, f|
 
 dat_block = lambda { |path|
   begin
-    d = Bayonetta::DATFile::new(path)
+    d = Bayonetta::DATFile::load(path)
     path = path.gsub("/", "\\") if $options[:windows]
     d.each.select { |name, f|
       [".wta", ".wtb"].include? File.extname(name)

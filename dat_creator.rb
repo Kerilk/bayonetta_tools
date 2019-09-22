@@ -11,18 +11,18 @@ Dir.mkdir("dat_output") unless Dir.exist?("dat_output")
 
 big = YAML::load_file(".metadata/big.yaml")
 
-d = Bayonetta::DATFile::new(nil, big)
+d = Bayonetta::DATFile::new(big)
 
-d.layout = YAML::load_file(".metadata/layout.yaml")
+layout = YAML::load_file(".metadata/layout.yaml")
 
-d.layout.each { |fname|
+layout.each { |fname|
   File::open(fname, "rb") { |f|
     d.push(fname, StringIO.new(f.read,"rb") )
   }
 }
 
 if File::exist?(".metadata/hash_map.yaml")
-  d.hash_map = YAML::load_file(".metadata/hash_map.yaml")
+  d.set_hash_map YAML::load_file(".metadata/hash_map.yaml")
 end
 
 extension = ".dat"

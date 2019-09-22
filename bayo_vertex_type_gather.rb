@@ -24,7 +24,7 @@ if File::directory?(ARGV[0])
   dats.each { |path|
     File::open(path, "rb") { |f|
       begin
-        d = Bayonetta::DATFile::new(f)
+        d = Bayonetta::DATFile::load(f)
       rescue
         warn "could not open #{path}!"
         next

@@ -1,131 +1,159 @@
 require 'stringio'
 module Bayonetta
-  class DATFile
-    include Endianness
-    include Alignment
+  class DATFile < LibBin::DataConverter
     attr_reader :big
-    attr_accessor :layout
-    attr_accessor :hash_map
-
     ALIGNMENTS = {
       'wmb' => 0x1000,
       'wtb' => 0x1000,
+      'wtp' => 0x1000,
+      'wta' =>   0x40,
       'exp' => 0x1000,
+      'sop' =>   0x40,
       'eff' => 0x1000,
-      'sdx' => 0x1000
+      'sdx' => 0x1000,
+      'bxm' =>   0x40
     }
     ALIGNMENTS.default = 0x10
 
+    class Header < LibBin::DataConverter
+      string :id, 4
+      uint32 :num_files
+      uint32 :offset_file_offsets
+      uint32 :offset_file_extensions
+      uint32 :offset_file_names
+      uint32 :offset_file_sizes
+      uint32 :offset_hash_map
+    end
+
+    class HashMap < LibBin::DataConverter
+      class Header < LibBin::DataConverter
+        uint32 :pre_hash_shift
+        uint32 :offset_bucket_ranks
+        uint32 :offset_hashes
+        uint32 :offset_file_indices
+      end
+      register_field :header, Header
+      int16 :bucket_ranks, count: '(1<<(31 - header\pre_hash_shift))', offset: 'header\offset_bucket_ranks', relative_offset: true
+      uint32 :hashes, count: '..\header\num_files', offset: 'header\offset_hashes', relative_offset: true
+      uint16 :file_indices, count: '..\header\num_files', offset: 'header\offset_file_indices', relative_offset: true
+
+      def get
+        {
+          pre_hash_shift: @header.pre_hash_shift,
+          hashes: file_indices.zip(hashes).sort { |(i1 ,h1), (i2, h2)|
+            i1 <=> i2
+          }.collect { |i, h|
+            h
+          }
+        }
+      end
+
+      def initialize
+        super
+        @header = Header::new
+      end
+
+      def set(hash_map)
+        bit_shift = hash_map[:pre_hash_shift]
+        hash_list = hash_map[:hashes]
+        num_files = hash_list.size
+        @header.pre_hash_shift = bit_shift
+        buckets = Hash::new { |h, k| h[k] = [] }
+        hash_list.each_with_index { |h, i|
+          bucket_index = h >> @header.pre_hash_shift
+          buckets[bucket_index].push [h, i]
+        }
+        @bucket_ranks = []
+        @hashes = []
+        @file_indices = []
+        bucket_rank = 0
+        num_buckets = (1 << (31 - header.pre_hash_shift))
+        num_buckets.times { |i|
+          if buckets.has_key?(i)
+            @bucket_ranks.push bucket_rank
+            bucket_rank += buckets[i].size
+            buckets[i].each { |h, ind|
+              @hashes.push h
+              @file_indices.push ind
+            }
+          else
+            @bucket_ranks.push -1
+          end
+        }
+        @header.offset_bucket_ranks = 0x10
+        @header.offset_hashes = header.offset_bucket_ranks + num_buckets * 2
+        @header.offset_file_indices = header.offset_hashes + num_files * 4
+        self
+      end
+    end
+
+    register_field :header, Header
+    uint32 :file_offsets, count: 'header\num_files', offset: 'header\offset_file_offsets'
+    string :file_extensions, 4, count: 'header\num_files', offset: 'header\offset_file_extensions'
+    uint32 :file_name_length, offset: 'header\offset_file_names'
+    string :file_names, count: 'header\num_files', offset: 'header\offset_file_names + 4 + __iterator * file_name_length', sequence: true
+    uint32 :file_sizes, count: 'header\num_files', offset: 'header\offset_file_sizes'
+    register_field :hash_map, HashMap, offset: 'header\offset_hash_map'
+    string :files, 'file_sizes[__iterator]', count: 'header\num_files', offset: 'file_offsets[__iterator]', sequence: true
+
     def self.is_big?(f)
       f.rewind
-      block = lambda { |int|
-        id = f.read(4)
-        raise "Invalid id #{id.inspect}!" if id != "DAT\0".b
-        file_number = f.read(4).unpack(int).first
-        file_offsets_offset = f.read(4).unpack(int).first
-        file_extensions_offset = f.read(4).unpack(int).first
-        file_names_offset = f.read(4).unpack(int).first
-        file_sizes_offset = f.read(4).unpack(int).first
-
-        ( file_number >= 0 ) &&
-        ( file_offsets_offset > 0 ) && ( file_offsets_offset < f.size ) &&
-        ( file_extensions_offset > 0 ) && ( file_extensions_offset < f.size ) &&
-        ( file_names_offset > 0 ) && ( file_names_offset < f.size - 4 ) &&
-        ( file_sizes_offset > 0 ) && ( file_sizes_offset < f.size )
+      block = lambda { |big|
+        h = Header::load(f, big)
+        h.offset_file_offsets < f.size &&
+          h.offset_file_names < f.size &&
+          h.offset_file_sizes < f.size &&
+          h.offset_hash_map < f.size
       }
-      big = block.call("l>")
+      big = block.call(true)
       f.rewind
-      small = block.call("l<")
+      small = block.call(false)
       f.rewind
       raise "Invalid data!" unless big ^ small
       return big
     end
 
-    def initialize(f = nil, big = false)
+    def initialize(big = false)
       @big = big
-      if f
-        file_name_input = false
-        unless f.respond_to?(:read) && f.respond_to?(:seek)
-          file_name_input = true
-          f = File::new(f, "rb")
-        end
-        @big = DATFile.is_big?(f)
+      super()
+      @header = Header::new
+      @header.id = "DAT\x00".b
+      @header.num_files = 0
+      @header.offset_file_offsets = 0
+      @header.offset_file_extensions = 0
+      @header.offset_file_names = 0
+      @header.offset_file_sizes = 0
+      @header.offset_hash_map = 0
 
-        f.rewind
-        uint = get_uint
-        @id = f.read(4)
-        raise "Invalid id #{id.inspect}!" if @id != "DAT\0".b
-        @file_number = f.read(4).unpack(uint).first
-        @file_offsets_offset = f.read(4).unpack(uint).first
-        @file_extensions_offset = f.read(4).unpack(uint).first
-        @file_names_offset = f.read(4).unpack(uint).first
-        @file_sizes_offset = f.read(4).unpack(uint).first
-        @hash_map_offset = f.read(4).unpack(uint).first
+      @file_offsets = []
+      @file_extensions = []
+      @file_name_length = 0
+      @file_names = []
+      @file_sizes = []
+      @files = []
 
-        f.seek(@file_offsets_offset)
-        @file_offsets = f.read(4*@file_number).unpack("#{uint}*")
-        f.seek(@file_extensions_offset)
-        @file_extensions = @file_number.times.collect {
-          f.read(3).unpack("a#{3}").first
-        }
+      @hash_map = nil
+    end
 
-        f.seek(@file_names_offset)
-        @filename_length = f.read(4).unpack(uint).first
-        @file_names = @file_number.times.collect {
-          f.read(@filename_length).unpack("a#{@filename_length}").first.delete("\0")
-        }
+    def invalidate_layout
+      @header.offset_file_offsets = 0
+      @header.offset_file_extensions = 0
+      @header.offset_file_names = 0
+      @header.offset_file_sizes = 0
+      @header.offset_hash_map = 0
+      @file_offsets = []
+      @hash_map = nil
+      self
+    end
 
-        f.seek(@file_sizes_offset)
-        @file_sizes = f.read(4*@file_number).unpack("#{uint}*")
-
-        if @hash_map_offset != 0
-          @hash_map = {}
-          f.seek(@hash_map_offset)
-          @pre_hash_shift = f.read(4).unpack(uint).first
-          @hash_map[:pre_hash_shift] = @pre_hash_shift
-          bin_offsets_offset, hashes_offset, file_indices_offset = f.read(12).unpack("#{uint}*")
-          f.seek(@hash_map_offset + bin_offsets_offset)
-          @bin_offsets = f.read(2*(1<<(31 - @pre_hash_shift))).unpack("#{get_short}*")
-          f.seek(@hash_map_offset + hashes_offset)
-          @hashes = f.read(4*@file_number).unpack("#{uint}*")
-          f.seek(@hash_map_offset + file_indices_offset)
-          @indices = f.read(2*@file_number).unpack("#{get_ushort}*")
-          @hash_map[:hashes] = @indices.zip(@hashes).sort { |(i1 ,h1), (i2, h2)|
-            i1 <=> i2
-          }.collect { |i, h|
-            h
-          }
-        end
-
-        @files = @file_number.times.collect { |i|
-          f.seek(@file_offsets[i])
-          of = StringIO::new( f.read(@file_sizes[i]), "rb")
-        }
-        f.close if file_name_input
-        @layout = @file_names.dup
-      else
-        @id = "DAT\x00".b
-        @layout = nil
-        @hash_map = nil
-        @file_number = 0
-        @file_offsets_offset = 0
-        @file_extensions_offset = 0
-        @file_names_offset = 0
-        @file_sizes_offset = 0
-
-        @file_offsets = []
-        @file_extensions = []
-        @filename_length = 0
-        @file_names = []
-        @file_sizes = []
-        @files = []
-      end
+    def layout
+      @file_names.collect { |name| name[0..-2] }
     end
 
     def each
       if block_given? then
-        @file_number.times { |i|
-          yield @file_names[i], @files[i]
+        @header.num_files.times { |i|
+          yield @file_names[i][0..-2], StringIO::new(@files[i], "rb")
         }
       else
         to_enum(:each)
@@ -133,155 +161,93 @@ module Bayonetta
     end
 
     def [](i)
-      return [@file_names[i], @files[i]]
-    end
-
-    def invalidate_layout
-      @file_offsets_offset = 0
-      @file_extensions_offset = 0
-      @file_names_offset = 0
-      @file_sizes_offset = 0
-      @file_offsets = []
-      @layout = nil
-      @hash_map = nil
-      self
+      return [@file_names[i][0..-2], StringIO::new(@files[i], "rb")]
     end
 
     def push(name, file)
       invalidate_layout
-      @file_names.push name
-      @files.push file
+      @file_names.push name+"\x00"
+      if file.kind_of?(StringIO)
+        data = file.string
+      else
+        file.rewind
+        data = file.read
+      end
+      @files.push data
       @file_sizes.push file.size
       extname = File.extname(name)
       raise "Invalid name, missing extension!" if extname == ""
-      @file_extensions.push extname[1..-1]
-      @file_number += 1
+      @file_extensions.push extname[1..-1]+"\x00"
+      @header.num_files += 1
       self
     end
 
-    def sort_files
-      if @layout
-        file_map = @layout.each_with_index.collect.to_h
-        all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
-        all_arr.select! { |e|
-          @layout.include?(e[1])
-        }
-        @file_number = all_arr.size
-        all_arr.sort! { |e1, e2|
-          file_map[e1[1]] <=> file_map[e2[1]]
-        }
-      else
-        all_arr = @files.zip( @file_names, @file_sizes, @file_extensions )
-        all_arr.sort! { |e1, e2|
-          ALIGNMENTS[e2[3]] <=>  ALIGNMENTS[e1[3]]
-        }
-      end
-      @files, @file_names, @file_sizes, @file_extensions = all_arr.transpose
-      @layout = @file_names.dup unless @layout
-    end
-
     def compute_layout
-      sort_files
-
-      @file_offsets_offset = 0x20
-      @file_extensions_offset = @file_offsets_offset + 4 * @file_number
-      @file_names_offset = @file_extensions_offset + 4 * @file_number
+      @header.offset_file_offsets = 0x20
+      @header.offset_file_extensions = @header.offset_file_offsets + 4 * @header.num_files
+      @header.offset_file_names = @header.offset_file_extensions + 4 * @header.num_files
       max_file_name_length = @file_names.collect(&:length).max
-      @file_name_length = max_file_name_length + 1
-      @file_sizes_offset = @file_names_offset + 4 + @file_name_length * @file_number
-      @file_sizes_offset = align(@file_sizes_offset, 4)
+      @file_name_length = max_file_name_length
+      @header.offset_file_sizes = @header.offset_file_names + 4 + @file_name_length * @header.num_files
+      @header.offset_file_sizes = align(@header.offset_file_sizes, 4)
       if @hash_map
-        @hash_map_offset = @file_sizes_offset + 4 * @file_number
-        bins = Hash::new { |h, k| h[k] = [] }
-        raise "Invalid hashes" unless @file_number == @hash_map[:hashes].length
-        @hash_map[:hashes].each_with_index { |h, i|
-          bin_index = h >> @hash_map[:pre_hash_shift]
-          bins[bin_index].push [h, i]
-        }
-        @bin_offsets = []
-        @hashes = []
-        @indices = []
-        bin_offset = 0
-        bin_count = (1 << (31 - @hash_map[:pre_hash_shift]))
-        bin_count.times { |i|
-          if bins.has_key?(i)
-            @bin_offsets.push bin_offset
-            bin_offset += bins[i].size
-            bins[i].each { |h, ind|
-              @hashes.push h
-              @indices.push ind
-            }
-          else
-            @bin_offsets.push -1
-          end
-        }
-        @pre_hash_shift = @hash_map[:pre_hash_shift]
-        @bin_offsets_offset = @hash_map_offset + 0x10
-        @hashes_offset = @bin_offsets_offset + bin_count * 2
-        @file_indices_offset = @hashes_offset + @file_number * 4
-        files_offset = @file_indices_offset +  @file_number * 2
+        @header.offset_hash_map = @header.offset_file_sizes + 4 * @header.num_files
+        files_offset = @header.offset_hash_map + @hash_map.__size(@header.offset_hash_map, self)
       else
-        files_offset = @file_sizes_offset + 4 * @file_number
+        @offset_hash_map = 0
+        files_offset = @header.offset_file_sizes + 4 * @header.num_files
       end
-      @files_offsets = @file_number.times.collect { |i|
-        tmp = align(files_offset, ALIGNMENTS[@file_extensions[i]])
-        files_offset = align(tmp + @file_sizes[i], ALIGNMENTS[@file_extensions[i]])
+      @file_offsets = @header.num_files.times.collect { |i|
+        tmp = align(files_offset, ALIGNMENTS[@file_extensions[i][0..-2]])
+        files_offset = align(tmp + @file_sizes[i], ALIGNMENTS[@file_extensions[i][0..-2]])
         tmp
       }
       @total_size = align(files_offset, 0x1000)
       self
     end
 
-    def dump(name)
+    def set_hash_map(hash)
+      @hash_map = HashMap::new
+      @hash_map.set hash
+    end
+
+    def self.load(input_name)
+      if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+        input = input_name
+      else
+        File.open(input_name, "rb") { |f|
+          input = StringIO::new(f.read, "rb")
+        }
+      end
+      big = self::is_big?(input)
+      dat = self::new(big)
+      dat.__load(input, big)
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+      dat
+    end
+
+    def dump(output_name)
       compute_layout
-      uint = get_uint
-      File.open(name,"wb") { |f|
-        f.write("\0"*@total_size)
-        f.rewind
-        f.write([@id].pack("a4"))
-        f.write([@file_number].pack(uint))
-        f.write([@file_offsets_offset].pack(uint))
-        f.write([@file_extensions_offset].pack(uint))
-        f.write([@file_names_offset].pack(uint))
-        f.write([@file_sizes_offset].pack(uint))
-        f.write([@hash_map_offset].pack(uint)) if @hash_map
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = StringIO::new("", "wb")#File.open(output_name, "wb")
+        output.write("\x00"*@total_size)
+        output.rewind
+      end
+      output.rewind
 
-        f.seek(@file_offsets_offset)
-        f.write(@files_offsets.pack("#{uint}*"))
+      __set_dump_type(output, @big, nil, nil)
+      __dump_fields
+      __unset_dump_type
 
-        f.seek(@file_extensions_offset)
-        @file_extensions.each { |ext|
-          f.write([ext].pack("a4"))
+      unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        File.open(output_name, "wb") { |f|
+          f.write output.string
         }
-
-        f.seek(@file_names_offset)
-        f.write([@file_name_length].pack(uint))
-        @file_names.each { |name|
-          f.write([name].pack("a#{@file_name_length}"))
-        }
-
-        f.seek(@file_sizes_offset)
-        f.write(@file_sizes.pack("#{uint}*"))
-        if @hash_map
-          f.seek(@hash_map_offset)
-          f.write([@pre_hash_shift].pack(uint))
-          f.write([@bin_offsets_offset - @hash_map_offset].pack(uint))
-          f.write([@hashes_offset - @hash_map_offset].pack(uint))
-          f.write([@file_indices_offset - @hash_map_offset].pack(uint))
-          f.seek(@bin_offsets_offset)
-          f.write(@bin_offsets.pack("#{get_short}*"))
-          f.seek(@hashes_offset)
-          f.write(@hashes.pack("#{uint}*"))
-          f.seek(@file_indices_offset)
-          f.write(@indices.pack("#{get_ushort}*"))
-        end
-
-        @files_offsets.each_with_index { |off, i|
-          f.seek(off)
-          @files[i].rewind
-          f.write( @files[i].read )
-        }
-      }
+        output.close
+      end
+      self
     end
 
   end

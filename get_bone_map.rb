@@ -21,7 +21,7 @@ end
 
 raise "Invalid file #{input_file}" unless File::file?(input_file)
 if File.extname(input_file) == ".dat"
-  wmb = DATFile::new(input_file).each.select { |name, f|
+  wmb = DATFile::load(input_file).each.select { |name, f|
     name == File.basename(input_file, ".dat")+".wmb"
   }.first[1]
   wmb = WMBFile::load(wmb)

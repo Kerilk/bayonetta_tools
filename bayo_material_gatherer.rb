@@ -48,7 +48,7 @@ wmb_block = lambda { |path, f|
 
 dat_block = lambda { |path, f|
   begin
-    d = Bayonetta::DATFile::new(f)
+    d = Bayonetta::DATFile::load(f)
   rescue
     warn "could not open #{path}!"
     next

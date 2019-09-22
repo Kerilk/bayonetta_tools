@@ -95,8 +95,8 @@ if File::directory?(ARGV[0]) && File::directory?(ARGV[1])
   entries.each { |e|
     big_f = File::new("#{ARGV[0]}/#{e}", "rb")
     small_f = File::new("#{ARGV[1]}/#{e}", "rb")
-    big_dat = Bayonetta::DATFile::new(big_f, true)
-    small_dat = Bayonetta::DATFile::new(small_f, false)
+    big_dat = Bayonetta::DATFile::load(big_f)
+    small_dat = Bayonetta::DATFile::load(small_f)
     big_eff_list = big_dat.each.collect.select { |name, df|
       File.extname(name) == ".eff"
     }

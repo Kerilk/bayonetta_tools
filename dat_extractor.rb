@@ -19,7 +19,7 @@ ARGV.each { |filename|
   Dir.mkdir(dir_name) unless Dir.exist?(dir_name)
   Dir.chdir(dir_name)
 
-  dat = Bayonetta::DATFile::new(f)
+  dat = Bayonetta::DATFile::load(f)
 
   duplicates = dat.each.each_with_object(Hash.new(0)) { |f, counts|
     name, _ = f
@@ -38,7 +38,6 @@ ARGV.each { |filename|
 
   dat.each { |name, f|
     File::open(name, "wb") { |f2|
-      f.rewind
       f2.write(f.read)
     }
   }
@@ -55,7 +54,7 @@ ARGV.each { |filename|
   }
   if dat.hash_map
     File::open("hash_map.yaml", "w") { |fl|
-      fl.print YAML::dump( dat.hash_map )
+      fl.print YAML::dump( dat.hash_map.get )
     }
   end
   # clean up
