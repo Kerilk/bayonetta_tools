@@ -7,7 +7,7 @@ module Bayonetta
       uint64 :size
       uint64 :offset
       uint64 :compressed_size
-#      string :name, offset: 'offset_name + ..\header.offset_file_descriptors + ..\header.num_files * 0x20'
+      string :name, offset: 'offset_name + ..\header.offset_file_descriptors + ..\header.num_files * 0x20'
     end
 
     class Header < LibBin::DataConverter
@@ -21,7 +21,7 @@ module Bayonetta
 
     register_field :header, Header
     register_field :file_descriptors, FileDescriptor, count: 'header.num_files',
-                   offset: 'header.offset_file_descriptors'
+                   offset: 'header.offset_file_descriptors + __iterator * 0x20', sequence: true
 
     def self.is_big?(f)
       f.rewind

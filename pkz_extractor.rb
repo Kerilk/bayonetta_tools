@@ -16,11 +16,8 @@ ARGV.each { |filename|
 
   name_table_offset = pkz.header.offset_file_descriptors + pkz.header.num_files * 0x20
   pkz.file_descriptors.each { |d|
-    f.seek(d.offset_name + name_table_offset)
-    name = f.read(16).tr("\x00","")
-    puts name
     f.seek(d.offset)
-    File::open(name, "wb") { |nf|
+    File::open(d.name[0..-2], "wb") { |nf|
       nf.write Zstd.decompress(f.read(d.compressed_size))
       raise "Decompression error!" if nf.size != d.size
     }
