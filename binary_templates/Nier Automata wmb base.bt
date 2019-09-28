@@ -35,7 +35,7 @@ struct {
     uint32  version<format=hex>;
     int32   unknownA;
     int16   flags <comment="0x8 indices int32 else int16">;
-    int16   unknownTerminator;
+    int16   referenceBone;
     struct  {
         float x, y, z;
         float u, v, w;
