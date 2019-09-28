@@ -1054,6 +1054,11 @@ module Bayonetta
     register_field :meshes, Mesh, count: 'header\num_meshes', sequence: true,
                    offset: 'header\offset_meshes + meshes_offsets[__iterator]'
 
+    def texture_ids
+      return [] unless @tex_infos
+      @tex_infos.tex_infos.collect { |i| i.id }
+    end
+
     def get_vertex_types
       if @vertex_type
         return [@vertex_type, @vertex_ex_type]

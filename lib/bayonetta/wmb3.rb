@@ -156,7 +156,7 @@ module Bayonetta
               @vertex_size += VERTEX_FIELDS[type][1]
             }
           end
-          raise "Invalid size for ex data #{@vertex_size} != #{@header.vertex_size}!" if @vertex_size != @header.vertex_size
+          raise "Invalid size for vertex data #{@vertex_size} != #{@header.vertex_size}!" if @vertex_size != @header.vertex_size
           @vertex_ex_type = Class::new(LibBin::DataConverter)
           @vertex_ex_size = 0
           if types[1]
@@ -330,6 +330,13 @@ module Bayonetta
                    offset: 'header\info_mesh_material_pairs\offset'
     register_field :unknown1, Unknown1, length: 'header\info_unknown1\number',
                    offset: 'header\info_unknown1\offset'
+
+    def texture_ids
+      ids = @materials.collect { |m|
+        m.textures.collect { |t| t.texture_id }
+      }
+      ids.flatten.uniq
+    end
 
     def cleanup_vertexes
       vertex_usage, index_usage = get_vertex_index_usage
