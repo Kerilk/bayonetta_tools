@@ -338,6 +338,12 @@ module Bayonetta
       ids.flatten.uniq
     end
 
+    def materials_textures
+      mat_tex = @materials.collect { |m|
+        [m.name, m.textures.collect { |t| [t.texture_id, t.name] }]
+      }.to_h
+    end
+
     def cleanup_vertexes
       vertex_usage, index_usage = get_vertex_index_usage
       @vertex_groups.each_with_index { |vertex_group, vertex_group_index|

@@ -1059,6 +1059,14 @@ module Bayonetta
       @tex_infos.tex_infos.collect { |i| i.id }
     end
 
+    def materials_textures
+      return {} unless @tex_infos
+      tex_ids = texture_ids
+      @materials.each_with_index.collect { |m, i|
+        [i, m.material_data.select { |t| tex_ids.include?(t) }]
+      }.to_h
+    end
+
     def get_vertex_types
       if @vertex_type
         return [@vertex_type, @vertex_ex_type]
