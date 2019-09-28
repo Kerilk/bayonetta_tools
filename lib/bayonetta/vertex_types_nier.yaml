@@ -1,79 +1,4 @@
 ---
-11:
-- - - :position
-    - :position_t
-  - - :tangents
-    - :tangents_t
-  - - :mapping
-    - :mapping_t
-  - - :bone_infos
-    - :bone_infos_t
-- - - :mapping2
-    - :mapping_t
-  - - :color
-    - :color_t
-  - - :normal
-    - :hnormal_t
-  - - :mapping3
-    - :mapping_t
-7:
-- - - :position
-    - :position_t
-  - - :tangents
-    - :tangents_t
-  - - :mapping
-    - :mapping_t
-  - - :bone_infos
-    - :bone_infos_t
-- - - :mapping2
-    - :mapping_t
-  - - :normal
-    - :hnormal_t
-10:
-- - - :position
-    - :position_t
-  - - :tangents
-    - :tangents_t
-  - - :mapping
-    - :mapping_t
-  - - :bone_infos
-    - :bone_infos_t
-- - - :mapping2
-    - :mapping_t
-  - - :color
-    - :color_t
-  - - :normal
-    - :hnormal_t
-5:
-- - - :position
-    - :position_t
-  - - :tangents
-    - :tangents_t
-  - - :mapping
-    - :mapping_t
-  - - :bone_infos
-    - :bone_infos_t
-  - - :mapping2
-    - :mapping_t
-  - - :color
-    - :color_t
-- - - :normal
-    - :hnormal_t
-  - - :mapping3
-    - :mapping_t
-4:
-- - - :position
-    - :position_t
-  - - :tangents
-    - :tangents_t
-  - - :mapping
-    - :mapping_t
-  - - :mapping2
-    - :mapping_t
-  - - :color
-    - :color_t
-- - - :normal
-    - :hnormal_t
 14:
 - - - :position
     - :position_t
@@ -112,3 +37,98 @@
     - :mapping_t
   - - :mapping5
     - :mapping_t
+11:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :bone_infos
+    - :bone_infos_t
+- - - :mapping2
+    - :mapping_t
+  - - :color
+    - :color_t
+  - - :normal
+    - :hnormal_t
+  - - :mapping3
+    - :mapping_t
+10:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :bone_infos
+    - :bone_infos_t
+- - - :mapping2
+    - :mapping_t
+  - - :color
+    - :color_t
+  - - :normal
+    - :hnormal_t
+7:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :bone_infos
+    - :bone_infos_t
+- - - :mapping2
+    - :mapping_t
+  - - :normal
+    - :hnormal_t
+5:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :bone_infos
+    - :bone_infos_t
+  - - :mapping2
+    - :mapping_t
+  - - :color
+    - :color_t
+- - - :normal
+    - :hnormal_t
+  - - :mapping3
+    - :mapping_t
+4:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :mapping2
+    - :mapping_t
+  - - :color
+    - :color_t
+- - - :normal
+    - :hnormal_t
+1:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :mapping2
+    - :mapping_t
+- - - :normal
+    - :hnormal_t
+0:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :normal
+    - :hnormal_t
