@@ -1,0 +1,386 @@
+//Credit: https://github.com/blueskythlikesclouds/SonicAudioTools/
+LittleEndian();
+
+typedef enum {
+    UInt8   =  0,
+    Int8    =  1,
+    UInt16  =  2,
+    Int16   =  3,
+    UInt32  =  4,
+    Int32   =  5,
+    UInt64  =  6,
+    Int64   =  7,
+    Float   =  8,
+    Double  =  9,
+    String  = 10,
+    Data    = 11,
+    GUID    = 12
+} type_t;
+
+typedef enum {
+    TypeMask = 0xf,
+    Name = 0x10,
+    DefaultValue = 0x20,
+    RowStorage = 0x40
+} flag_t;
+
+typedef enum {
+        None = -1,
+        Id = 0,
+        FileName = 1,
+        FileNameAndId = 2,
+        FileNameAndGroup = 3,
+        IdAndGroup = 4,
+        FileNameIdAndGroup = 5
+} mode_t;
+
+local uint64 offset;
+local int row = 0;
+
+typedef struct {
+    local uint64 pos;
+    byte    flags <format=hex, comment = "0x10: name, 0x20: defaultValue, 0x40: rowStorage, 0xf: typeMask">;
+    if (flags & Name) {
+        uint32  namePosition <format=hex>;
+        pos = FTell();
+        FSeek(startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.stringPoolPosition + namePosition);
+        string name;
+        FSeek(pos);
+    }
+    if (flags & DefaultValue) {
+        switch(flags & TypeMask) {
+        case UInt8:
+            ubyte   value;
+            break;
+        case Int8:
+            byte    value;
+            break;
+        case UInt16:
+            uint16  value;
+            break;
+        case Int16:
+            int16   value;
+            break;
+        case UInt32:
+            uint32  value;
+            break;
+        case Int32:
+            int32   value;
+            break;
+        case UInt64:
+            uint64  value;
+            break;
+        case Int64:
+            int64   value;
+            break;
+        case Float:
+            float   value;
+            break;
+        case Double:
+            double  value;
+            break;
+        case String:
+            uint32  stringPosition <format=hex>;
+            local uint64 string_pos = startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.stringPoolPosition + stringPosition;
+            pos = FTell();
+            FSeek(string_pos);
+            string value;
+            FSeek(pos);
+            break;
+        case Data:
+            uint32  position <format=hex>;
+            uint32  length <format=hex>;
+            pos = FTell();
+            local uint64 data_pos = startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.dataPoolPosition + position;
+            FSeek(data_pos);
+            if (position > 0 && length == 0) {
+                local uint32 sublength = 0;
+                if (ReadString(data_pos, 4) == "@UTF") {
+                    sublength = ReadUInt(data_pos + 4);
+                }
+                byte data[sublength];
+            } else {
+                byte data[length];
+            }
+            FSeek(pos);
+            break;
+        case GUID:
+            byte value[16];
+            break;
+        }
+    }
+    if (flags & RowStorage) {
+        pos = FTell();
+        FSeek(startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.rowsPosition + row * parentof(parentof(this)).header.rowLength + offset);
+        switch(flags & TypeMask) {
+        case UInt8:
+            ubyte   value;
+            offset += 1;
+            break;
+        case Int8:
+            byte    value;
+            offset += 1;
+            break;
+        case UInt16:
+            uint16  value;
+            offset += 2;
+            break;
+        case Int16:
+            int16   value;
+            offset += 2;
+            break;
+        case UInt32:
+            uint32  value;
+            offset += 4;
+            break;
+        case Int32:
+            int32   value;
+            offset += 4;
+            break;
+        case UInt64:
+            uint64  value;
+            offset += 8;
+            break;
+        case Int64:
+            int64   value;
+            offset += 8;
+            break;
+        case Float:
+            float   value;
+            offset += 4;
+            break;
+        case Double:
+            double  value;
+            offset += 8;
+            break;
+        case String:
+            uint32  stringPosition <format=hex>;
+            offset += 4;
+            local uint64 string_pos = startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.stringPoolPosition + stringPosition;
+            FSeek(string_pos);
+            string value;
+            break;
+        case Data:
+            uint32  position <format=hex>;
+            uint32  length <format=hex>;
+            offset += 8;
+            local uint64 data_pos = startof(parentof(parentof(this))) + 8 + parentof(parentof(this)).header.dataPoolPosition + position;
+            FSeek(data_pos);
+            if (position > 0 && length == 0) {
+                local uint32 sublength = 0;
+                if (Memcmp(ReadString(data_pos, 4), "@UTF") == 0) {
+                    sublength = ReadUInt(data_pos + 4);
+                }
+                byte data[sublength];
+            } else {
+                byte data[length];
+            }
+            break;
+        case GUID:
+            byte value[16];
+            offset += 16;
+            break;
+        }
+        FSeek(pos);
+    }
+} field_t;
+
+
+typedef struct {
+    local uint64 pos;
+    BigEndian();
+    struct {
+        char    id[4]; //"@UTF"
+        uint32  length <format=hex>;
+        byte    unknown;
+        byte    encodingType <comment="0: shift-jis, 1: utf8">;
+        uint16  rowsPosition <format=hex>;
+        uint32  stringPoolPosition <format=hex>;
+        uint32  dataPoolPosition <format=hex>;
+        uint32  tableNamePosition <format=hex>;
+        uint16  fieldCount;
+        uint16  rowLength <format=hex>;
+        uint32  rowCount;
+        pos = FTell();
+        FSeek(startof(this) + 8 + header.stringPoolPosition + header.tableNamePosition);
+        string  tableName;
+        FSeek(pos);
+    } header;
+    row = -1;
+    pos = FTell();
+    struct {
+        FSeek(pos);
+        row += 1;
+        offset = 0;
+        field_t fields[header.fieldCount] <optimize=false, read=readField>;
+    } rows[header.rowCount] <optimize=false>;
+} table_t;
+
+string tableRead( table_t &value ) {
+    local string s;
+    SPrintf(s, "%s", value.header.tableName);
+    return s;
+}
+
+string readField( field_t &field ) {
+    local string name;
+    local string value;
+    if (exists(field.name)) {
+        SPrintf(name, "%s", field.name);
+    }
+    if (exists(field.value)) {
+        switch(field.flags & TypeMask) {
+        case UInt8:
+        case UInt16:
+        case UInt32:
+        case UInt64:
+            SPrintf(value, "%u", field.value);
+            break;
+        case Int8:
+        case Int16:
+        case Int32:
+        case Int64:
+            SPrintf(value, "%d", field.value);
+            break;
+        case Float:
+            SPrintf(value, "%f", field.value);
+            break;
+        case Double:
+            SPrintf(value, "%lf", field.value);
+            break;
+        case String:
+            SPrintf(value, "%s", field.value);
+            break;
+        case Data:
+            SPrintf(value, "%s", "[...]");
+            break;
+        case GUID:
+            SPrintf(value, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", field.value[0], field.value[1], field.value[2], field.value[3],
+                                  field.value[4], field.value[5],
+                                  field.value[6], field.value[7],
+                                  field.value[8], field.value[9],
+                                  field.value[10], field.value[11], field.value[12], field.value[13], field.value[14], field.value[15]);
+            break;
+        }
+    } else {
+        switch(field.flags & TypeMask) {
+        case UInt8:
+        case UInt16:
+        case UInt32:
+        case UInt64:
+            SPrintf(value, "%u", 0);
+            break;
+        case Int8:
+        case Int16:
+        case Int32:
+        case Int64:
+            SPrintf(value, "%d", 0);
+            break;
+        case Float:
+            SPrintf(value, "%f", 0.0);
+            break;
+        case Double:
+            SPrintf(value, "%lf", 0.0);
+            break;
+        case String:
+            SPrintf(value, "%s", "\"\"");
+            break;
+        case Data:
+            SPrintf(value, "%s", "[]");
+            break;
+        case GUID:
+            SPrintf(value, "00000000-0000-0000-0000-000000000000");
+            break;
+        }
+    }
+    return name + ": " + value;
+}
+
+typedef struct{
+    LittleEndian();
+    char    id[4]; //"CPK ", "TOC ", "ITOC", "ETOC"
+    uint32  flags;
+    uint32  tableLength <format=hex>;
+    uint32  uknown;
+    table_t table <read=tableRead>;
+} section_t;
+
+int getFieldIndex(string name, table_t &table) {
+    local int i;
+    for (i = 0; i < table.header.fieldCount; i++) {
+        if(exists(table.rows[0].fields[i].name) && table.rows[0].fields[i].name == name)
+            return i;
+    }
+    return -1;
+}
+
+int hasField(string name, table_t &table) {
+    return getFieldIndex(name, table) != -1;
+}
+
+section_t header;
+
+local mode_t mode = -1;
+
+local uint64 tocOffset = header.table.rows[0].fields[getFieldIndex("TocOffset", header.table)].value;
+local uint64 itocOffset = header.table.rows[0].fields[getFieldIndex("ItocOffset", header.table)].value;
+
+if (hasField("CpkMode", header.table)) {
+    mode = header.table.rows[0].fields[getFieldIndex("CpkMode", header.table)].value;
+} else {
+    if (tocOffset > 0 && itocOffset == 0) {
+        mode = FileName;
+    } else if (tocOffset == 0 && itocOffset > 0) {
+        mode = Id;
+    } else if (tocOffset > 0 && itocOffset > 0) {
+        mode = FileNameAndId;
+    } else {
+        mode = None;
+    }
+}
+Printf("CpkMode: %s\n", EnumToString(mode));
+if (mode == None)
+    Exit(0);
+
+local uint64 etocOffset = header.table.rows[0].fields[getFieldIndex("EtocOffset", header.table)].value;
+local uint64 contentOffset = header.table.rows[0].fields[getFieldIndex("ContentOffset", header.table)].value;
+
+local uint16 align = header.table.rows[0].fields[getFieldIndex("Align", header.table)].value;
+
+if (tocOffset > 0) {
+    FSeek(tocOffset);
+    section_t toc;
+}
+if (etocOffset > 0) {
+    FSeek(etocOffset);
+    section_t etoc;
+}
+if (itocOffset > 0) {
+    FSeek(itocOffset);
+    section_t itoc;
+}
+LittleEndian();
+if (mode == FileName || mode == FileNameAndId) {
+    local uint64 contentDelta = 0;
+    if (contentOffset < tocOffset)
+        contentDelta = contentOffset;
+    else
+        contentDelta = tocOffset;
+    local int k;
+    for (k = 0; k < toc.table.header.rowCount; k++) {
+        FSeek(toc.table.rows[k].fields[getFieldIndex("FileOffset", toc.table)].value + contentDelta);
+        struct {
+            if (toc.table.rows[k].fields[getFieldIndex("FileSize", toc.table)].value ==
+                toc.table.rows[k].fields[getFieldIndex("ExtractSize", toc.table)].value) {
+                byte data[toc.table.rows[k].fields[getFieldIndex("FileSize", toc.table)].value];
+            } else {
+                char    id[8];
+                uint32  uncompressedSize;
+                uint32  compressedSize;
+                byte    compressedData[compressedSize];
+                byte    uncompressedHeader[0x100];
+            }
+        } file;
+    }
+} else if (mode == Id) {
+}
