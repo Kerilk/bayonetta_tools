@@ -2224,6 +2224,9 @@ module Bayonetta
       last_offset = @header.offset_materials = align(last_offset, 0x20)
 
       last_offset +=  @materials.collect(&:__size).reduce(&:+)
+      # Pad last material with zeros
+      pad_count = (align(last_offset, 0x20) - last_offset)/4
+      @materials.last.material_data += [0]*pad_count
       last_offset = @header.offset_meshes_offsets = align(last_offset, 0x20)
 
       off = 0
