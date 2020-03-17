@@ -7,8 +7,33 @@ require 'yaml'
 require 'nokogiri'
 include Bayonetta
 
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: wmb_export_assim.rb file format"
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+  opts.on("-f", "--formats", "Prints supported formats") do
+    Assimp::export_format_descriptions.each { |d|
+      puts "\t#{d.id.to_s} (.#{d.file_extension})"
+    }
+    exit
+  end
+
+end
+parser.parse!
+
 source = ARGV[0]
 format = ARGV[1]
+
+if !source || !format
+  puts "Invalid Arguments!"
+  puts parser
+  exit
+end
+
 
 raise "Invalid file #{source}" unless File::file?(source)
 
