@@ -1,0 +1,52 @@
+LittleEndian();
+
+FSeek(0);
+struct {
+    char    id[4];
+    struct {
+        int16   unknown0;
+        ubyte   unknown1;
+        ubyte   unknown2;
+    } unknownVersion;
+    uint32   offsetEnemyDropData <format=hex>;
+    uint32   enemyDropDataSize;
+    uint32   dropItemSize;
+    uint16   numEnemies;
+    uint16   numDropItems;
+} header;
+
+FSeek(header.offsetEnemyDropData);
+if( header.enemyDropDataSize == 0xE ) {     // enemyDropDataSize 14
+    struct {
+        uint16   unknownIndex;
+        uint16   indexFirstDropItem;
+        uint16   numUniqueDropItems;
+        uint16   numGoldDrops;
+        uint16   unknownFlag1;
+        ubyte    dropAmount;
+        ubyte    dropGoldAmount;
+        uint16   unknownInt16;
+    } enemyDropData[header.numEnemies];
+} else if ( header.enemyDropDataSize == 0x18 ) {    // enemyDropDataSize 24
+    struct {
+        ubyte   unknownIndex;
+        ubyte   unknownByte;
+        uint16  unknownInt16;
+        uint32  unknownInt32;
+        ubyte   levelRangeStart;
+        ubyte   levelRangeEnd;
+        uint16  indexFirstDropItem;
+        uint16  numUniqueDropItems;
+        uint16  numGoldDrops;
+        uint16  unknownInt16;
+        ubyte   dropAmount;
+        ubyte   dropGoldAmount;
+        uint16  unknownInt16;
+        uint16  unknownInt16;
+    } enemyDropData[header.numEnemies];
+}
+
+struct {
+    uint32   itemID;
+    uint32   dropWeight;
+} dropItems[header.numDropItems];
