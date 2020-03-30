@@ -704,8 +704,11 @@ module Bayonetta
     end
 
     def set_tpose
+      neutral_scale = Linalg::Vector::new(1.0, 1.0, 1.0)
       inverse_bind_pose = @bones.collect { |b|
-        Linalg::get_inverse_transformation_matrix(b.position, b.rotation, b.scale)
+        parent_scale = neutral_scale
+        parent_scale = @bones[b.parent_index].scale if b.parent_index != -1
+        Linalg::get_inverse_transformation_matrix(b.position, b.rotation, b.scale, parent_scale)
       }
       target_pose = @bones.collect { |b|
         Linalg::get_translation_matrix(b.t_position)
