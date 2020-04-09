@@ -1,13 +1,15 @@
 LittleEndian();
 
+string readEmID(uint16 id) {
+  string out;
+  SPrintf(out, "em%04x", id);
+  return out;
+}
+
 FSeek(0);
 struct {
-    char    id[4];
-    struct {
-        int16   unknown0;
-        ubyte   unknown1;
-        ubyte   unknown2;
-    } unknownVersion;
+    char     id[4];
+    float    version;
     uint32   offsetEnemyDropData <format=hex>;
     uint32   enemyDropDataSize;
     uint32   dropItemSize;
@@ -29,9 +31,8 @@ if( header.enemyDropDataSize == 0xE ) {     // enemyDropDataSize 14
     } enemyDropData[header.numEnemies];
 } else if ( header.enemyDropDataSize == 0x18 ) {    // enemyDropDataSize 24
     struct {
-        ubyte   unknownIndex;
-        ubyte   unknownByte;
-        uint16  unknownInt16;
+        short   enemyID <read=readEmID>;
+        uint16  unknownActorClass;
         uint32  unknownInt32;
         ubyte   levelRangeStart;
         ubyte   levelRangeEnd;
