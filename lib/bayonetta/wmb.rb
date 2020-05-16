@@ -1713,6 +1713,25 @@ module Bayonetta
       self
     end
 
+    def delete_batches(hash)
+      hash.each { |k, list|
+        raise "Mesh #{k} was not found in the model!" unless @meshes[k]
+        list = case list
+          when Enumerable
+            list.to_a
+          else
+            [list]
+          end
+        kept_batches = @meshes[k].batches.length.times.to_a - list
+        @meshes[k].batches = kept_batches.collect { |i|
+          raise "Batch #{i} was not found in mesh #{k}!" unless @meshes[k].batches[i]
+          @meshes[k].batches[i]
+        }
+        @meshes[k].header.num_batch = @meshes[k].batches.length
+      }
+      self
+    end
+
     def delete_bones(list)
       used_bones = (@header.num_bones.times.to_a - list)
       restrict_bones(used_bones)
