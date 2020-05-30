@@ -244,11 +244,15 @@ module Bayonetta
   class Normal < LibBin::DataConverter
     include VectorAccessor
     attr_accessor :normal
+    attr_accessor :normal_big_orig
+    attr_accessor :normal_small_orig
+    attr_accessor :wide
 
     def initialize
       @normal = [0.0, 0.0, 0.0]
       @normal_big_orig = nil
       @normal_small_orig = nil
+      @wide = false
     end
 
     def x
@@ -320,6 +324,34 @@ module Bayonetta
       normalize(fx, fy, fz)
     end
 
+    def redecode_wide
+      v = normal_small_orig.unpack("L<").first
+      nx = v & ((1<<10)-1)
+      ny = (v >> 10) & ((1<<10)-1)
+      nz = (v >> 20) & ((1<<10)-1)
+      sx = nx & (1<<9)
+      sy = ny & (1<<9)
+      sz = nz & (1<<9)
+      if sx
+        nx ^= sx
+        nx = -(sx-nx)
+      end
+      if sy
+        ny ^= sy
+        ny = -(sy-ny)
+      end
+      if sz
+        nz ^= sz
+        nz = -(sz-nz)
+      end
+
+      mag = ((1<<9)-1).to_f
+      fx = nx.to_f/mag
+      fy = ny.to_f/mag
+      fz = nz.to_f/mag
+      @normals = normalize(fx, fy, fz)
+    end
+
     def decode_small_normal(v)
       n = v.unpack("c4")
       nx = n[3]
@@ -343,16 +375,37 @@ module Bayonetta
     end
 
     def encode_small_normal(normal)
-      fx = normal[0]
-      fy = normal[1]
-      fz = normal[2]
-      nx = (fx*127.0).to_i
-      ny = (fy*127.0).to_i
-      nz = (fz*127.0).to_i
-      nx = clamp(nx, 127, -128)
-      ny = clamp(ny, 127, -128)
-      nz = clamp(nz, 127, -128)
-      [0, nz, ny, nx].pack("c4")
+      if @wide
+        fx = normal[0]
+        fy = normal[1]
+        fz = normal[2]
+        mag = (1<<9)-1
+        nx = (fx*(mag).to_f).to_i
+        ny = (fy*(mag).to_f).to_i
+        nz = (fz*(mag).to_f).to_i
+        nx = clamp(nx, mag, -1-mag)
+        ny = clamp(ny, mag, -1-mag)
+        nz = clamp(nz, mag, -1-mag)
+        mask = (1<<10)-1
+        v = 0
+        v |= nz & mask
+        v <<= 10
+        v |= ny & mask
+        v <<= 10
+        v |= nx & mask
+        [v].pack("L<")
+      else
+        fx = normal[0]
+        fy = normal[1]
+        fz = normal[2]
+        nx = (fx*127.0).to_i
+        ny = (fy*127.0).to_i
+        nz = (fz*127.0).to_i
+        nx = clamp(nx, 127, -128)
+        ny = clamp(ny, 127, -128)
+        nz = clamp(nz, 127, -128)
+        [0, nz, ny, nx].pack("c4")
+      end
     end
 
     def encode_big_normal(normal)
@@ -1239,6 +1292,41 @@ module Bayonetta
         }
         output.close
       end
+      self
+    end
+
+    def check_normals
+      return self if @__was_big
+      wide_normals = false
+      @vertexes.each { |v|
+        if v.normal.normal_small_orig.bytes.first == 0
+          wide_normals = true
+        end
+      }
+      if wide_normals
+        @vertexes.each { |v|
+          v.normal.wide = true
+          v.normal.redecode_wide
+        }
+      end
+      self
+    end
+
+    def normals_to_wide
+      @vertexes.each { |v|
+        v.normal.wide = true
+        v.normal.normal_big_orig = nil
+        v.normal.normal_small_orig = nil
+      }
+      self
+    end
+
+    def normals_to_narrow
+      @vertexes.each { |v|
+        v.normal.wide = false
+        v.normal.normal_big_orig = nil
+        v.normal.normal_small_orig = nil
+      }
       self
     end
 

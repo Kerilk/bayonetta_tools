@@ -67,6 +67,10 @@ OptionParser.new do |opts|
     $options[:offsets] = o
   end
 
+  opts.on("--[no-]check-normals", "Try to detect wide normals (Switch)") do |cn|
+    $options[:check_normals] = cn
+  end
+
   opts.on("-f", "--[no-]fix-ex-data", "Put normal map u v in ex data") do |fix|
     $options[:fix] = fix
   end
@@ -184,6 +188,7 @@ raise "Invalid file #{input_file}" unless File::file?(input_file)
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
+wmb.check_normals if $options[:check_normals]
 wmb.scale($options[:scale]) if $options[:scale]
 wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]
