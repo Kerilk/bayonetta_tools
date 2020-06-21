@@ -3,6 +3,7 @@ module Bayonetta
   class DATFile < LibBin::DataConverter
     attr_reader :big
     ALIGNMENTS = {
+      'dat' => 0x2000,
       'wmb' => 0x1000,
       'wtb' => 0x1000,
       'wtp' => 0x1000,
