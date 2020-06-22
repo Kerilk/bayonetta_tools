@@ -26,7 +26,7 @@ OptionParser.new do |opts|
     $options[:windows] = windows
   end
 
-  opts.on("y", "--[no-]yaml", "Ouput YAML database") do |yaml|
+  opts.on("-y", "--[no-]yaml", "Ouput YAML database") do |yaml|
     $options[:yaml] = yaml
   end
 
@@ -46,10 +46,16 @@ yaml_wtx_block = lambda{ |big, f|
   end
 }
 
-yaml_dat_block = lambda { |path|
+yaml_dat_block = lambda { |path, fh=nil|
   h = {}
   begin
-    d = Bayonetta::DATFile::load(path)
+    d = Bayonetta::DATFile::load(fh ? fh : path)
+    d.each.select { |name, f|
+      File.extname(name) == ".dat"
+    }.each { |name, f|
+      res = yaml_dat_block.call("", f)
+      h[name] = res if res.size > 0
+    }
     d.each.select { |name, f|
       [".wta", ".wtb"].include? File.extname(name)
     }.each { |name, f|
@@ -73,10 +79,15 @@ wtx_block = lambda { |big, file_path, f|
   end
 }
 
-dat_block = lambda { |path|
+dat_block = lambda { |path, fh=nil|
   begin
-    d = Bayonetta::DATFile::load(path)
+    d = Bayonetta::DATFile::load(fh ? fh : path)
     path = path.gsub("/", "\\") if $options[:windows]
+    d.each.select { |name, f|
+      File.extname(name) == ".dat"
+    }.each { |name, f|
+      dat_block.call(path + ":" + name, f)
+    }
     d.each.select { |name, f|
       [".wta", ".wtb"].include? File.extname(name)
     }.each { |name, f|
@@ -100,6 +111,29 @@ if File::directory?(path)
       h[path] = res if res.size > 0
     else
       dat_block.call(path)
+    end
+  }
+  wtbs = Dir.glob("./**/*.wtb")
+  wtbs.each { |path|
+    begin
+      f = File::open(path)
+      id = f.read(4)
+      if id == "WTB\x00"
+        big = false
+      else
+        big = true
+      end
+      f.rewind
+      if $options[:yaml]
+        path = path.gsub(ARGV[0],"")
+        path = path.gsub("/", "\\") if $options[:windows]
+        res = yaml_wtx_block.call(big, f)
+        h[path] = res if res.size > 0
+      else
+        wtx_block.call(big, path, f)
+      end
+    rescue
+      next
     end
   }
 elsif File::exist?(path)
