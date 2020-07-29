@@ -112,6 +112,17 @@
     - :color_t
 - - - :normal
     - :hnormal_t
+3:
+- - - :position
+    - :position_t
+  - - :tangents
+    - :tangents_t
+  - - :mapping
+    - :mapping_t
+  - - :color
+    - :color_t
+- - - :normal
+    - :hnormal_t
 1:
 - - - :position
     - :position_t

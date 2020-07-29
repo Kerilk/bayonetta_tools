@@ -1,4 +1,5 @@
 #!ruby
+require 'fileutils'
 require 'yaml'
 require_relative 'lib/bayonetta'
 
@@ -37,6 +38,10 @@ ARGV.each { |filename|
   end
 
   dat.each { |name, f|
+    d = File::dirname(name)
+    if d != "."
+      FileUtils.mkdir_p(d)
+    end
     File::open(name, "wb") { |f2|
       f2.write(f.read)
     }

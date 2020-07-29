@@ -90,6 +90,19 @@ module Bayonetta
 
         @texture_infos = []
 
+        if !@wtp && texture_type == ".dds" &&  @offset_texture_offsets != 0 && @offset_texture_sizes != 0
+          @texture_offsets.each_with_index { |off, i|
+            if @texture_sizes[i] > 4
+              f.seek(off)
+              tex_id = f.read(4)
+              if tex_id == "BNTX"
+                texture_type = ".bntx"
+                break
+              end
+            end
+          }
+        end
+
         if !@wtp && texture_type == ".xt1" # Astral Chain Switch
           @textures = @texture_offsets.each_with_index.collect { |off, i|
             f.seek(@offset_texture_infos + i*0x38)

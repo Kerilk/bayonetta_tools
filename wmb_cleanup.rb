@@ -19,6 +19,7 @@ $options = {
   :swap_meshes => nil,
   :move_meshes => nil,
   :delete_meshes => nil,
+  :delete_batches => nil,
   :merge_meshes => nil,
   :overwrite => nil
 }
@@ -66,6 +67,10 @@ OptionParser.new do |opts|
     $options[:offsets] = o
   end
 
+  opts.on("--[no-]check-normals", "Try to detect wide normals (Switch)") do |cn|
+    $options[:check_normals] = cn
+  end
+
   opts.on("-f", "--[no-]fix-ex-data", "Put normal map u v in ex data") do |fix|
     $options[:fix] = fix
   end
@@ -106,7 +111,7 @@ OptionParser.new do |opts|
     $options[:delete_meshes] = eval(mesh_list).to_a
   end
 
-  opts.on("--delete-batches=BATCHLIST", "Delete specified batches (WMB3)") do |batch_list|
+  opts.on("--delete-batches=BATCHLIST", "Delete specified batch list (WMB3) or { mesh => batch list } hash") do |batch_list|
     $options[:delete_batches] = eval(batch_list).to_a
   end
 
@@ -130,8 +135,8 @@ OptionParser.new do |opts|
     $options[:cleanup_mat_sizes] = cleanup_mat_sizes
   end
 
-  opts.on("--maximize-material-sizes", "Maximize material sizes") do |cleanup_mat_sizes|
-    $options[:maximize_mat_sizes] = cleanup_mat_sizes
+  opts.on("--maximize-material-sizes", "Maximize material sizes") do |maximize_mat_sizes|
+    $options[:maximize_mat_sizes] = maximize_mat_sizes
   end
 
   opts.on("--overwrite", "Overwrite input file") do |overwrite|
@@ -183,6 +188,7 @@ raise "Invalid file #{input_file}" unless File::file?(input_file)
 Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 wmb = WMBFile::load(input_file)
+wmb.check_normals if $options[:check_normals]
 wmb.scale($options[:scale]) if $options[:scale]
 wmb.rotate(*($options[:rotate])) if $options[:rotate]
 wmb.shift(*($options[:shift])) if $options[:shift]

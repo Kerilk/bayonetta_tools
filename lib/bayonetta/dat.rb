@@ -3,6 +3,7 @@ module Bayonetta
   class DATFile < LibBin::DataConverter
     attr_reader :big
     ALIGNMENTS = {
+      'dat' => 0x2000,
       'wmb' => 0x1000,
       'wtb' => 0x1000,
       'wtp' => 0x1000,
@@ -153,7 +154,7 @@ module Bayonetta
     def each
       if block_given? then
         @header.num_files.times { |i|
-          yield @file_names[i][0..-2], StringIO::new(@files[i], "rb")
+          yield @file_names[i][0..-2], StringIO::new(@files[i] ? @files[i] : "", "rb")
         }
       else
         to_enum(:each)
@@ -161,7 +162,7 @@ module Bayonetta
     end
 
     def [](i)
-      return [@file_names[i][0..-2], StringIO::new(@files[i], "rb")]
+      return [@file_names[i][0..-2], StringIO::new(@files[i] ? @files[i] : "", "rb")]
     end
 
     def push(name, file)
@@ -198,9 +199,13 @@ module Bayonetta
         files_offset = @header.offset_file_sizes + 4 * @header.num_files
       end
       @file_offsets = @header.num_files.times.collect { |i|
-        tmp = align(files_offset, ALIGNMENTS[@file_extensions[i][0..-2]])
-        files_offset = align(tmp + @file_sizes[i], ALIGNMENTS[@file_extensions[i][0..-2]])
-        tmp
+        if @file_sizes[i] > 0
+          tmp = align(files_offset, ALIGNMENTS[@file_extensions[i][0..-2]])
+          files_offset = align(tmp + @file_sizes[i], ALIGNMENTS[@file_extensions[i][0..-2]])
+          tmp
+        else
+          0
+        end
       }
       @total_size = align(files_offset, 0x1000)
       self
