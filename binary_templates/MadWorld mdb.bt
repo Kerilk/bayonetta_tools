@@ -1,0 +1,156 @@
+BigEndian();
+//Thanks Joschka for most of the geometry related stuff
+struct {
+    char id[2];
+    byte vertexFlags <format=hex, comment="0x12: position short, 0x13 position float" >;
+    byte padding;
+    uint32 numVertexPos;
+    uint32 vertexPosOffset <format=hex>;
+    uint32 numNormals;
+    uint32 normalsOffset <format=hex>;
+    uint32 numUVs;
+    uint32 UVsOffset <format=hex>;
+    uint32 numD;
+    uint32 dOffset <format=hex>;
+    uint32 numBonePalette;
+    uint32 bonePaletteOffset <format=hex>;
+    uint32 numBones;
+    uint32 parentOffset <format=hex>;
+    uint32 boneRelativePositionOffset <format=hex>;
+    uint32 bonePositionOffset <format=hex>;
+    uint32 numMaterials;
+    uint32 materialsOffset <format=hex>;
+    uint32 numG;
+    uint32 meshesOffset <format=hex>;
+    short  ug[4];
+    uint32 hOffset <format=hex>;
+    uint32 iOffset <format=hex>;
+    uint32 boneNameOffset <format=hex>;
+    uint32 bonePaletteReferenceCountOffset <format=hex>;
+    byte   uj[4];
+} header <bgcolor=cBlue>;
+
+FSeek(header.vertexPosOffset);
+
+typedef struct {
+    uint16 x, y, z;
+} vectorShort <read=vectorShortRead>;
+
+string vectorShortRead(vectorShort &v) {
+    string s;
+    SPrintf(s, "%e %e %e", v.x/8192.0f, v.y/8192.0f, v.z/8192.0f );
+    return s;
+}
+
+typedef struct {
+    float x, y, z;
+} vector <read=vectorRead>;
+
+string vectorRead(vector &v) {
+    string s;
+    SPrintf(s, "%e %e %e", v.x, v.y, v.z);
+    return s;
+}
+
+if (header.vertexFlags == 0x12) {
+    struct {
+        vectorShort pos;
+        uint16 skinningInfo;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x13) {
+    struct {
+        vector pos;
+        uint16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else {
+    Warning("Unknown vertex format: %2x\n", header.vertexFlags);
+}
+
+FSeek(header.normalsOffset);
+
+struct {
+    byte v1, v2, v3;
+} normals[header.numNormals] <bgcolor=cDkRed>;
+
+FSeek(header.UVsOffset);
+
+struct {
+    int16 v1, v2;
+} UVs[header.numUVs] <bgcolor=cLtRed>;
+
+FSeek(header.bonePaletteOffset);
+struct {
+    struct {
+        byte index;
+        byte weight;
+    } boneWeight[4];
+} bonePalettes[header.numBonePalette] <bgcolor=cBlue>;
+FSeek(header.bonePaletteReferenceCountOffset);
+short bonePaletteReferenceCount[header.numBonePalette] <bgcolor=cDkBlue>;
+
+FSeek(header.parentOffset);
+byte boneParents[header.numBones] <bgcolor=cLtBlue>;
+FSeek(header.boneNameOffset);
+byte boneNames[header.numBones] <bgcolor=cPurple>;
+FSeek(header.boneRelativePositionOffset);
+struct {
+    float x, y, z;
+} boneRelativePositions[header.numBones] <bgcolor=cDkPurple>;
+FSeek(header.bonePositionOffset);
+struct {
+    float x, y, z;
+} bonePositions[header.numBones] <bgcolor=cLtPurple>;
+
+FSeek(header.materialsOffset);
+struct {
+    byte textureIndex;
+    byte data[15];
+} materials[header.numMaterials];
+
+local uint32 meshBaseOffset = 0;
+local uint32 meshOffset = header.meshesOffset;
+local uint32 indexBufferOffset;
+local uint32 i;
+
+local uint32 maxPositionIndex = 0;
+local uint32 maxNormalIndex = 0;
+local uint32 maxUVIndex = 0;
+while(meshOffset) {
+    FSeek(meshBaseOffset + meshOffset);
+    meshBaseOffset = FTell();
+    struct {
+        uint32 nextMeshOffset <format=hex>;
+        short data[5];
+        short materialIndex;
+        short udata[2];
+        uint32 indexBufferSize <format=hex>;
+        uint32 ua;
+        uint32 ub;
+        string name;
+        meshOffset = nextMeshOffset;
+        if (nextMeshOffset)
+            indexBufferOffset = meshBaseOffset + nextMeshOffset - indexBufferSize;
+        else
+            indexBufferOffset = FileSize() - indexBufferSize;
+        FSeek(indexBufferOffset);
+        struct {
+            byte flags <format=hex>;
+            ushort indexCount;
+            struct {
+                ushort positionIndex;
+                ushort normalIndex;
+                ushort UVIndex;
+            } indexes[indexCount];
+        } indexBuffer;
+        for (i = 0; i < indexBuffer.indexCount; i++) {
+            if (indexBuffer.indexes[i].positionIndex > maxPositionIndex)
+                maxPositionIndex = indexBuffer.indexes[i].positionIndex;
+            if (indexBuffer.indexes[i].normalIndex > maxNormalIndex)
+                maxNormalIndex = indexBuffer.indexes[i].normalIndex;
+            if (indexBuffer.indexes[i].UVIndex > maxUVIndex)
+                maxUVIndex = indexBuffer.indexes[i].UVIndex;
+        }
+    } mesh <bgcolor=cAqua>;
+    
+}

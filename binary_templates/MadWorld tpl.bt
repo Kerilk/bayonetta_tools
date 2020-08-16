@@ -1,0 +1,30 @@
+BigEndian();
+struct {
+    uint32 flags;
+    uint32 numTextures;
+    uint32 textureInfoOffset <format=hex>;
+} header;
+
+FSeek(header.textureInfoOffset);
+
+struct {
+    uint32 headerOffset <format=hex>;
+    uint32 ua;
+} textureInfos[header.numTextures];
+
+local int i;
+for(i = 0; i < header.numTextures; i++) {
+    FSeek(textureInfos[i].headerOffset);
+    struct {
+        short width;
+        short height;
+        uint32 format;
+        uint32 offset <format=hex>;
+        uint32 ua;
+        uint32 ub;
+        uint32 uc;
+        uint32 ud;
+        uint32 ue;
+        uint32 uf;
+    } textureHeader;
+}
