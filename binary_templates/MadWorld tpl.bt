@@ -28,8 +28,8 @@ for (i = 0; i < header.numImages; i++) {
 for (i = 0; i < header.numImages; i++) {
     FSeek(header.imageTable[i].headerOffset);
     struct {
-        short height;
-        short width;
+        ushort height;
+        ushort width;
         uint32 format <format=hex, comment="0x00: I4, 0x01: I8, 0x02: IA4, 0x03: IA8, 0x04: RGB565, 0x05: RGB5A3, 0x06: RGBA32 (RGBA8), 0x08: C4 (CI4), 0x09: C8 (CI8), 0x0A: C14X2 (CI14x2), 0x0E: CMPR">;
         uint32 offset <format=hex>;
         uint32 wrapS;
