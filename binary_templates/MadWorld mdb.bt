@@ -59,16 +59,49 @@ string vectorRead(vector &v) {
     return s;
 }
 
-if (header.vertexFlags == 0x1200) {
+if (header.vertexFlags == 0x1200 && header.numBones) {
     struct {
         vectorShort pos;
         int16 bonePaletteIndex;
     } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1300) {
+} else if (header.vertexFlags == 0x1203 && header.numBones) {
     struct {
         vector pos;
         int16 bonePaletteIndex;
         uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1203 && !header.numBones) {
+    struct {
+        vectorShort pos;
+        int16 bonePaletteIndex;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1204 && header.numBones) {
+    struct {
+        vector pos;
+        int16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1204 && !header.numBones) {
+    struct {
+        vectorShort pos;
+        int16 bonePaletteIndex;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1300 && header.numBones) {
+    struct {
+        vector pos;
+        int16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1303 && header.numBones) {
+    struct {
+        vector pos;
+        int16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else if (header.vertexFlags == 0x1303 && !header.numBones) {
+    struct {
+        vectorShort pos;
+        int16 bonePaletteIndex;
     } vertexPos[header.numVertexPos] <bgcolor=cRed>;
 } else if (header.vertexFlags == 0x1304 && header.numBones) {
     struct {
@@ -86,14 +119,8 @@ if (header.vertexFlags == 0x1200) {
         vectorShort pos;
         int16 bonePaletteIndex;
     } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1303 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
 } else {
-    Warning("Unknown vertex format: %2x\n", header.vertexFlags);
+    Warning("Unknown vertex format: %2x with %sbones\n", header.vertexFlags, header.numBones ? "" : "no ");
 }
 
 FSeek(header.normalsOffset);
@@ -114,8 +141,6 @@ string normalRead(normal &v) {
 
 normal normals[header.numNormals] <bgcolor=cDkRed>;
 
-FSeek(header.UVsOffset);
-
 typedef struct {
     uint16 u, v;
 } uv <read=uvRead>;
@@ -128,7 +153,10 @@ string uvRead(uv &t) {
     return s;
 }
 
-uv UVs[header.numUVs] <bgcolor=cLtRed>;
+if (header.UVsOffset && header.numUVs) {
+    FSeek(header.UVsOffset);
+    uv UVs[header.numUVs] <bgcolor=cLtRed>;
+}
 
 typedef struct {
     uchar r, g, b, a;
@@ -140,7 +168,7 @@ string colorRead(color &v) {
     return s;
 }
 
-if (header.colorsOffset) {
+if (header.colorsOffset && header.numColors) {
     FSeek(header.colorsOffset);
     color colors[header.numColors];
 }
@@ -196,12 +224,12 @@ struct {
 local uint32 meshBaseOffset = 0;
 local uint32 meshOffset = header.meshesOffset;
 local uint32 indexBufferOffset;
-local uint32 i;
+local uint32 i, j;
 
-local uint32 maxUnknownIndex = -1;
+local int32  maxUnknownIndex = -1;
 local uint32 maxPositionIndex = 0;
 local uint32 maxNormalIndex = 0;
-local uint32 maxUVIndex = 0;
+local int32  maxUVIndex = -1;
 local int32  maxColorIndex = -1;
 local uint32 numFaces = 0;
 while(meshOffset) {
@@ -209,10 +237,12 @@ while(meshOffset) {
     meshBaseOffset = FTell();
     struct {
         uint32 nextMeshOffset <format=hex>;
-        byte   materialID, fb, fc, fd;
+        ubyte  materialID;
+        ubyte  flags<format=hex, comment="0x1: color info, 0x8: no UVs">;
+        ubyte  fc, fd;
         short  data[6];
         uint32 indexBufferSize <format=hex>;
-        uint32 ua;
+        uint32 numIndexBuffers;
         uint32 ub;
         if (header.vertexFlags & 0x200) {
             char name[0x3c];
@@ -233,38 +263,41 @@ while(meshOffset) {
             }
         }
         FSeek(indexBufferOffset);
-        while (ReadByte()) {
+        for (j =0; j < (numIndexBuffers ? numIndexBuffers : 1); j++) {
             struct {
-                ubyte flags <format=hex, comment="0x08: triangle strip">;
+                ubyte type <format=hex, comment="0x90: triangles, 0x98, 0xa0 ?: triangle strip">;
                 ushort indexCount;
+                if (type == 0x98 || type == 0xa0)
+                    numFaces += indexCount - 2;
+                else if (type == 0x90)
+                    numFaces += indexCount / 3;
+                else {
+                    Warning("Unknown primitive %x!", type);
+                }
                 struct {
                     if (header.strangeFlags & 0x100) {
                         byte   unknownIndex;
                     }
                     ushort positionIndex;
                     ushort normalIndex;
-                    if (header.colorsOffset) {
+                    if (header.numColors && flags & 0x1) {
                         ushort colorIndex;
                     }
-                    ushort UVIndex;
-                    if (flags == 0x98)
-                        numFaces += indexCount - 2;
-                    else if (flags == 0x90)
-                        numFaces += indexCount / 3;
-                    else
-                        Warning("Unknown primitive %x!", flags);
+                    if (header.numUVs && !(flags &0x8)) {
+                        ushort UVIndex;
+                    }
                 } indexes[indexCount]<optimize=true>;
             } indexBuffer;
             for (i = 0; i < indexBuffer.indexCount; i++) {
-                if (header.strangeFlags & 0x100 && indexBuffer.indexes[i].unknownIndex > maxUnknownIndex)
+                if ((header.strangeFlags & 0x100) && indexBuffer.indexes[i].unknownIndex > maxUnknownIndex)
                     maxUnknownIndex = indexBuffer.indexes[i].unknownIndex;
                 if (indexBuffer.indexes[i].positionIndex > maxPositionIndex)
                     maxPositionIndex = indexBuffer.indexes[i].positionIndex;
                 if (indexBuffer.indexes[i].normalIndex > maxNormalIndex)
                     maxNormalIndex = indexBuffer.indexes[i].normalIndex;
-                if (header.colorsOffset && indexBuffer.indexes[i].colorIndex > maxColorIndex)
+                if (header.numColors && flags & 0x1 && indexBuffer.indexes[i].colorIndex > maxColorIndex)
                     maxColorIndex = indexBuffer.indexes[i].colorIndex;
-                if (indexBuffer.indexes[i].UVIndex > maxUVIndex)
+                if (header.numUVs && !(flags &0x8) && indexBuffer.indexes[i].UVIndex > maxUVIndex)
                     maxUVIndex = indexBuffer.indexes[i].UVIndex;
             }
         }
@@ -275,7 +308,7 @@ while(meshOffset) {
 
 if (maxPositionIndex != header.numVertexPos - 1 ||
     maxNormalIndex != header.numNormals - 1 ||
-    maxUVIndex != header.numUVs - 1 ||
-    (header.colorsOffset && maxColorIndex != header.numColors -1)) {
+    (header.numUVs && maxUVIndex != header.numUVs - 1) ||
+    (header.numColors && maxColorIndex != header.numColors - 1)) {
     Warning("Invalid index format!!!");
 }
