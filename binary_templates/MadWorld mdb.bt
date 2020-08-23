@@ -2,7 +2,7 @@ BigEndian();
 //Thanks Joschka for most of the geometry related stuff
 struct {
     char id[2];
-    ushort vertexFlags <format=hex, comment="0x200: flag extended descriptors,  0x100: position float if bones, 0x4: non actor?" >;
+    ushort vertexFlags <format=hex, comment="0x200: flag extended descriptors" >;
     uint32 numVertexPos;
     uint32 vertexPosOffset <format=hex>;
     uint32 numNormals;
@@ -28,11 +28,9 @@ struct {
     uint32 unknownBoneRelatedOffset2 <format=hex>;
     uint32 boneNameOffset <format=hex>;
     uint32 bonePaletteReferenceCountOffset <format=hex>;
-    if (vertexFlags & 0x200) {
-        short  numMeshes;
-        ubyte  ud;
-        ubyte  uf;
-    }
+    short  numMeshes <comment="if vertexFlags & 0x200">;
+    ubyte  ud;
+    ubyte  uf;
     uint32 ug[5];
     uint32 strangeFlags <format=hex, comment="0x100: additional byte in index">;
 } header <bgcolor=cBlue>;
