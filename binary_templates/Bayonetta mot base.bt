@@ -194,6 +194,7 @@ for ( i = 0; i < header.recordNumber; i++) {
 
 	// unkown flag, I have yet to find another for Bayonetta
 	default:
+        Warning("Found unknown flag: %x (%d)", records[i].flag, i);
 		break;
 	}
 }
