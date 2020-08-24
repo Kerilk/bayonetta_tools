@@ -2,7 +2,7 @@ BigEndian();
 //Thanks Joschka for most of the geometry related stuff
 struct {
     char id[2];
-    ushort vertexFlags <format=hex, comment="0x200: flag extended descriptors" >;
+    ushort vertexFlags <format=hex, comment="0x200: flag extended descriptors, 0x8: no normals?" >;
     uint32 numVertexPos;
     uint32 vertexPosOffset <format=hex>;
     uint32 numNormals;
@@ -71,7 +71,7 @@ if (header.positionDivisorBit != -1) {
     } vertexPos[header.numVertexPos] <bgcolor=cRed>;
 }
 
-FSeek(header.normalsOffset);
+
 
 typedef struct {
     byte x, y, z;
@@ -87,7 +87,10 @@ string normalRead(normal &v) {
     return s;
 }
 
-normal normals[header.numNormals] <bgcolor=cDkRed>;
+if (header.numNormals) {
+    FSeek(header.normalsOffset);
+    normal normals[header.numNormals] <bgcolor=cDkRed>;
+}
 
 typedef struct {
     int16 u, v;
@@ -177,7 +180,7 @@ local uint32 i, j;
 
 local int32  maxUnknownIndex = -1;
 local uint32 maxPositionIndex = 0;
-local uint32 maxNormalIndex = 0;
+local int32  maxNormalIndex = -1;
 local int32  maxUVIndex = -1;
 local int32  maxColorIndex = -1;
 local uint32 numFaces = 0;
@@ -187,7 +190,7 @@ while(meshOffset) {
     struct {
         uint32 nextMeshOffset <format=hex>;
         ubyte  materialID;
-        ubyte  flags<format=hex, comment="0x1: color info, 0x8: no UVs">;
+        ubyte  flags<format=hex, comment="0x1: color info, 0x4: no normals, 0x8: no UVs">;
         ubyte  fc, fd;
         short  data[6];
         uint32 indexBufferSize <format=hex>;
@@ -228,7 +231,9 @@ while(meshOffset) {
                         byte   unknownIndex;
                     }
                     ushort positionIndex;
-                    ushort normalIndex;
+                    if (header.numNormals && !(flags & 0x4)) {
+                        ushort normalIndex;
+                    }
                     if (header.numColors && flags & 0x1) {
                         ushort colorIndex;
                     }
@@ -242,7 +247,7 @@ while(meshOffset) {
                     maxUnknownIndex = indexBuffer.indexes[i].unknownIndex;
                 if (indexBuffer.indexes[i].positionIndex > maxPositionIndex)
                     maxPositionIndex = indexBuffer.indexes[i].positionIndex;
-                if (indexBuffer.indexes[i].normalIndex > maxNormalIndex)
+                if (header.numNormals && !(flags & 0x4) &&indexBuffer.indexes[i].normalIndex > maxNormalIndex)
                     maxNormalIndex = indexBuffer.indexes[i].normalIndex;
                 if (header.numColors && flags & 0x1 && indexBuffer.indexes[i].colorIndex > maxColorIndex)
                     maxColorIndex = indexBuffer.indexes[i].colorIndex;
@@ -256,7 +261,7 @@ while(meshOffset) {
 }
 
 if (maxPositionIndex != header.numVertexPos - 1 ||
-    maxNormalIndex != header.numNormals - 1 ||
+    (header.numNormals && maxNormalIndex != header.numNormals - 1) ||
     (header.numUVs && maxUVIndex != header.numUVs - 1) ||
     (header.numColors && maxColorIndex != header.numColors - 1)) {
     Warning("Invalid index format!!!");
