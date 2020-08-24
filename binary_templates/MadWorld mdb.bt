@@ -21,8 +21,8 @@ struct {
     uint32 materialsOffset <format=hex>;
     uint32 unknownCount <format=hex, comment="Distinc triangles?">;
     uint32 meshesOffset <format=hex>;
-    short  ua;
-    short  ub;
+    short  positionDivisorBit;
+    short  uvDivisorBit;
     uint32 uc;
     uint32 unknownBoneRelatedOffset1 <format=hex>;
     uint32 unknownBoneRelatedOffset2 <format=hex>;
@@ -38,12 +38,13 @@ struct {
 FSeek(header.vertexPosOffset);
 
 typedef struct {
-    uint16 x, y, z;
+    int16 x, y, z;
 } vectorShort <read=vectorShortRead>;
 
 string vectorShortRead(vectorShort &v) {
     string s;
-    SPrintf(s, "%f %f %f", v.x/8192.0f, v.y/8192.0f, v.z/8192.0f );
+    float divisor = (float)(1 << header.positionDivisorBit);
+    SPrintf(s, "%f %f %f", v.x/divisor, v.y/divisor, v.z/divisor );
     return s;
 }
 
@@ -57,68 +58,17 @@ string vectorRead(vector &v) {
     return s;
 }
 
-if (header.vertexFlags == 0x1200 && header.numBones) {
-    struct {
-        vectorShort pos;
-        int16 bonePaletteIndex;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1203 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1203 && !header.numBones) {
-    struct {
-        vectorShort pos;
-        int16 bonePaletteIndex;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1204 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1204 && !header.numBones) {
-    struct {
-        vectorShort pos;
-        int16 bonePaletteIndex;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1300 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1303 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1303 && !header.numBones) {
-    struct {
-        vectorShort pos;
-        int16 bonePaletteIndex;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1304 && header.numBones) {
-    struct {
-        vector pos;
-        int16 bonePaletteIndex;
-        uint16 padding;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1304 && !header.numBones) {
-    struct {
-        vectorShort pos;
-        int16 bonePaletteIndex;
-    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
-} else if (header.vertexFlags == 0x1104 && !header.numBones) {
+if (header.positionDivisorBit != -1) {
     struct {
         vectorShort pos;
         int16 bonePaletteIndex;
     } vertexPos[header.numVertexPos] <bgcolor=cRed>;
 } else {
-    Warning("Unknown vertex format: %2x with %sbones\n", header.vertexFlags, header.numBones ? "" : "no ");
+    struct {
+        vector pos;
+        int16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
 }
 
 FSeek(header.normalsOffset);
@@ -140,13 +90,14 @@ string normalRead(normal &v) {
 normal normals[header.numNormals] <bgcolor=cDkRed>;
 
 typedef struct {
-    uint16 u, v;
+    int16 u, v;
 } uv <read=uvRead>;
 
 string uvRead(uv &t) {
     string s;
-    float u = t.u/16384.0f;
-    float v = t.v/16384.0f;
+    float divisor = (float)(1 << header.uvDivisorBit);
+    float u = t.u/divisor;
+    float v = t.v/divisor;
     SPrintf(s, "%f %f", u, v);
     return s;
 }
