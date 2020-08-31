@@ -1,0 +1,268 @@
+BigEndian();
+//Thanks Joschka for most of the geometry related stuff
+struct {
+    char id[2];
+    ushort vertexFlags <format=hex, comment="0x200: flag extended descriptors, 0x8: no normals?" >;
+    uint32 numVertexPos;
+    uint32 vertexPosOffset <format=hex>;
+    uint32 numNormals;
+    uint32 normalsOffset <format=hex>;
+    uint32 numUVs;
+    uint32 UVsOffset <format=hex>;
+    uint32 numColors;
+    uint32 colorsOffset <format=hex>;
+    uint32 numBonePalette;
+    uint32 bonePaletteOffset <format=hex>;
+    uint32 numBones;
+    uint32 parentOffset <format=hex>;
+    uint32 boneRelativePositionOffset <format=hex>;
+    uint32 bonePositionOffset <format=hex>;
+    uint32 numMaterials;
+    uint32 materialsOffset <format=hex>;
+    uint32 unknownCount <format=hex, comment="Distinc triangles?">;
+    uint32 meshesOffset <format=hex>;
+    short  positionDivisorBit;
+    short  uvDivisorBit;
+    uint32 uc;
+    uint32 unknownBoneRelatedOffset1 <format=hex>;
+    uint32 unknownBoneRelatedOffset2 <format=hex>;
+    uint32 boneNameOffset <format=hex>;
+    uint32 bonePaletteReferenceCountOffset <format=hex>;
+    short  numMeshes <comment="if vertexFlags & 0x200">;
+    ubyte  ud;
+    ubyte  uf;
+    uint32 ug[5];
+    uint32 strangeFlags <format=hex, comment="0x100: additional byte in index">;
+} header <bgcolor=cBlue>;
+
+FSeek(header.vertexPosOffset);
+
+typedef struct {
+    int16 x, y, z;
+} vectorShort <read=vectorShortRead>;
+
+string vectorShortRead(vectorShort &v) {
+    string s;
+    float divisor = (float)(1 << header.positionDivisorBit);
+    SPrintf(s, "%f %f %f", v.x/divisor, v.y/divisor, v.z/divisor );
+    return s;
+}
+
+typedef struct {
+    float x, y, z;
+} vector <read=vectorRead>;
+
+string vectorRead(vector &v) {
+    string s;
+    SPrintf(s, "%f %f %f", v.x, v.y, v.z);
+    return s;
+}
+
+if (header.positionDivisorBit != -1) {
+    struct {
+        vectorShort pos;
+        int16 bonePaletteIndex;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+} else {
+    struct {
+        vector pos;
+        int16 bonePaletteIndex;
+        uint16 padding;
+    } vertexPos[header.numVertexPos] <bgcolor=cRed>;
+}
+
+
+
+typedef struct {
+    byte x, y, z;
+} normal <read=normalRead>;
+
+string normalRead(normal &v) {
+    string s;
+    float x = v.x/64.0f;
+    float y = v.y/64.0f;
+    float z = v.z/64.0f;
+    float nrm = Sqrt(x*x+y*y+z*z);
+    SPrintf(s, "%f %f %f (%f)", x, y, z, nrm);
+    return s;
+}
+
+if (header.numNormals) {
+    FSeek(header.normalsOffset);
+    normal normals[header.numNormals] <bgcolor=cDkRed>;
+}
+
+typedef struct {
+    int16 u, v;
+} uv <read=uvRead>;
+
+string uvRead(uv &t) {
+    string s;
+    float divisor = (float)(1 << header.uvDivisorBit);
+    float u = t.u/divisor;
+    float v = t.v/divisor;
+    SPrintf(s, "%f %f", u, v);
+    return s;
+}
+
+if (header.UVsOffset && header.numUVs) {
+    FSeek(header.UVsOffset);
+    uv UVs[header.numUVs] <bgcolor=cLtRed>;
+}
+
+typedef struct {
+    uchar r, g, b, a;
+} color <read=colorRead>;
+
+string colorRead(color &v) {
+    string s;
+    SPrintf(s, "#%02X%02X%02X%02X", v.r, v.g, v.b, v.a);
+    return s;
+}
+
+if (header.colorsOffset && header.numColors) {
+    FSeek(header.colorsOffset);
+    color colors[header.numColors];
+}
+
+if (header.bonePaletteOffset) {
+    FSeek(header.bonePaletteOffset);
+    struct {
+        struct {
+            byte index;
+            byte weight;
+        } boneWeight[4];
+    } bonePalettes[header.numBonePalette] <bgcolor=cBlue>;
+}
+if (header.bonePaletteReferenceCountOffset) {
+    FSeek(header.bonePaletteReferenceCountOffset);
+    short bonePaletteReferenceCount[header.numBonePalette] <bgcolor=cDkBlue>;
+}
+if (header.parentOffset) {
+    FSeek(header.parentOffset);
+    byte boneParents[header.numBones] <bgcolor=cLtBlue>;
+}
+if (header.unknownBoneRelatedOffset1) {
+    FSeek(header.unknownBoneRelatedOffset1);
+    byte unknownBoneInfo1[header.numBones] <bgcolor=0xCCCC00>;
+}
+if (header.unknownBoneRelatedOffset2) {
+    FSeek(header.unknownBoneRelatedOffset2);
+    byte unknownBoneInfo2[header.numBones] <bgcolor=0xAAAA00>;
+}
+if (header.boneNameOffset) {
+    FSeek(header.boneNameOffset);
+    byte boneNames[header.numBones] <bgcolor=cPurple>;
+}
+if (header.boneRelativePositionOffset) {
+    FSeek(header.boneRelativePositionOffset);
+    struct {
+        float x, y, z;
+    } boneRelativePositions[header.numBones] <bgcolor=cDkPurple>;
+}
+if (header.bonePositionOffset) {
+    FSeek(header.bonePositionOffset);
+    struct {
+        float x, y, z;
+    } bonePositions[header.numBones] <bgcolor=cLtPurple>;
+}
+
+FSeek(header.materialsOffset);
+struct {
+    byte textureIndex;
+    byte data[15];
+} materials[header.numMaterials] <bgcolor=cLtGray>;
+
+local uint32 meshBaseOffset = 0;
+local uint32 meshOffset = header.meshesOffset;
+local uint32 indexBufferOffset;
+local uint32 i, j;
+
+local int32  maxUnknownIndex = -1;
+local uint32 maxPositionIndex = 0;
+local int32  maxNormalIndex = -1;
+local int32  maxUVIndex = -1;
+local int32  maxColorIndex = -1;
+local uint32 numFaces = 0;
+while(meshOffset) {
+    FSeek(meshBaseOffset + meshOffset);
+    meshBaseOffset = FTell();
+    struct {
+        uint32 nextMeshOffset <format=hex>;
+        ubyte  materialID;
+        ubyte  flags<format=hex, comment="0x1: color info, 0x4: no normals, 0x8: no UVs">;
+        ubyte  fc, fd;
+        short  data[6];
+        uint32 indexBufferSize <format=hex>;
+        uint32 numIndexBuffers;
+        uint32 ub;
+        if (header.vertexFlags & 0x200) {
+            char name[0x3c];
+            uint32 uc;
+        }
+        else
+            char name[0x20];
+        meshOffset = nextMeshOffset;
+        if (indexBufferSize) {
+            if (nextMeshOffset)
+                indexBufferOffset = meshBaseOffset + nextMeshOffset - indexBufferSize;
+            else
+                indexBufferOffset = FileSize() - indexBufferSize;
+        } else {
+            indexBufferOffset = FTell();
+            if (indexBufferOffset % 0x20) {
+                indexBufferOffset += 0x20 - indexBufferOffset % 0x20;
+            }
+        }
+        FSeek(indexBufferOffset);
+        for (j =0; j < (numIndexBuffers ? numIndexBuffers : 1); j++) {
+            struct {
+                ubyte type <format=hex, comment="0x90: triangles, 0x98, 0xa0 ?: triangle strip">;
+                ushort indexCount;
+                if (type == 0x98 || type == 0xa0)
+                    numFaces += indexCount - 2;
+                else if (type == 0x90)
+                    numFaces += indexCount / 3;
+                else {
+                    Warning("Unknown primitive %x!", type);
+                }
+                struct {
+                    if (header.strangeFlags & 0x100) {
+                        byte   unknownIndex;
+                    }
+                    ushort positionIndex;
+                    if (header.numNormals && !(flags & 0x4)) {
+                        ushort normalIndex;
+                    }
+                    if (header.numColors && flags & 0x1) {
+                        ushort colorIndex;
+                    }
+                    if (header.numUVs && !(flags &0x8)) {
+                        ushort UVIndex;
+                    }
+                } indexes[indexCount]<optimize=true>;
+            } indexBuffer;
+            for (i = 0; i < indexBuffer.indexCount; i++) {
+                if ((header.strangeFlags & 0x100) && indexBuffer.indexes[i].unknownIndex > maxUnknownIndex)
+                    maxUnknownIndex = indexBuffer.indexes[i].unknownIndex;
+                if (indexBuffer.indexes[i].positionIndex > maxPositionIndex)
+                    maxPositionIndex = indexBuffer.indexes[i].positionIndex;
+                if (header.numNormals && !(flags & 0x4) &&indexBuffer.indexes[i].normalIndex > maxNormalIndex)
+                    maxNormalIndex = indexBuffer.indexes[i].normalIndex;
+                if (header.numColors && flags & 0x1 && indexBuffer.indexes[i].colorIndex > maxColorIndex)
+                    maxColorIndex = indexBuffer.indexes[i].colorIndex;
+                if (header.numUVs && !(flags &0x8) && indexBuffer.indexes[i].UVIndex > maxUVIndex)
+                    maxUVIndex = indexBuffer.indexes[i].UVIndex;
+            }
+        }
+
+    } mesh <bgcolor=cAqua>;
+    
+}
+
+if (maxPositionIndex != header.numVertexPos - 1 ||
+    (header.numNormals && maxNormalIndex != header.numNormals - 1) ||
+    (header.numUVs && maxUVIndex != header.numUVs - 1) ||
+    (header.numColors && maxColorIndex != header.numColors - 1)) {
+    Warning("Invalid index format!!!");
+}

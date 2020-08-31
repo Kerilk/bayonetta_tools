@@ -1,0 +1,5 @@
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("SCR\0", id, 4) == 0, "Wrong file type");
+FSeek(0);
+#include "MadWorld scr base.bt"
