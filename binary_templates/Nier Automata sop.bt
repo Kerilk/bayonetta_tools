@@ -13,22 +13,22 @@ for (i = 0; i < header.recordCount; i++) {
     FSeek(header.recordOffsets[i]);
     struct {
         struct {
-            uint32  hash <format=hex>;
+            uint32  id <format=hex>;
             ubyte   count1;
             ubyte   count2;
             ubyte   count3;
             ubyte   count4;
          } header;
         struct {
-            uint32  hash <format=hex>;
+            uint32  id <format=hex>;
             uint32  boneName;
         } entries1[header.count1];
         struct {
-            uint32  hash <format=hex>;
+            uint32  id <format=hex>;
             uint32  u;
         } entries2[header.count2];
         struct {
-            uint32  hash <format=hex>;
+            uint32  id <format=hex>;
             uint32  u;
             float   f;
         } entries3[header.count3];
