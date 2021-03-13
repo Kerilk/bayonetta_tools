@@ -50,9 +50,7 @@ module Bayonetta
       node = nodes[index]
       name, value = datas[node.datum_index]
       n = Nokogiri::XML::Node.new(name, doc)
-      if value
-        n << Nokogiri::XML::Text.new(value, doc)
-      end
+      n.content = value if value
       node.attribute_count.times { |i|
         name, value = datas[node.datum_index + i + 1]
         n[name] = value
@@ -71,18 +69,22 @@ module Bayonetta
     end
 
     def process_node(node, index, next_node_index)
-      n = Node.new
-      text = node.children.select { |c| c.is_a?(Nokogiri::XML::Text) }.first
-      children = node.children.reject { |c| c.is_a?(Nokogiri::XML::Text) }
+      name = node.name
+      value = node.content
+      value = value.strip if value
+      value = nil if value == ''
       attributes = node.attributes
+      children = node.children.reject { |c| c.is_a?(Nokogiri::XML::Text) }
+
+      n = Node.new
       n.child_count = children.size
       n.first_child_index = next_node_index
       n.attribute_count = attributes.size
       n.datum_index = datums.size
+
       nodes[index] = n
-      value = text && text.content && text.content.strip != "" ? text.content : nil
-      datums.push [node.name, value]
-      data.add node.name
+      datums.push [name, value]
+      data.add name
       data.add value if value
       attributes.each { |k, v|
         datums.push [k, v.value]
