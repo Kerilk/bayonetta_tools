@@ -1,115 +1,175 @@
 require 'nokogiri'
+require 'set'
 
 module Bayonetta
+#=begin
+  class BXMFile < LibBin::DataConverter
 
-  class BXMFile
-    class Node
-      attr_reader :child_number
-      attr_reader :first_child_index
-      attr_reader :attribute_number
-      attr_reader :data_index
-      def initialize(child_number, first_child_index, attribute_number, data_index)
-        @child_number = child_number
-        @first_child_index = first_child_index
-        @attribute_number = attribute_number
-        @data_index = data_index
+    class Datum < LibBin::DataConverter
+      uint16 :name_offset
+      int16 :value_offset
+    end
+
+    class Node < LibBin::DataConverter
+      uint16 :child_count
+      uint16 :first_child_index
+      uint16 :attribute_count
+      uint16 :datum_index
+    end
+
+    class Header < LibBin::DataConverter
+      string :id, 4
+      uint32 :unknown
+      uint16 :node_count
+      uint16 :datum_count
+      uint32 :data_size
+    end
+
+    register_field :header, Header
+    register_field :nodes, Node, count: 'header\node_count'
+    register_field :datums, Datum, count: 'header\datum_count'
+    string :data, 'header\data_size'
+
+    def get_data_strings
+      io = StringIO::new(data, "rb")
+      pos = 0
+      data_strings = {-1 => nil}
+      while (l = io.gets("\0"))
+        data_strings[pos] = l.unpack("Z*").first
+        pos = io.tell
       end
+      data_strings
     end
 
-    class DataItem
-      attr_reader :name, :value
-      def initialize(name, value = nil)
-        @name = name
-        @value = value
+    def get_datas
+      data_strings = get_data_strings
+      datums.collect { |d| [data_strings[d.name_offset], data_strings[d.value_offset]] }
+    end
+
+    def build_xml_tree(doc, index, datas)
+      node = nodes[index]
+      name, value = datas[node.datum_index]
+      n = Nokogiri::XML::Node.new(name, doc)
+      if value
+        n << Nokogiri::XML::Text.new(value, doc)
       end
-    end
-
-    private
-
-    def read_nodes(f, base_offset)
-      f.seek(base_offset)
-      f.read(@node_number*8).unpack("S>*").each_slice(4).collect{ |param|
-        Node::new(*param)
+      node.attribute_count.times { |i|
+        name, value = datas[node.datum_index + i + 1]
+        n[name] = value
       }
-    end
-
-    def read_data_offsets(f, base_offset)
-      f.seek(base_offset)
-      f.read(@data_number*4).unpack("s>*").each_slice(2).to_a
-    end
-
-    def read_data_blob(f, base_offset)
-      @data_offsets.collect { |name_offset, value_offset|
-        f.seek(base_offset + name_offset)
-        name = f.readline("\x00").chomp("\x00")
-        if value_offset != -1
-          f.seek(base_offset + value_offset)
-          value = f.readline("\x00").chomp("\x00")
-        else
-          value = nil
-        end
-        DataItem::new(name, value)
-      }
-    end
-
-    def build_xml_tree(doc, index = 0)
-      d = @data[@nodes[index].data_index]
-      n = Nokogiri::XML::Node.new d.name, doc
-      if d.value
-        n.content = d.value
-      end
-      @nodes[index].attribute_number.times { |i|
-        d = @data[@nodes[index].data_index + 1 + i]
-        n[d.name] = d.value
-      }
-      @nodes[index].child_number.times { |i|
-        n << build_xml_tree(doc, @nodes[index].first_child_index + i)
+      node.child_count.times { |i|
+        n << build_xml_tree(doc, node.first_child_index + i, datas)
       }
       n
     end
 
-    public
-
-    attr_reader :id
-    attr_reader :u
-    attr_reader :node_number
-    attr_reader :data_number
-    attr_reader :data_size
-
-    attr_reader :nodes
-    attr_reader :data_offsets
-    attr_reader :data
-
-    def initialize(f, big=true)
-      @id = f.read(4)
-      raise "Invalid file type #{id}!" unless @id == "XML\x00" || @id == "BXM\x00"
-      @u = f.read(4).unpack("L>").first
-      @node_number = f.read(2).unpack("S>").first
-      @data_number = f.read(2).unpack("S>").first
-      @data_size = f.read(4).unpack("L>").first
-
-      @nodes = read_nodes(f, 0x10)
-
-      @data_offsets = read_data_offsets(f, 0x10 + @node_number * 8)
-
-      @data = read_data_blob(f, 0x10 + @node_number * 8 + @data_number * 4)
-
-    end
-
     def to_xml
+      datas = get_datas
       doc = Nokogiri::XML::Document::new
-      doc << build_xml_tree(doc)
+      doc << build_xml_tree(doc, 0, datas) if header.node_count > 0
       doc
     end
 
-    def self.load(input_name, big = true)
+    def process_node(node, index, next_node_index)
+      n = Node.new
+      text = node.children.select { |c| c.is_a?(Nokogiri::XML::Text) }.first
+      children = node.children.reject { |c| c.is_a?(Nokogiri::XML::Text) }
+      attributes = node.attributes
+      n.child_count = children.size
+      n.first_child_index = next_node_index
+      n.attribute_count = attributes.size
+      n.datum_index = datums.size
+      nodes[index] = n
+      value = text && text.content && text.content.strip != "" ? text.content : nil
+      datums.push [node.name, value]
+      data.add node.name
+      data.add value if value
+      attributes.each { |k, v|
+        datums.push [k, v.value]
+        data.add k
+        data.add v.value
+      }
+      next_node_index += children.size
+      children.each_with_index { |c, i|
+        next_node_index = process_node(c, n.first_child_index + i, next_node_index)
+      }
+      next_node_index
+    end
+
+    def from_xml(xml, tag)
+      @header = Header.new
+      @nodes = []
+      @datums = []
+      @data = Set.new
+      header.id = tag
+      header.unknown = 0
+      process_node(xml.children.first, 0, 1)
+      header.node_count = nodes.length
+      header.datum_count = datums.length
+      io = StringIO::new("", "wb")
+      data_map = data.collect { |d|
+        pos = io.tell
+        io.write(d, "\0")
+        [d, pos]
+      }.to_h
+      data_map[nil] = -1
+      datums.collect! { |n, v|
+        d = Datum.new
+        d.name_offset = data_map[n]
+        d.value_offset = data_map[v]
+        d
+      }
+      @data = io.string
+      header.data_size = data.bytesize
+      self
+    end
+
+    def self.from_xml(xml, tag="BXM\0")
+      bxm = self.new
+      bxm.from_xml(xml, tag)
+    end
+
+    def self.is_big?(f)
+      true
+    end
+
+    def self.load(input_name)
       if input_name.respond_to?(:read) && input_name.respond_to?(:seek)
         input = input_name
       else
-        input = File.open(input_name, "rb")
+        File.open(input_name, "rb") { |f|
+          input = StringIO::new(f.read, "rb")
+        }
       end
-      c = self::new(input)
-      c
+      tag = input.read(4).unpack("a4").first
+      raise "invalid file type #{tag}!" if tag != "XML\0" && tag != "BXM\0"
+      input.rewind
+      bxm = self.new
+      big = input_big = is_big?(input)
+      bxm.instance_variable_set(:@__was_big, big)
+      bxm.__load(input, big)
+      input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
+      bxm
+    end
+
+    def dump(output_name, output_big = true)
+      if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        output = output_name
+      else
+        output = StringIO::new("", "wb")
+      end
+
+      __set_dump_type(output, output_big, nil, nil)
+      __dump_fields
+      __unset_dump_type
+
+      unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
+        File.open(output_name, "wb") { |f|
+          f.write output.string
+        }
+        output.close
+      end
+      self
     end
 
   end
