@@ -12,7 +12,7 @@ ARGV.each { |filename|
 
   raise "Invalid file (#{name})!" unless ext_name == ".dat" || ext_name == ".evn" || ext_name == ".eff" || ext_name == ".dtt"
 
-
+  next unless File::size?(filename)
   f = File::open(filename, "rb")
 
   Dir.chdir(directory)

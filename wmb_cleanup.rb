@@ -59,6 +59,10 @@ OptionParser.new do |opts|
     $options[:vertexes] = vertexes
   end
 
+  opts.on("--[no-]remove_duplicate_vertexes", "Ensure no vertex is used more than once") do |rdv|
+    $options[:remove_duplicate_vertexes] = rdv
+  end
+
   opts.on("--[no-]normalize-vertex-usage", "Ensure no vertex is used in more than 1 batch") do |nvu|
     $options[:normalize_vertex_usage] = nvu
   end
@@ -207,6 +211,7 @@ wmb.add_ancestors_bone_refs if $options[:submodel_bone_refs]
 wmb.add_previous_bone_refs if $options[:previous_bone_refs]
 wmb.cleanup_bones if $options[:bones]
 wmb.recompute_relative_positions if $options[:recompute_relative_positions]
+wmb.remove_duplicate_vertexes if $options[:remove_duplicate_vertexes]
 wmb.normalize_vertex_usage if $options[:normalize_vertex_usage]
 wmb.remove_triangle_strips if $options[:strips]
 wmb.revert_triangles($options[:revert]) if $options[:revert]

@@ -125,6 +125,33 @@ if( header.offsetVertexGroups != 0 ) {
                 normal_t    normal;
             } vertexesExData[numVertexes];
         }
+        else if ( vertexSize == 20 && vertexExDataSize == 16 && header.vertexFormat == 0x137) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+                ubyteList   boneIndex;
+                ubyteList   boneWeight;
+            } vertexesExData[numVertexes];
+        } else if ( vertexSize == 20 && vertexExDataSize == 8 && header.vertexFormat == 0x107) {
+            FSeek(vertexOffset);
+            struct {
+                vector      position;
+                mapping_t   mapping;
+                tangents_t  tangents;
+            } vertexes[numVertexes];
+            FSeek(vertexExDataOffset);
+            struct {
+                normal_t    normal;
+            } vertexesExData[numVertexes];
+        } else {
+            Warning("Unknown vertex format: sz: %d, exSz: %d fmt: %x", vertexSize, vertexExDataSize, header.vertexFormat);
+        }
         FSeek(indexBufferOffset);
         uint16 indexes[numIndexes];
         FSeek(pos);

@@ -116,6 +116,10 @@ module Bayonetta
       v & 0xff
     end
 
+    def to_a
+      [r, g,  b, a]
+    end
+
   end
 
   module VectorAccessor
@@ -214,16 +218,28 @@ module Bayonetta
       self
     end
 
+    def to_a
+      [x, y, z, s]
+    end
+
   end
 
   class Mapping < LibBin::DataConverter
     register_field :u, :half
     register_field :v, :half
+
+    def to_a
+      [u, v]
+    end
   end
 
   class FloatMapping < LibBin::DataConverter
     register_field :u, :F
     register_field :v, :F
+
+    def to_a
+      [u, v]
+    end
   end
 
   class FloatNormal < LibBin::DataConverter
@@ -231,6 +247,10 @@ module Bayonetta
     register_field :x, :F
     register_field :y, :F
     register_field :z, :F
+
+    def to_a
+      [x, y, z]
+    end
   end
 
   class HalfNormal < LibBin::DataConverter
@@ -239,6 +259,10 @@ module Bayonetta
     register_field :y, :half
     register_field :z, :half
     register_field :dummy, :half
+
+    def to_a
+      [x, y, z]
+    end
   end
 
   class Normal < LibBin::DataConverter
@@ -468,6 +492,10 @@ module Bayonetta
       dump_normal
     end
 
+
+    def to_a
+      [x, y, z]
+    end
   end
 
   class Position < LibBin::DataConverter
@@ -516,6 +544,9 @@ module Bayonetta
       "<#{@x}, #{@y}, #{@z}>"
     end
 
+    def to_a
+      [x, y, z]
+    end
   end
 
   class BoneInfos < LibBin::DataConverter
@@ -565,6 +596,9 @@ module Bayonetta
       self
     end
 
+    def to_a
+      get_indexes_and_weights
+    end
   end
 
   class BoneIndexTranslateTable < LibBin::DataConverter
@@ -2108,6 +2142,29 @@ module Bayonetta
       }
       @header.num_vertexes = @vertexes.size
       self
+    end
+
+    def remove_duplicate_vertexes
+      vertex_indices = @header.num_vertexes.times
+      equivalent_vertex_indices = vertex_indices.group_by { |indx|
+        data = get_vertex_fields.collect { |f|
+          get_vertex_field(f, indx).to_a
+        }
+      }
+      indx_map = {}
+      equivalent_vertex_indices.each { |k, group|
+        group.each { |indx|
+          indx_map[indx] = group.first
+        }
+      }
+      @meshes.each { |m|
+        m.batches.each { |b|
+          b.indices = b.vertex_indices.collect { |i|
+            indx_map[i]
+          }
+          b.recompute_from_absolute_indices
+        }
+      }
     end
 
     def copy_vertex_properties(vertex_hash, **options)
