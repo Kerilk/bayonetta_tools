@@ -74,7 +74,7 @@ module Bayonetta
       value = value.strip if value
       value = nil if value == ''
       attributes = node.attributes
-      children = node.children.reject { |c| c.is_a?(Nokogiri::XML::Text) }
+      children = node.elements
 
       n = Node.new
       n.child_count = children.size
