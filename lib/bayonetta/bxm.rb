@@ -70,27 +70,28 @@ module Bayonetta
 
     def process_node(node, index, next_node_index)
       name = node.name
-      value = node.content
+      children = node.elements
+      value = node.content if children.empty?
       value = value.strip if value
       value = nil if value == ''
       attributes = node.attributes
-      children = node.elements
 
       n = Node.new
       n.child_count = children.size
       n.first_child_index = next_node_index
       n.attribute_count = attributes.size
-      n.datum_index = datums.size
-
       nodes[index] = n
-      datums.push [name, value]
-      data.add name
-      data.add value if value
-      attributes.each { |k, v|
-        datums.push [k, v.value]
-        data.add k
-        data.add v.value
-      }
+
+      node_datums = [[name, value]]
+      attributes.each { |k, v| node_datums.push [k, v.value] }
+      datum_index = datums.each_cons(node_datums.size).find_index { |sub| sub == node_datums }
+      if datum_index
+        n.datum_index = datum_index
+      else
+        n.datum_index = datums.size
+        datums.push *node_datums
+        node_datums.flatten.each { |v| data.add v if v }
+      end
       next_node_index += children.size
       children.each_with_index { |c, i|
         next_node_index = process_node(c, n.first_child_index + i, next_node_index)
