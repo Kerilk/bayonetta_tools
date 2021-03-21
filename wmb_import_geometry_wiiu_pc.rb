@@ -320,7 +320,25 @@ class BayoMat
   end
 end
 
+@material_database = YAML::load_file("./lib/bayonetta/material_database.yaml")
+@mat_properties = @material_database.select { |k, h|
+  h[:layout]
+}.collect { |k, h|
+  tex_num = h[:layout].count { |k, v| v.match("sampler") }
+  lightmap_index = h[:layout].find_index { |k, v| k == "lightmap" && v.match("sampler") }
+  lightmap_index = -1 unless lightmap_index
+  normalmap_index = h[:layout].find_index { |k, v| k == "reliefmap" && v.match("sampler") }
+  normalmap_index = -1 unless normalmap_index
+  second_diffuse_index = h[:layout].find_index { |k, v| k == "Color_2" && v.match("sampler") }
+  second_diffuse_index = -1 unless second_diffuse_index
+  reflection_index = h[:layout].find_index { |k, v| k == "envmap" && v.match("sampler") }
+  reflection_index = -1 unless reflection_index
+  mat_info = BayoMat.new(k, h[:size], tex_num, lightmap_index, normalmap_index, second_diffuse_index, reflection_index)
+  [k, mat_info]
+}.to_h
+
 def bayo_mat_properties
+  return @mat_properties
   {
     0x31 => BayoMat::new(0x31, 0xC0, 3,  1, -1, -1, -1),
     0x32 => BayoMat::new(0x32, 0xE4, 4,  1, -1, -1,  3),
