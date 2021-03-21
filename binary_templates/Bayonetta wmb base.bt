@@ -2491,7 +2491,9 @@ struct {
     uint32  offsetUnknownJ;
     uint32  offsetBoneSymmetries;
     uint32  offsetBoneFlags;
-    int32   exMatInfo[4];
+    uint32  exMatSahderNamesOffset;
+    uint32  exMatSamplersOffset;
+    int32   exMatInfo[2];
 } header;
 
 typedef struct {
@@ -2737,15 +2739,15 @@ if ( header.offsetBoneFlags ) {
 }
 
 
-if ( header.exMatInfo[0] ) {
-    FSeek( header.exMatInfo[0] );
+if ( header.exMatSahderNamesOffset ) {
+    FSeek( header.exMatSahderNamesOffset );
     struct {
         char shaderName[16];
     } shaderNames[header.numMaterials];
 }
 
-if ( header.exMatInfo[1] ) {
-    FSeek( header.exMatInfo[1] );
+if ( header.exMatSamplersOffset ) {
+    FSeek( header.exMatSamplersOffset );
     int32 numTexIDs;
     struct { 
         uint32  TexID<format=hex>;
@@ -3221,6 +3223,18 @@ for ( i = 0; i < header.numMaterials; i++ ) {
 FSeek( header.offsetMeshesOffsets );
 uint32 meshesOffsets[header.numMeshes];
 
+typedef struct {
+    uint16 x, y, z;
+} vectorShort <read=vectorShortRead>;
+
+string vectorShortRead(vectorShort &v) {
+    string s;
+    int delta = 0x8000;
+    int divisor = 0x4000;
+    SPrintf(s, "%f %f %f", (float)(v.x - delta)/divisor, (float)(v.y - delta)/divisor, (float)(v.z - delta)/divisor );
+    return s;
+}
+
 local int j;
 typedef struct {
     struct {
@@ -3253,7 +3267,83 @@ typedef struct {
         } unknown;
     }
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets + batchOffsets[j] + batchHeader.offsetIndices);
-    uint16 indices[batchHeader.numIndices];
+    if (header.numVertexes) {
+        uint16 indices[batchHeader.numIndices];
+    } else {
+        struct {
+            local uint vtxStart = FTell();
+            short data1[4];
+            ushort vertexCount;
+            ushort indexCount;
+            int data1bis;
+            uint offsetIndices <format=hex>; //indices seem to be compressed, can use Noesis_DecompressEdgeIndices to decompress?
+            ushort sizeIndices <format=hex>;
+            ushort pad1;
+            uint offset2 <format=hex>;
+            uint offset3 <format=hex>;
+            ushort size2 <format=hex>;
+            ushort pad2;
+            uint size3 <format=hex>;
+            int unkn1 <format=hex>;
+            uint offsetMappingColor <format=hex>;
+            uint sizeMappingColor <format=hex>;
+            int data3[3] <format=hex>;
+            uint offsetBoneWeights <format=hex>;
+            int data4[5] <format=hex>;
+            uint sizes[2] <format=hex>;
+            uint offsets[2] <format=hex>;
+            uint offsets2[4] <format=hex>;
+            ushort sizes2[4] <format=hex>;
+            local uint pos = FTell();
+            if (offsetIndices) {
+                FSeek(vtxStart + offsetIndices);
+                ubyte compressedIndices[sizeIndices] <bgcolor=cLtBlue>;
+            }
+            if (offset2) {
+                FSeek(vtxStart + offset2);
+                vectorShort vectors2[vertexCount] <bgcolor=cLtRed>;
+            }
+            if (offset3) {
+                FSeek(vtxStart + offset3);
+                vectorShort vectors3[vertexCount] <bgcolor=cLtGreen>;
+            }
+            if (offsetMappingColor) {
+                FSeek(vtxStart + offsetMappingColor);
+                struct {
+                    mapping_t   mapping;
+                    color_t     color;
+                } mappingColor[vertexCount] <bgcolor=cBlue>;
+            }
+            if (offsetBoneWeights) {
+                FSeek(vtxStart + offsetBoneWeights);
+                struct {
+                    struct {
+                        ubyte boneWeight;
+                        ubyte boneIndex;
+                    } boneIndexWeights[4];
+                } boneWeights[vertexCount] <bgcolor=cGreen>;
+            }
+            local int k;
+            for (k=0; k <2; k++) {
+                FSeek(vtxStart + offsets[k]);
+                if (sizes[k]) {
+                    struct {
+                        ubyte byteInfos[sizes[k]] <bgcolor=cPurple>;
+                    } infos;
+                }
+            }
+            for (k=0; k <4; k++) {
+                FSeek(vtxStart + offsets2[k]);
+                if (sizes2[k]) {
+                    struct {
+                        ubyte byteInfos[sizes2[k]] <bgcolor=cRed>;
+                    } infos2;
+                }
+            }
+            
+            FSeek(pos);
+        } vertexDesc[batchHeader.numIndices] <optimize=false>;
+    }
 } batch;
 
 typedef    struct {
@@ -3261,17 +3351,21 @@ typedef    struct {
         int16   id;
         int16   numBatch;
         int16   unknownA1;
-        int16   boundingBoxInfos <comment="0x0 center + height, 0x1: + corner1 + corner2 + 2 infos">;
+        int16   boundingBoxInfos <comment="0x0 center + height, 0x1: center + height + corner1 + corner2 + 2 infos, 0x2: center + height + corner1 + corner2">;
         uint32  offsetBatchOffsets;
         int32   flags <format=hex,comment="0x80000000: name present">;
         int32   unknownC[4];
         char    name[32]<comment="'UV_' substring is matched and is used (see loadMesh function)"> ;
         vector  center;
         float   height;
-        vector  corner1;
-        vector  corner2;
-        float   unknownD;
-        float   unknownE;
+        if (boundingBoxInfos > 0) {
+            vector  corner1;
+            vector  corner2;
+        }
+        if (boundingBoxInfos == 1) {
+            float   unknownD;
+            float   unknownE;
+        }
     } meshHeader;
     FSeek( header.offsetMeshes + meshesOffsets[i] + meshHeader.offsetBatchOffsets );
     uint32 batchOffsets[meshHeader.numBatch];
