@@ -320,7 +320,7 @@ class BayoMat
   end
 end
 
-@material_database = YAML::load_file("./lib/bayonetta/material_database.yaml")
+@material_database = YAML::load_file(File.join(__dir__,"lib/bayonetta/material_database.yaml"))
 @mat_properties = @material_database.select { |k, h|
   h[:layout]
 }.collect { |k, h|
