@@ -1,10 +1,14 @@
 #!ruby
 require 'assimp-ffi'
+require 'rbconfig'
 require 'optparse'
+require 'pathname'
 require 'set'
 require_relative 'lib/bayonetta.rb'
 require 'yaml'
 include Bayonetta
+
+$is_win = (RbConfig::CONFIG['host_os'] =~ /mswin/)
 
 $options = {}
 
@@ -642,15 +646,39 @@ def merge_materials(wmb, scene, tex)
   new_tex_list
 end
 
+def convert_windows_path(path)
+  # we are on linux but were given a windows path, hypothesis: linux on windows
+  if path.include?("\\")
+    res = ""
+    copy = path.dup
+    if path.start_with?("\\\\")
+      res << "//"
+      copy = copy[2..-1]
+    elsif path.start_with?("\\")
+      res << "/"
+      copy = copy[2..-1]
+    elsif m = path.match(/([A-Za-z]):\\/) #linux on windows
+      res << "/mnt/#{m[1].downcase}/"
+      copy = copy[3..-1]
+    end
+    res << copy.gsub("\\", "/")
+  else
+    res = path
+  end
+  res
+end
+
 def add_textures(tex, path, new_tex_list)
   new_tex_list.each { |tex_path|
     extension = File.extname(tex_path)
+    tex_path = convert_windows_path(tex_path) unless $is_win
+    old_tex_path = Pathname.new(tex_path).absolute? ? tex_path : File.join(path, tex_path)
     if extension.downcase != ".dds"
-      old_tex_path = File.join(path, tex_path)
-      tex_path = File.join(path, File.join(File.dirname(tex_path), File.basename(tex_path,extension)))+".dds"
+      tex_path = Pathname.new(tex_path).absolute? ? File.join(File.dirname(tex_path), File.basename(tex_path,extension)) + ".dds" :
+                                      File.join(path, File.join(File.dirname(tex_path), File.basename(tex_path,extension)))+ ".dds"
       `convert -define dds:compression=dxt5 "#{old_tex_path}" "#{tex_path}"`
     else
-      tex_path = File.join(path, tex_path)
+      tex_path = old_tex_path
     end
     tex.push File::new(tex_path, "rb")
   }
