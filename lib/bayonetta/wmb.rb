@@ -2345,6 +2345,7 @@ module Bayonetta
         angle = Math.acos(v1.dot(v2) / (v1.length * v2.length));
         tangents[i] += s*angle
       }
+      warn "Found #{inconsistentuvs} inconsistent UVs" if inconsistentuvs > 0
       tangents.each { |i, t|
         t.normalize!
         @vertexes[i].tangents.set(t.x, t.y, t.z, -t.w)
