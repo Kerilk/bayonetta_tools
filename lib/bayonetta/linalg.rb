@@ -161,12 +161,32 @@ module Bayonetta
         @data[3] = v
       end
 
+      def -(other)
+        Vector::new(x-other.x, y-other.y, z-other.z, w)
+      end
+
+      def +(other)
+        Vector::new(x+other.x, y+other.y, z+other.z, w)
+      end
+
+      def *(scalar)
+        Vector::new(x*scalar, y*scalar, z*scalar, w)
+      end
+
+      def dot(other)
+        x*other.x + y*other.y + z*other.z
+      end
+
       def -@
         self.class::new(-x, -y, -z, w)
       end
 
+      def length
+        Math.sqrt(x*x + y*y + z*z)
+      end
+
       def normalize!
-        l = Math::sqrt(x*x + y*y + z*z)
+        l = length
         if l != 0.0
           @data[0] /= l
           @data[1] /= l

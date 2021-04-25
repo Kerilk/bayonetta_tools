@@ -394,6 +394,7 @@ def create_new_meshes(wmb, mesh_mapping)
 end
 
 def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
+  recompute_tangents = false
   bone_refs = {}
   bone_refs = batch.bones.sort { |b1, b2|
       b1.name <=> b2.name
@@ -453,7 +454,8 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
           t.set(o_t.x, o_t.y, o_t.z, s)
         end
       else
-        warn "Invalid mapping(tangents not computable) for batch: #{batch.name}!"
+        warn "Invalid mapping for batch: #{batch.name}, tangents will be recomputed!" unless recompute_tangents
+        recompute_tangents = true
         t.set(0, 0, 0, 1)
       end
       wmb.set_vertex_field(field, target_index, t)
@@ -536,7 +538,7 @@ def set_fields(wmb, bone_mapping, batch, new_indices, transform_matrix)
     raise "Unknow field in wmb file #{field.inspect}!"
   end
   end
-  bone_refs
+  [bone_refs, recompute_tangents]
 end
 
 def merge_geometry(wmb, scene, bone_mapping)
@@ -579,7 +581,7 @@ def merge_geometry(wmb, scene, bone_mapping)
 
       wmb.header.num_vertexes += num_vertices
 
-      bone_refs = set_fields(wmb, bone_mapping, batch, new_indices, matrix)
+      bone_refs, recompute_tangents = set_fields(wmb, bone_mapping, batch, new_indices, matrix)
 
       b = WMBFile::Batch::new
       b.header.material_id = wmb.header.num_materials + batch.material_index
@@ -595,6 +597,9 @@ def merge_geometry(wmb, scene, bone_mapping)
       b.num_bone_ref = b.bone_refs.length
       new_meshes[i].batches.push b
       new_meshes[i].header.num_batch += 1
+      if recompute_tangents
+        wmb.recompute_batch_tangents(b)
+      end
     }
   }
   wmb.meshes += new_meshes
@@ -703,7 +708,7 @@ end
 
 property_store = Assimp::PropertyStore::new
 property_store.import_fbx_preserve_pivots = Assimp::FALSE
-scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :CalcTangentSpace, :FlipWindingOrder, :Triangulate, :FlipUVs], props: property_store)
+scene = Assimp::import_file(source, flags: [:JoinIdenticalVertices, :FlipWindingOrder, :Triangulate, :FlipUVs], props: property_store)
 
 
 common_mapping, bone_mapping = merge_bones(wmb, scene)

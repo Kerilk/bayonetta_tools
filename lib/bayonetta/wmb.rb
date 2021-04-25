@@ -168,7 +168,7 @@ module Bayonetta
     end
 
     def y
-(((@data >> 8) & 0xff) - 127.0)/127.0
+      (((@data >> 8) & 0xff) - 127.0)/127.0
     end
 
     def z
@@ -2310,6 +2310,53 @@ module Bayonetta
       vertex_indices.uniq!
       vertex_indices.each { |i|
         @vertexes[i].tangents.data = [@vertexes[i].tangents.data].pack("L<").unpack("L>").first
+      }
+    end
+
+    def recompute_batch_tangents(batch)
+      vertex_indices = batch.vertex_indices.uniq
+      tangents = vertex_indices.collect { |i| [i, Linalg::Vector::new(0, 0, 0, 0)] }.to_h
+      indices = batch.triangles.flatten
+      inconsistentuvs = 0
+      # https://stackoverflow.com/a/66918075
+      indices.each_with_index { |i, l|
+        j = indices[(l + 1) % 3 + (l / 3) * 3]
+        k = indices[(l + 2) % 3 + (l / 3) * 3]
+        n = Linalg::Vector::new(*@vertexes[i].normal.to_a, 0.0)
+        pi = Linalg::Vector::new(*@vertexes[i].position.to_a, 0.0)
+        mi = Linalg::Vector::new(*@vertexes[i].mapping.to_a, 0.0, 0.0)
+        pj = Linalg::Vector::new(*@vertexes[j].position.to_a, 0.0)
+        mj = Linalg::Vector::new(*@vertexes[j].mapping.to_a, 0.0, 0.0)
+        pk = Linalg::Vector::new(*@vertexes[k].position.to_a, 0.0)
+        mk = Linalg::Vector::new(*@vertexes[k].mapping.to_a, 0.0, 0.0)
+        v1 = pj - pi
+        v2 = pk - pi
+        t1 = mj - mi
+        t2 = mk - mi
+        uv2xArea = t1.x * t2.y - t1.y * t2.x
+        next if (uv2xArea.abs < 9.5367431640625e-07)
+        flip = uv2xArea > 0.0 ? 1.0 : -1.0
+        inconsistentuvs += 1 if (tangents[i].w != 0 && tangents[i].w != flip)
+        tangents[i].w = flip
+        c = v1.x * n.x + v1.y * n.y + v1.z * n.z
+        v1 -= n * (v1.dot(n));
+        v2 -= n * (v2.dot(n));
+        s = ((v1 * t2.y - v2 * t1.y) * flip).normalize
+        angle = Math.acos(v1.dot(v2) / (v1.length * v2.length));
+        tangents[i] += s*angle
+      }
+      tangents.each { |i, t|
+        t.normalize!
+        @vertexes[i].tangents.set(t.x, t.y, t.z, -t.w)
+      }
+    end
+
+    def recompute_tangents(mesh_list)
+      raise "Vertex don't have tangents information!" unless @vertexes[0].respond_to?(:tangents)
+      mesh_list.each { |i|
+        @meshes[i].batches.each { |b|
+          recompute_batch_tangents(b)
+        }
       }
     end
 
