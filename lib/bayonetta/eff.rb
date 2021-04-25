@@ -142,7 +142,7 @@ module Bayonetta
 
       def to_stringio
         total_size = compute_layout
-        str = StringIO::new("\x00"*total_size, "w+b")
+        str = StringIO::new("\x00"*total_size, "wb")
         str.rewind
 
         case @name
@@ -274,7 +274,7 @@ module Bayonetta
 
     def to_stringio
       total_size = compute_layout
-      str = StringIO::new("\x00"*total_size, "w+b")
+      str = StringIO::new("\x00"*total_size, "wb")
       str.rewind
 
       uint = get_uint
