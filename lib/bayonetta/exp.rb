@@ -351,30 +351,30 @@ module Bayonetta
 
     class Entry < LibBin::DataConverter
 
-      def self.convert(input, output, input_big, output_big, parent, index)
+      def self.convert(input, output, input_big, output_big, parent, index, length = nil)
         entry_type = parent.records[index].entry_type
         entry = nil
         case entry_type
         when 1
-          entry = Entry1::convert(input, output, input_big, output_big, parent, index)
+          entry = Entry1::convert(input, output, input_big, output_big, parent, index, length)
         when 2
-          entry = Entry2::convert(input, output, input_big, output_big, parent, index)
+          entry = Entry2::convert(input, output, input_big, output_big, parent, index, length)
         when 3
-          entry = Entry3::convert(input, output, input_big, output_big, parent, index)
+          entry = Entry3::convert(input, output, input_big, output_big, parent, index, length)
         end
         entry
       end
 
-      def self.load(input, input_big, parent, index)
+      def self.load(input, input_big, parent, index, length = nil)
         entry_type = parent.records[index].entry_type
         entry = nil
         case entry_type
         when 1
-          entry = Entry1::load(input, input_big, parent, index)
+          entry = Entry1::load(input, input_big, parent, index, length)
         when 2
-          entry = Entry2::load(input, input_big, parent, index)
+          entry = Entry2::load(input, input_big, parent, index, length)
         when 3
-          entry = Entry3::load(input, input_big, parent, index)
+          entry = Entry3::load(input, input_big, parent, index, length)
         end
         entry
       end
