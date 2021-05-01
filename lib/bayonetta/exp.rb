@@ -433,12 +433,12 @@ module Bayonetta
 
     class Interpolation < LibBin::DataConverter
 
-      def self.convert(input, output, input_big, output_big, parent, index)
+      def self.convert(input, output, input_big, output_big, parent, index, length = nil)
         interpolation_type = parent.records[index].interpolation_type
         interpolation = nil
         case interpolation_type
         when 4
-          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index)
+          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index, length)
         when -1
           interpolation = nil
         else
@@ -447,12 +447,12 @@ module Bayonetta
         interpolation
       end
 
-      def self.load(input, input_big, parent, index)
+      def self.load(input, input_big, parent, index, length = nil)
         interpolation_type = parent.records[index].interpolation_type
         interpolation = nil
         case interpolation_type
         when 4
-          interpolation = Interpolation4::load(input, input_big, parent, index)
+          interpolation = Interpolation4::load(input, input_big, parent, index, length)
         when -1
           interpolation = nil
         else
