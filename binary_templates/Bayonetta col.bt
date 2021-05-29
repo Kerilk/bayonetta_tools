@@ -1,0 +1,98 @@
+LittleEndian();
+
+struct {
+    char   id[4];
+    uint32 count;
+    uint32 offset <format=hex>;
+    FSeek(offset);
+    uint32 offsets[count] <format=hex>;
+} colheader;
+
+
+struct scm_position_t {
+    float x, y, z;
+};
+
+struct scm_vector_t {
+    float x, y, z;
+};
+
+struct scm_header_t {
+    char  id[4];
+    float version;
+    short depth;
+    short numNodes;
+    int32 u_c;
+    int32 numGroups;
+    int32 numEntries;
+    int32 numVertices;
+    int32 numIndices;
+    int32 offsetGroups <format=hex>;
+    int32 offsetEntries <format=hex>;
+    int32 offsetVertices <format=hex>;
+    int32 offsetIndices <format=hex>;
+    int32 offsetNodes <format=hex>;
+    int32 u_m;
+    int32 u_n;
+    int32 u_o;
+    int32 offsetNodes <format=hex>;
+    int32 offsetEntryIndices <format=hex>;
+    scm_position_t corner1;
+    scm_position_t corner2;
+    scm_position_t center;
+    float radius;
+};
+
+struct scm_group_t {
+    byte index;
+    char name[0x1b];
+    byte  u_d[0x14];
+};
+
+struct scm_entry_t {
+    int32 index;
+    short vertexIndexStart <comment="An offset in the Index buffer">;
+    short u_a[5];
+    scm_vector_t   normal;
+    scm_position_t corner1;
+    scm_position_t corner2;
+    scm_position_t center;
+    float radius;
+};
+
+struct scm_nodes_t {
+    int32 index;
+    int32 level <comment="< depth">;
+    int32 children[2] <comment="MAX_INT means none">;
+    int32 neighbors[6];
+    int32 numEntries;
+    int32 entriesIndexStart;
+    float u_e[40];
+};
+
+local int i;
+
+struct scm_t {
+    local uint start = FTell();
+    scm_header_t header;
+    FSeek(start + header.offsetGroups);
+    scm_group_t groups[header.numGroups];
+    FSeek(start + header.offsetEntries);
+    scm_entry_t entries[header.numEntries];
+    FSeek(start + header.offsetVertices);
+    scm_position_t vertices[header.numVertices];
+    FSeek(start + header.offsetIndices);
+    uint32 indices[header.numIndices];
+    FSeek(start + header.offsetNodes);
+    scm_nodes_t nodes[header.numNodes];
+    FSeek(start + header.offsetEntryIndices);
+    uint32 entryIndices[((i + 1 < colheader.count - 1 ? colheader.offsets[i+1] : FileSize())
+                         - (start + header.offsetEntryIndices))/4];
+};
+
+for (i = 0; i < colheader.count; i++) {
+   FSeek(colheader.offsets[i]);
+   scm_t scm;
+}
+
+#include "Bayonetta col base.bt"
