@@ -65,7 +65,11 @@ struct scm_nodes_t {
     int32 neighbors[6];
     int32 numEntries;
     int32 entriesIndexStart;
-    float u_e[40];
+    float u_e[30];
+    scm_position_t corner1;
+    scm_position_t corner2;
+    scm_position_t center;
+    float radius;
 };
 
 local int i;
