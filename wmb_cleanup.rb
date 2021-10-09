@@ -119,6 +119,10 @@ OptionParser.new do |opts|
     $options[:delete_batches] = eval(batch_list).to_a
   end
 
+  opts.on("--dummy=MESHHLIST", "Replace a given meshes by dummy mesh with one dummy batch") do |mesh_list|
+    $options[:dummy_meshes] = eval(mesh_list).to_a
+  end
+
   opts.on("--split-meshes=MESHLIST", "Split the selected meshes into meshes containing only one batch") do |split_meshes|
     $options[:split_meshes] = eval(split_meshes).to_a
   end
@@ -201,6 +205,7 @@ wmb.duplicate_meshes($options[:duplicate_meshes]) if $options[:duplicate_meshes]
 wmb.move_meshes($options[:move_meshes]) if $options[:move_meshes]
 wmb.swap_meshes($options[:swap_meshes]) if $options[:swap_meshes]
 wmb.merge_meshes($options[:merge_meshes]) if $options[:merge_meshes]
+wmb.dummy_meshes($options[:dummy_meshes]) if $options[:dummy_meshes]
 if $options[:delete_meshes]
   wmb.delete_meshes($options[:delete_meshes])
 elsif $options[:delete_batches]

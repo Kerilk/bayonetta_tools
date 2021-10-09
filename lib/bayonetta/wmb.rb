@@ -1784,6 +1784,15 @@ module Bayonetta
       self
     end
 
+    def dummy_meshes(list)
+      list.map { |i| m = @meshes[i]
+        m.header.num_batch = 1
+        m.batches = [m.batches.first]
+        m.batches[0].set_triangles([m.batches[0].triangles.first[0]]*3)
+      }
+      self
+    end
+
     def duplicate_meshes(list)
       @meshes += list.collect { |i|
         @meshes[i].duplicate(@positions, @vertexes, @vertexes_ex_data)
