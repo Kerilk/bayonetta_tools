@@ -1,0 +1,123 @@
+LittleEndian();
+
+char id[4] <hidden=true>;
+Assert( Memcmp("COL2", id, 4) == 0, "Wrong file type");
+FSeek(0);
+
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+        float  w;
+} vector4<read=vector4Read>;
+
+string vector4Read( vector4 &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f, w: %f", value.x, value.y, value.z, value.w);
+    return s;
+}
+
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector<read=vectorRead>;
+
+string vectorRead( vector &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+
+struct {
+    byte    id[4];
+    uint32  version<format=hex>;
+    uint32  offsetNames<format=hex>;
+    uint32  nameCount;
+    uint32  offsetMeshes<format=hex>;
+    uint32  meshCount;
+    uint32  offsetBoneMap<format=hex>;
+    uint32  boneMapCount;
+    uint32  offsetUh<format=hex>;
+    uint32  uhCount;
+    uint32  offsetMeshMap<format=hex>;
+    uint32  meshMapCount;
+    uint32  offsetColTreeNodes<format=hex>;
+    uint32  colTreeNodesCount;
+} header;
+
+local int       i, j;
+local uint32    pos, posi, posj;
+FSeek(header.offsetNames);
+struct {
+    uint32  nameStart[header.nameCount];
+    for (i = 0; i < header.nameCount; i++) {
+        FSeek(nameStart[i]);
+        struct {
+            string str;
+        } name;
+    }
+} nameGroup<optimize=false>;
+
+FSeek(header.offsetMeshes);
+
+
+for (j = 0; j < header.meshCount; j++) {
+struct mesh_s {
+    uint32  flags<format=hex, comment="Must be used to link with the state of the model (break, etc...)">;
+    uint32  nameIndex;
+    uint32  indexSize<comment="guess">;
+    uint32  offset<format=hex>;
+    uint32  batchCount;
+    posj = FTell();
+    FSeek(offset);
+    for (i = 0; i < batchCount; i++) {
+        struct {
+            int32   boneIndex;
+            uint32  offsetVertices<format=hex>;
+            uint32  vertexCount;
+            uint32  offsetIndices<format=hex>;
+            uint32  indexCount;
+            posi = FTell();
+            FSeek(offsetVertices);
+            vector4 vertices[vertexCount];
+            FSeek(offsetIndices);
+            uint16  indices[indexCount];
+            FSeek(posi);
+        } batch;
+    }
+    FSeek(posj);
+} mesh<read=meshRead>;
+}
+string meshRead(mesh_s &mesh) {
+    return nameGroup.name[mesh.nameIndex].str;
+}
+
+if (header.offsetMeshMap) {
+    FSeek(header.offsetMeshMap);
+    uint32  meshMap[header.meshMapCount];
+}
+
+if (header.offsetBoneMap) {
+    FSeek(header.offsetBoneMap);
+    uint32  boneMap[header.boneMapCount];
+}
+
+if( header.offsetColTreeNodes) {
+    FSeek( header.offsetColTreeNodes );
+    struct {
+        vector  p1;
+        vector  p2;
+        int32   left;
+        int32   right;
+        uint32  offsetMeshIndices<format=hex>;
+        uint32  meshIndexCount;
+        if (offsetMeshIndices && meshIndexCount) {
+            pos = FTell();
+            FSeek(offsetMeshIndices);
+            uint32 meshIndices[meshIndexCount];
+            FSeek(pos);
+        }
+    } colTreeNodes[header.colTreeNodesCount]<optimize=false>;
+}
