@@ -39,8 +39,8 @@ struct {
     uint32  meshCount;
     uint32  offsetBoneMap<format=hex>;
     uint32  boneMapCount;
-    uint32  offsetUh<format=hex>;
-    uint32  uhCount;
+    uint32  offsetBoneMap2<format=hex>; // for batch type 3
+    uint32  boneMap2Count;
     uint32  offsetMeshMap<format=hex>;
     uint32  meshMapCount;
     uint32  offsetColTreeNodes<format=hex>;
@@ -67,25 +67,44 @@ for (j = 0; j < header.meshCount; j++) {
 struct mesh_s {
     uint32  flags<format=hex, comment="Must be used to link with the state of the model (break, etc...)">;
     uint32  nameIndex;
-    uint32  indexSize<comment="guess">;
+    uint32  batchType;
     uint32  offset<format=hex>;
     uint32  batchCount;
     posj = FTell();
     FSeek(offset);
     for (i = 0; i < batchCount; i++) {
-        struct {
-            int32   boneIndex;
-            uint32  offsetVertices<format=hex>;
-            uint32  vertexCount;
-            uint32  offsetIndices<format=hex>;
-            uint32  indexCount;
-            posi = FTell();
-            FSeek(offsetVertices);
-            vector4 vertices[vertexCount];
-            FSeek(offsetIndices);
-            uint16  indices[indexCount];
-            FSeek(posi);
-        } batch;
+        if (batchType == 2) {
+            struct {
+                int32   boneIndex;
+                uint32  offsetVertices<format=hex>;
+                uint32  vertexCount;
+                uint32  offsetIndices<format=hex>;
+                uint32  indexCount;
+                posi = FTell();
+                FSeek(offsetVertices);
+                vector4 vertices[vertexCount];
+                FSeek(offsetIndices);
+                uint16  indices[indexCount];
+                FSeek(posi);
+            } batch;
+        } else if (batchType == 3) {
+            struct {
+                uint32  offsetVertices<format=hex>;
+                uint32  vertexCount;
+                uint32  offsetIndices<format=hex>;
+                uint32  indexCount;
+                posi = FTell();
+                FSeek(offsetVertices);
+                struct {
+                    vector4 position;
+                    vector4 boneWeights;
+                    uint bones[4];
+                } vertices[vertexCount];
+                FSeek(offsetIndices);
+                uint16  indices[indexCount];
+                FSeek(posi);
+            } batch;
+        } else Warning("Unknown batch type: %d", batchType);
     }
     FSeek(posj);
 } mesh<read=meshRead>;
@@ -99,9 +118,14 @@ if (header.offsetMeshMap) {
     uint32  meshMap[header.meshMapCount];
 }
 
-if (header.offsetBoneMap) {
+if (header.offsetBoneMap) { // global bone indices
     FSeek(header.offsetBoneMap);
     uint32  boneMap[header.boneMapCount];
+}
+
+if (header.offsetBoneMap2) { // global bone indices
+    FSeek(header.offsetBoneMap2);
+    uint32  boneMap2[header.boneMap2Count];
 }
 
 if( header.offsetColTreeNodes) {
