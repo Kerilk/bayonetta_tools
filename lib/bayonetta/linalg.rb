@@ -187,7 +187,7 @@ module Bayonetta
 
       def normalize!
         l = length
-        if l != 0.0
+        if l != 0.0 && ! l.nan?
           @data[0] /= l
           @data[1] /= l
           @data[2] /= l
