@@ -216,7 +216,7 @@ def create_mesh( m, i, b, j)
 
     mesh = Assimp::Mesh::new
     mesh.primitive_types = :TRIANGLE
-    mesh.name = ("batch_%02d_" % i) + m.header.name.delete("\000")+("_%02d" % j)
+    mesh.name = ("batch_%02d_" % i) + m.header.name.unpack("Z*").first+("_%02d" % j)
     res = create_vertex_properties(mesh, uniq_vertices, b.bone_refs)
     if $wmb.tex_infos then
       mesh.material_index = b.header.ex_mat_id
