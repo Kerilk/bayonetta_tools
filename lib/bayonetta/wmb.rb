@@ -2353,7 +2353,7 @@ module Bayonetta
         s = ((v1 * t2.y - v2 * t1.y) * flip).normalize
         ac = v1.dot(v2) / (v1.length * v2.length)
         ac = (ac > 1.0 ? 1.0 : (ac < -1.0 ? -1.0 : ac))
-        angle = Math.acos(v1.dot(v2) / (v1.length * v2.length));
+        angle = Math.acos(ac);
         tangents[i] += s*angle
       }
       warn "Found #{inconsistentuvs} inconsistent UVs" if inconsistentuvs > 0
