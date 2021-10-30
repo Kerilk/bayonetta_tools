@@ -454,8 +454,8 @@ module Bayonetta
     end
 
     def load_normal
-      s = @__input.read(4)
-      if @__input_big
+      s = __input.read(4)
+      if __input_big
         @normal_big_orig = s
         @normal_small_orig = nil
         @normal = decode_big_normal(s)
@@ -467,12 +467,12 @@ module Bayonetta
     end
 
     def dump_normal
-      if @__output_big
+      if __output_big
         s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
       else
         s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
       end
-      @__output.write(s2)
+      __output.write(s2)
     end
 
     def convert_normal
