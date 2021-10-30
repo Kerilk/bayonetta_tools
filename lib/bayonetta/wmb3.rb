@@ -190,53 +190,6 @@ module Bayonetta
         end
       end
 
-      class IIndices < LibBin::DataConverter
-        uint32 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
-      end
-
-      class SIndices < LibBin::DataConverter
-        uint16 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
-      end
-
-      class Indices < LibBin::DataConverter
-
-        def self.convert(input, output, input_big, output_big, parent, index, length)
-          flags = parent.__parent.header.flags
-          if flags & 0x8 != 0
-            if length
-              return length.times.collect { IIndices::convert(input, output, input_big, output_big, parent, index) }
-            else
-              return IIndices::convert(input, output, input_big, output_big, parent, index)
-            end
-          else
-            if length
-              return length.times.collect { SIndices::convert(input, output, input_big, output_big, parent, index) }
-
-            else
-              return SIndices::convert(input, output, input_big, output_big, parent, index)
-            end
-          end
-        end
-
-        def self.load(input, input_big, parent, index, length)
-          flags = parent.__parent.header.flags
-          if flags & 0x8 != 0
-            if length
-              return length.times.collect { IIndices::load(input, input_big, parent, index) }
-            else
-              return IIndices::load(input, input_big, parent, index)
-            end
-          else
-            if length
-              return length.times.collect { SIndices::load(input, input_big, parent, index) }
-            else
-              return SIndices::load(input, input_big, parent, index)
-            end
-          end
-        end
-
-      end
-
       class Header < LibBin::DataConverter
         uint32 :offset_vertexes
         uint32 :offset_vertexes_ex_data
@@ -255,7 +208,7 @@ module Bayonetta
       register_field :vertexes, 'get_vertex_types[0]', length: 'header\num_vertexes', offset: 'header\offset_vertexes'
       register_field :vertexes_ex_data, 'get_vertex_types[1]', length: 'header\num_vertexes',
                      offset: 'header\offset_vertexes_ex_data'
-      register_field :indices, Indices
+      register_field :indices, '(..\header.flags & 0x8) != 0 ? UInt32 : UInt16' , length: 'header\num_indices', offset: 'header\offset_indices'
     end
 
     class Bone < LibBin::DataConverter
@@ -357,16 +310,16 @@ module Bayonetta
         vertex_group.header.num_vertexes = vertex_group.vertexes.size
 
         new_index_map = index_usage[vertex_group_index].uniq.sort.each_with_index.to_h
-        vertex_group.indices.values = new_index_map.keys.collect { |i|
-          new_vertex_map[vertex_group.indices.values[i]]
+        vertex_group.indices = new_index_map.keys.collect { |i|
+          new_vertex_map[vertex_group.indices[i]]
         }
-        vertex_group.header.num_indices = vertex_group.indices.values.size
+        vertex_group.header.num_indices = vertex_group.indices.size
         @batches.select { |batch| batch.vertex_group_index == vertex_group_index }.each { |batch|
           batch.vertex_start = new_vertex_map[batch.vertex_start]
           batch.index_start = new_index_map[batch.index_start]
           if batch.vertex_start != 0
             ((batch.index_start)...(batch.index_start + batch.num_indices)).each { |i|
-              vertex_group.indices.values[i] = vertex_group.indices.values[i] - batch.vertex_start
+              vertex_group.indices[i] = vertex_group.indices[i] - batch.vertex_start
             }
           end
         }
@@ -379,7 +332,7 @@ module Bayonetta
       @batches.each { |batch|
         index_range = (batch.index_start)...(batch.index_start + batch.num_indices)
         index_usage[batch.vertex_group_index] += index_range.to_a
-        vertex_usage[batch.vertex_group_index] += @vertex_groups[batch.vertex_group_index].indices.values[index_range].collect { |vertex|
+        vertex_usage[batch.vertex_group_index] += @vertex_groups[batch.vertex_group_index].indices[index_range].collect { |vertex|
           vertex + batch.vertex_start
         }
       }
@@ -684,7 +637,7 @@ module Bayonetta
     def get_vertex_usage
       vertex_usage = Hash::new { |h, k| h[k] = [] }
       @batches.each { |b|
-        @vertex_groups[b.vertex_group_index].indices.values[b.index_start...(b.index_start+b.num_indices)].each { |i|
+        @vertex_groups[b.vertex_group_index].indices[b.index_start...(b.index_start+b.num_indices)].each { |i|
           vertex_usage[[b.vertex_group_index, i]].push( b )
         }
       }
