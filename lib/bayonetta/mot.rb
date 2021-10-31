@@ -166,7 +166,7 @@ module Bayonetta
 
       def values(frame_count)
         count = frame_count
-        res = @keys.collect { |k| @p + k*@cp }
+        res = @keys.collect { |k| @p + k*@dp }
         res + [res.last] * (frame_count - keys.length)
       end
 
@@ -185,7 +185,7 @@ module Bayonetta
 
       def values(frame_count)
         count = frame_count
-        res = @keys.collect { |k| @p + k*@cp }
+        res = @keys.collect { |k| @p + k*@dp }
         res + [res.last] * (frame_count - keys.length)
       end
 
