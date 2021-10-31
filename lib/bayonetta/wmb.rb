@@ -21,52 +21,25 @@ module Bayonetta
       subclass.instance_variable_set(:@fields, @fields.dup)
     end
 
-    def self.convert(input, output, input_big, output_big, parent, index, length)
-      if length
-        length.times.collect {
-          h = self::new
-          if is_bayo2?(parent) && input_big
-            h.__convert(input, output, false, output_big, parent, index)
-          else
-            h.__convert(input, output, input_big, output_big, parent, index)
-          end
-        }
-      else
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.__convert(input, output, false, output_big, parent, index)
-        else
-          h.__convert(input, output, input_big, output_big, parent, index)
-        end
-      end
+    def __convert(input, output, input_big, output_big, parent = nil, index = nil)
+      __set_convert_type(input, output,
+                         input_big && self.class.is_bayo2?(parent) ? false : input_big,
+                         output_big && self.class.is_bayo2?(parent) ? false : output_big,
+                         parent, index)
+      __convert_fields
+      __unset_convert_type
+      self
     end
 
-    def self.load(input, input_big, parent, index, length)
-      if length
-        length.times.collect {
-          h = self::new
-          if is_bayo2?(parent) && input_big
-            h.__load(input, false, parent, index)
-          else
-            h.__load(input, input_big, parent, index)
-          end
-        }
-      else
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.__load(input, false, parent, index)
-        else
-          h.__load(input, input_big, parent, index)
-        end
-      end
+    def __load(input, input_big, parent = nil, index = nil)
+      __set_load_type(input, input_big && self.class.is_bayo2?(parent) ? false : input_big, parent, index)
+      __load_fields
+      __unset_load_type
+      self
     end
 
     def __dump(output, output_big, parent = nil, index = nil)
-      if self.class.is_bayo2?(parent) && output_big
-        __set_dump_type(output, false, parent, index)
-      else
-        __set_dump_type(output, output_big, parent, index)
-      end
+      __set_dump_type(output, output_big && self.class.is_bayo2?(parent) ? false : output_big, parent, index)
       __dump_fields
       __unset_dump_type
       self
