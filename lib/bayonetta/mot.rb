@@ -85,13 +85,8 @@ module Bayonetta
 
   module RelativeIndexes
     def key_frame_indexes
-      res = []
       index = 0
-      (@keys.length).times { |i|
-        index = @keys[i].index + index
-        res.push index
-      }
-      res
+      @keys.collect { |k| index += k.index }
     end
   end
 
