@@ -2553,8 +2553,9 @@ typedef ubyteList boneWeights_t;
 float tangentRead( uchar value) {
     float v;
     v = value;
-    v -= 127.0;
-    v /= 127.0;
+    v /= 255.0f;
+    v -= 0.5f;
+    v *= 2.0f;
     return v;
 }
 

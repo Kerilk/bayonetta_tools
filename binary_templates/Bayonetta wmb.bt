@@ -15,9 +15,9 @@ string normalRead( char val ) {
 
 string normals_tRead( normals_t &value ) {
     string s;
-    double fx = value.nx / 127.0;
-    double fy = value.ny / 127.0;
-    double fz = value.nz / 127.0;
+    double fx = value.nx * 0.007874016f; // 1.0f/127.0f
+    double fy = value.ny * 0.007874016f;
+    double fz = value.nz * 0.007874016f;
     float nrm = Sqrt(fx*fx + fy*fy + fz*fz);
     SPrintf(s, "nx: %f, ny: %f, nz: %f, nrm: %f", fx, fy, fz, nrm);
     return s;
