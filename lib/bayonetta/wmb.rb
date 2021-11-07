@@ -22,26 +22,26 @@ module Bayonetta
     end
 
     def __convert(input, output, input_big, output_big, parent = nil, index = nil)
-      __set_convert_type(input, output,
+      __set_convert_state(input, output,
                          input_big && self.class.is_bayo2?(parent) ? false : input_big,
                          output_big && self.class.is_bayo2?(parent) ? false : output_big,
                          parent, index)
       __convert_fields
-      __unset_convert_type
+      __unset_convert_state
       self
     end
 
     def __load(input, input_big, parent = nil, index = nil)
-      __set_load_type(input, input_big && self.class.is_bayo2?(parent) ? false : input_big, parent, index)
+      __set_load_state(input, input_big && self.class.is_bayo2?(parent) ? false : input_big, parent, index)
       __load_fields
-      __unset_load_type
+      __unset_load_state
       self
     end
 
     def __dump(output, output_big, parent = nil, index = nil)
-      __set_dump_type(output, output_big && self.class.is_bayo2?(parent) ? false : output_big, parent, index)
+      __set_dump_state(output, output_big && self.class.is_bayo2?(parent) ? false : output_big, parent, index)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
       self
     end
 
@@ -602,7 +602,7 @@ module Bayonetta
     end
 
     def __convert(input, output, input_big, output_big, parent, index, level = 1)
-      __set_convert_type(input, output, input_big, output_big, parent, index)
+      __set_convert_state(input, output, input_big, output_big, parent, index)
       __convert_fields
       if level == 1
         @second_levels = []
@@ -628,12 +628,12 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      __unset_convert_type
+      __unset_convert_state
       self
     end
 
     def __load(input, input_big, parent, index, level = 1)
-      __set_load_type(input, input_big, parent, index)
+      __set_load_state(input, input_big, parent, index)
       __load_fields
       if level == 1
         @second_levels = []
@@ -659,7 +659,7 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      __unset_load_type
+      __unset_load_state
       self
     end
 
@@ -715,7 +715,7 @@ module Bayonetta
     private :encode
 
     def __dump(output, output_big, parent, index, level = 1)
-      __set_dump_type(output, output_big, parent, index)
+      __set_dump_state(output, output_big, parent, index)
       encode if level == 1
       __dump_fields
       if @second_levels
@@ -728,7 +728,7 @@ module Bayonetta
           e.__dump(output, output_big, self, nil, level+2)
         }
       end
-      __unset_dump_type
+      __unset_dump_state
     end
 
   end
@@ -1282,9 +1282,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
 
       sz = output.size
       sz = align(sz, 0x20)

@@ -211,9 +211,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
@@ -639,9 +639,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
