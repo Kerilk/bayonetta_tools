@@ -5,7 +5,7 @@ $material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_data
 
 module Bayonetta
 
-  class UByteList < LibBin::DataConverter
+  class UByteList < LibBin::Structure
     uint32 :data
 
     def self.is_bayo2?(parent)
@@ -197,7 +197,7 @@ module Bayonetta
 
   end
 
-  class Mapping < LibBin::DataConverter
+  class Mapping < LibBin::Structure
     half :u
     half :v
 
@@ -206,7 +206,7 @@ module Bayonetta
     end
   end
 
-  class FloatMapping < LibBin::DataConverter
+  class FloatMapping < LibBin::Structure
     float :u
     float :v
 
@@ -215,7 +215,7 @@ module Bayonetta
     end
   end
 
-  class FloatNormal < LibBin::DataConverter
+  class FloatNormal < LibBin::Structure
     include VectorAccessor
     float :x
     float :y
@@ -226,7 +226,7 @@ module Bayonetta
     end
   end
 
-  class HalfNormal < LibBin::DataConverter
+  class HalfNormal < LibBin::Structure
     include VectorAccessor
     half :x
     half :y
@@ -238,7 +238,7 @@ module Bayonetta
     end
   end
 
-  class Normal < LibBin::DataConverter
+  class Normal < LibBin::Structure
     include VectorAccessor
     attr_accessor :normal
     attr_accessor :normal_big_orig
@@ -471,7 +471,7 @@ module Bayonetta
     end
   end
 
-  class Position < LibBin::DataConverter
+  class Position < LibBin::Structure
     include VectorAccessor
     float :x
     float :y
@@ -522,7 +522,7 @@ module Bayonetta
     end
   end
 
-  class BoneInfos < LibBin::DataConverter
+  class BoneInfos < LibBin::Structure
     register_field :indexes, UByteList
     register_field :weights, UByteList
 
@@ -574,7 +574,7 @@ module Bayonetta
     end
   end
 
-  class BoneIndexTranslateTable < LibBin::DataConverter
+  class BoneIndexTranslateTable < LibBin::Structure
     int16 :offsets, length: 16
     #attr_accessor :second_levels
     #attr_accessor :third_levels
@@ -745,14 +745,14 @@ module Bayonetta
     fmapping_t: [ FloatMapping, 8]
   }
 
-  class WMBFile < LibBin::DataConverter
+  class WMBFile < LibBin::Structure
     include Alignment
 
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
-    class UnknownStruct < LibBin::DataConverter
+    class UnknownStruct < LibBin::Structure
       uint8  :u_a1, length: 4
       uint32 :u_b1
       int16  :u_c1, length: 4
@@ -763,7 +763,7 @@ module Bayonetta
       uint32 :u_b3
     end
 
-    class Material < LibBin::DataConverter
+    class Material < LibBin::Structure
       int16  :type
       uint16 :flag
       uint32 :material_data,
@@ -800,7 +800,7 @@ module Bayonetta
 
     end
 
-    class BatchHeader < LibBin::DataConverter
+    class BatchHeader < LibBin::Structure
       int16  :batch_id #Bayo 2
       int16  :mesh_id
       uint16 :flags
@@ -836,7 +836,7 @@ module Bayonetta
       end
     end
 
-    class Batch < LibBin::DataConverter
+    class Batch < LibBin::Structure
       register_field :header, BatchHeader
       int32  :num_bone_ref, condition: 'header\has_bone_refs != 0'
       uint8  :bone_refs, length: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
@@ -973,7 +973,7 @@ module Bayonetta
 
     end
 
-    class MeshHeader < LibBin::DataConverter
+    class MeshHeader < LibBin::Structure
       int16  :id
       int16  :num_batch
       int16  :u_a1
@@ -998,7 +998,7 @@ module Bayonetta
       end
     end
 
-    class Mesh < LibBin::DataConverter
+    class Mesh < LibBin::Structure
       register_field :header, MeshHeader
       uint32         :batch_offsets, length: 'header\num_batch',
                      offset: '__position + header\offset_batch_offsets'
@@ -1043,21 +1043,21 @@ module Bayonetta
 
     end
 
-    class ShaderName < LibBin::DataConverter
+    class ShaderName < LibBin::Structure
       string :name, 16
     end
 
-    class TexInfo < LibBin::DataConverter
+    class TexInfo < LibBin::Structure
       uint32 :id
       int32  :info
     end
 
-    class TexInfos < LibBin::DataConverter
+    class TexInfos < LibBin::Structure
       int32 :num_tex_infos
       register_field :tex_infos, TexInfo, length: 'num_tex_infos'
     end
 
-    class WMBFileHeader < LibBin::DataConverter
+    class WMBFileHeader < LibBin::Structure
       uint32 :id
       int32  :u_a
       int32  :u_b
@@ -1132,7 +1132,7 @@ module Bayonetta
         return [@vertex_type, @vertex_ex_type]
       else
         types = VERTEX_TYPES[ [ @header.u_b, @header.vertex_ex_data_size, @header.vertex_ex_data] ]
-        @vertex_type = Class::new(LibBin::DataConverter)
+        @vertex_type = Class::new(LibBin::Structure)
         @vertex_size = 0
         if types[0]
           types[0].each { |name, type|
@@ -1140,7 +1140,7 @@ module Bayonetta
             @vertex_size += VERTEX_FIELDS[type][1]
           }
         end
-        @vertex_ex_type = Class::new(LibBin::DataConverter)
+        @vertex_ex_type = Class::new(LibBin::Structure)
         @vertex_ex_size = 0
         if types[1]
           types[1].each { |name, type|

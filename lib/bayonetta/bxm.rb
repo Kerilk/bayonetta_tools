@@ -3,21 +3,21 @@ require 'set'
 
 module Bayonetta
 #=begin
-  class BXMFile < LibBin::DataConverter
+  class BXMFile < LibBin::Structure
 
-    class Datum < LibBin::DataConverter
+    class Datum < LibBin::Structure
       uint16 :name_offset
       int16 :value_offset
     end
 
-    class Node < LibBin::DataConverter
+    class Node < LibBin::Structure
       uint16 :child_count
       uint16 :first_child_index
       uint16 :attribute_count
       uint16 :datum_index
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       string :id, 4
       uint32 :unknown
       uint16 :node_count

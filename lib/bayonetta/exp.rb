@@ -1,8 +1,78 @@
 module Bayonetta
 
-  class EXPFile2 < LibBin::DataConverter
+  module ExpQuantizedValues
+    def get_p(i)
+      @p + @keys[i].cp * @dp
+    end
 
-    class EXPFileHeader < LibBin::DataConverter
+    def get_m1(i)
+      @m1 + @keys[i].cm1 * @dm1
+    end
+
+    def get_m0(i)
+      @m0 + @keys[i].cm0 * @dm0
+    end
+  end
+
+  module ExpDirectValues
+    def get_p(i)
+      @keys[i].p
+    end
+
+    def get_m1(i)
+      @keys[i].m1
+    end
+
+    def get_m0(i)
+      @keys[i].m0
+    end
+  end
+
+  module ExpAbsolutePositions
+    def key_positions
+      @key_positions ||= @keys.collect { |k| k.v }
+    end
+  end
+
+  module ExpRelativePositions
+    def key_positions
+      @key_positions ||= begin
+        sum = 0
+        @keys.collect { |k| sum += k.v }
+      end
+    end
+  end
+
+  module ExpKeyInterpolate
+    def interpol(position, start, stop, key_index)
+      p_0 = get_p(key_index)
+      p_1 = get_p(key_index + 1)
+      m_0 = get_m1(key_index)
+      m_1 = get_m0(key_index + 1)
+      t = (value - start).to_f / (stop - start)
+      t3 = t*t*t
+      t2 = t*t
+      (2 * t3 - 3 * t2 + 1)*p_0 + (t3 - 2 * t2 + t)*m_0 + (-2 * t3 + 3 * t2)*p_1 + (t3 - t2)*m_1
+    end
+
+    def interpolate(position)
+      if positions <= key_positions.first
+        get_p(0)
+      elsif positions >= key_positions.last
+        get_p(key_positions.length -1)
+      else
+        key_positions.each_cons(2).each_with_index { |(start, stop), i|
+          if position <= stop && position >= start
+            return interpol(position, start, stop)
+          end
+        }
+      end
+    end
+  end
+
+  class EXPFile2 < LibBin::Structure
+
+    class EXPFileHeader < LibBin::Structure
       int8 :id, count: 4
       int32 :version
       uint32 :offset_records
@@ -20,7 +90,7 @@ module Bayonetta
       end
     end
 
-    class Record < LibBin::DataConverter
+    class Record < LibBin::Structure
       int16 :bone_index
       int8 :animation_track
       int8 :padding
@@ -39,7 +109,7 @@ module Bayonetta
 
     end
 
-    class Operation < LibBin::DataConverter
+    class Operation < LibBin::Structure
       int8 :type
       int8 :info
       int16 :number
@@ -54,7 +124,7 @@ module Bayonetta
 
     end
 
-    class Entry < LibBin::DataConverter
+    class Entry < LibBin::Structure
       register_field :operations, Operation, count: '..\records[__index]\num_operations'
 
       def initialize
@@ -109,7 +179,7 @@ module Bayonetta
 
     end
 
-    class Interpolation < LibBin::DataConverter
+    class Interpolation < LibBin::Structure
       int16 :num_points
       int16 :padding
       uint32 :offset
@@ -122,7 +192,7 @@ module Bayonetta
 
     end
 
-    class Point < LibBin::DataConverter
+    class Point < LibBin::Structure
       float :v
       float :p
       float :m0
@@ -137,7 +207,7 @@ module Bayonetta
 
     end
 
-    class InterpolationEntry < LibBin::DataConverter
+    class InterpolationEntry < LibBin::Structure
       register_field :points, Point, count: '..\interpolations[__index]\num_points'
 
       def get_value(val)
@@ -220,9 +290,9 @@ module Bayonetta
 
   end
 
-  class EXPFile < LibBin::DataConverter
+  class EXPFile < LibBin::Structure
 
-    class EXPFileHeader < LibBin::DataConverter
+    class EXPFileHeader < LibBin::Structure
       int8 :id, count: 4
       int32 :version
       uint32 :offset_records
@@ -237,7 +307,7 @@ module Bayonetta
 
     end
 
-    class Record < LibBin::DataConverter
+    class Record < LibBin::Structure
       int16 :u_a
       int16 :bone_index
       int8 :animation_track
@@ -263,7 +333,7 @@ module Bayonetta
 
     end
 
-    class Operation < LibBin::DataConverter
+    class Operation < LibBin::Structure
       uint32 :flags
       float :value
 
@@ -287,7 +357,7 @@ module Bayonetta
 
     end
 
-    class Entry1 < LibBin::DataConverter
+    class Entry1 < LibBin::Structure
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -306,7 +376,7 @@ module Bayonetta
 
     end
 
-    class Entry2 < LibBin::DataConverter
+    class Entry2 < LibBin::Structure
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -327,7 +397,7 @@ module Bayonetta
 
     end
 
-    class Entry3 < LibBin::DataConverter
+    class Entry3 < LibBin::Structure
       uint32 :flags
       int16 :bone_index
       int8 :animation_track
@@ -349,7 +419,7 @@ module Bayonetta
 
     end
 
-    class Entry < LibBin::DataConverter
+    class Entry < LibBin::Structure
 
       def self.convert(input, output, input_big, output_big, parent, index, length = nil)
         entry_type = parent.records[index].entry_type
@@ -381,7 +451,36 @@ module Bayonetta
 
     end
 
-    class Point4 < LibBin::DataConverter
+    class Key2 < LibBin::Structure
+      float :v
+      float :p
+      float :m0
+      float :m1
+
+      def initialize
+        @v = 0.0
+        @p = 0.0
+        @m0 = 0.0
+        @m1 = 0.0
+      end
+
+      def size
+        3 * 4
+      end
+    end
+
+    class Interpolation2 < LibBin::Structure
+      include ExpDirectValues
+      include ExpAbsolutePositions
+      include ExpKeyInterpolate
+      register_field :keys, Key2, count: '..\records[__index]\num_points'
+
+      def size
+        @keys.collect(&:size).reduce(:+)
+      end
+    end
+
+    class Key4 < LibBin::Structure
       float :v
       uint16 :dummy
       uint16 :cp
@@ -399,66 +498,90 @@ module Bayonetta
       def size
         3 * 4
       end
-
     end
 
-    class Interpolation4 < LibBin::DataConverter
+    class Interpolation4 < LibBin::Structure
+      include ExpQuantizedValues
+      include ExpAbsolutePositions
+      include ExpKeyInterpolate
       float :p
       float :dp
       float :m0
       float :dm0
       float :m1
       float :dm1
-      register_field :points, Point4, count: '..\records[__index]\num_points'
+      register_field :keys, Key4, count: '..\records[__index]\num_points'
 
       def size
-        4 * 6 + @points.collect(&:size).reduce(:+)
-      end
-
-      def interpolate(val)
-        @points.each_cons(2) { |left, right|
-          if left.v <= val && right.v >= val
-            p0 = @p + left.cp * @dp
-            p1 = @p + right.cp * @dp
-            m0 = @m1 + left.cm1 * @dm1
-            m1 = @m0 + right.cm0 * @dm0
-            t = (val - left.v).to_f / (right.v - left.v)
-            return (2 * t*t*t - 3 * t*t + 1)*p0 + (t*t*t - 2 * t*t + t)*m0 + (-2 * t*t*t + 3 * t*t)*p1 + (t*t*t - t * t)*m1
-          end
-
-        }
-        return 0.0
+        4 * 6 + @keys.collect(&:size).reduce(:+)
       end
     end
 
-    class Interpolation < LibBin::DataConverter
+    class Key6 < LibBin::Structure
+      uint8 :v
+      uint8 :cp
+      uint8 :cm0
+      uint8 :cm1
+
+      def initialize
+        @v = 0
+        @cp = 0
+        @cm0 = 0
+        @cm1 = 0
+      end
+
+      def size
+        4
+      end
+    end
+
+    class Interpolation6 < LibBin::Structure
+      include ExpQuantizedValues
+      include ExpRelativePositions
+      include ExpKeyInterpolate
+      pghalf :p
+      pghalf :dp
+      pghalf :m0
+      pghalf :dm0
+      pghalf :m1
+      pghalf :dm1
+      register_field :keys, Key6, count: '..\records[__index]\num_points'
+
+      def size
+        2 * 6 + @keys.collect(&:size).reduce(:+)
+      end
+    end
+
+    class Interpolation < LibBin::Structure
 
       def self.convert(input, output, input_big, output_big, parent, index, length = nil)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
+        case parent.records[index].interpolation_type
+        when 2
+          Interpolation2::convert(input, output, input_big, output_big, parent, index, length)
         when 4
-          interpolation = Interpolation4::convert(input, output, input_big, output_big, parent, index, length)
+          Interpolation4::convert(input, output, input_big, output_big, parent, index, length)
+        when 6
+          Interpolation6::convert(input, output, input_big, output_big, parent, index, length)
         when -1
-          interpolation = nil
+          nil
         else
           raise "Unknown Interpolation type: #{interpolation_type}, please report!"
         end
-        interpolation
       end
 
       def self.load(input, input_big, parent, index, length = nil)
-        interpolation_type = parent.records[index].interpolation_type
-        interpolation = nil
-        case interpolation_type
+        case parent.records[index].interpolation_type
+        when 2
+          Interpolation2::load(input, input_big, parent, index, length)
         when 4
-          interpolation = Interpolation4::load(input, input_big, parent, index, length)
+          Interpolation4::load(input, input_big, parent, index, length)
+        when 6
+          Interpolation6::load(input, input_big, parent, index, length)
         when -1
-          interpolation = nil
+          nil
         else
           raise "Unknown Interpolation type: #{interpolation_type}, please report!"
         end
-        interpolation
       end
 
     end
@@ -478,9 +601,6 @@ module Bayonetta
       rad_to_deg = 180.0 / Math::PI
       deg_to_rad = Math::PI / 180.0
       tracks.each { |tr|
-        tr[0] *= 10.0
-        tr[1] *= 10.0
-        tr[2] *= 10.0
         tr[3] *= rad_to_deg
         tr[4] *= rad_to_deg
         tr[5] *= rad_to_deg
@@ -498,9 +618,6 @@ module Bayonetta
         tracks[bone_index][animation_track] = value
       }
       tracks.each { |tr|
-        tr[0] *= 0.1
-        tr[1] *= 0.1
-        tr[2] *= 0.1
         tr[3] *= deg_to_rad
         tr[4] *= deg_to_rad
         tr[5] *= deg_to_rad

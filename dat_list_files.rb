@@ -3,7 +3,7 @@ require 'yaml'
 require 'optparse'
 require_relative 'lib/bayonetta'
 
-class WTBFilePartial < LibBin::DataConverter
+class WTBFilePartial < LibBin::Structure
   uint32 :id
   uint32 :unknown
   uint32 :num_textures

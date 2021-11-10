@@ -1,13 +1,13 @@
 module Bayonetta
-  class WMB3File < LibBin::DataConverter
+  class WMB3File < LibBin::Structure
 
-    class MeshMaterialPair < LibBin::DataConverter
+    class MeshMaterialPair < LibBin::Structure
       uint32 :mesh_index
       uint32 :material_index
     end
 
-    class Mesh < LibBin::DataConverter
-      class Header < LibBin::DataConverter
+    class Mesh < LibBin::Structure
+      class Header < LibBin::Structure
         uint32 :offset_name
         float  :bounding_box, length: 6
         uint32 :offset_materials
@@ -21,28 +21,28 @@ module Bayonetta
       uint16 :bone_indices, length: 'header\num_bones_indices', offset: 'header\offset_bones_indices'
     end
 
-    class Material < LibBin::DataConverter
+    class Material < LibBin::Structure
 
-      class Variable < LibBin::DataConverter
+      class Variable < LibBin::Structure
         uint32 :offset_name
         float :value
         string :name, offset: 'offset_name'
       end
 
-      class ParameterGroup < LibBin::DataConverter
+      class ParameterGroup < LibBin::Structure
         int32 :index
         uint32 :offset_parameters
         uint32 :num_parameters
         float :parameters, length: 'num_parameters', offset: 'offset_parameters'
       end
 
-      class Texture < LibBin::DataConverter
+      class Texture < LibBin::Structure
         uint32 :offset_name
         uint32 :texture_id
         string :name, offset: 'offset_name'
       end
 
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint16 :date, length: 4
         uint32 :offset_name
         uint32 :offset_shader_name
@@ -68,15 +68,15 @@ module Bayonetta
 
     end
 
-    class BoneSet < LibBin::DataConverter
+    class BoneSet < LibBin::Structure
       uint32 :offset_bone_indices
       uint32 :num_bone_indices
       int16 :bone_indices, length: 'num_bone_indices', offset: 'offset_bone_indices'
     end
 
-    class Lod < LibBin::DataConverter
+    class Lod < LibBin::Structure
 
-      class BatchInfo < LibBin::DataConverter
+      class BatchInfo < LibBin::Structure
         uint32 :vertex_group_index
         uint32 :mesh_index
         uint32 :material_index
@@ -85,7 +85,7 @@ module Bayonetta
         int32 :u_b
       end
 
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint32 :offset_name
         int32 :lod_level
         uint32 :batch_start
@@ -97,14 +97,14 @@ module Bayonetta
       register_field :batch_infos, BatchInfo, length: 'header\num_batch_infos', offset: 'header\offset_batch_infos'
     end
 
-    class ColTreeNode < LibBin::DataConverter
+    class ColTreeNode < LibBin::Structure
       register_field :p1, Position
       register_field :p2, Position
       int32 :left
       int32 :right
     end
 
-    class Batch < LibBin::DataConverter
+    class Batch < LibBin::Structure
       uint32 :vertex_group_index
       int32 :bone_set_index
       uint32 :vertex_start
@@ -117,7 +117,7 @@ module Bayonetta
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types_nier.yaml')) )
 
-    class VertexGroup < LibBin::DataConverter
+    class VertexGroup < LibBin::Structure
 
       def is_bayo2? #UByteList are arrays of char really
         true
@@ -148,7 +148,7 @@ module Bayonetta
           return [@vertex_type, @vertex_ex_type]
         else
           types = VERTEX_TYPES[ @header.vertex_flags ]
-          @vertex_type = Class::new(LibBin::DataConverter)
+          @vertex_type = Class::new(LibBin::Structure)
           @vertex_size = 0
           if types[0]
             types[0].each { |name, type|
@@ -157,7 +157,7 @@ module Bayonetta
             }
           end
           raise "Invalid size for vertex data #{@vertex_size} != #{@header.vertex_size}!" if @vertex_size != @header.vertex_size
-          @vertex_ex_type = Class::new(LibBin::DataConverter)
+          @vertex_ex_type = Class::new(LibBin::Structure)
           @vertex_ex_size = 0
           if types[1]
             types[1].each { |name, type|
@@ -190,7 +190,7 @@ module Bayonetta
         end
       end
 
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint32 :offset_vertexes
         uint32 :offset_vertexes_ex_data
         uint32 :u_a
@@ -211,7 +211,7 @@ module Bayonetta
       register_field :indices, '(..\header.flags & 0x8) != 0 ? UInt32 : UInt16' , length: 'header\num_indices', offset: 'header\offset_indices'
     end
 
-    class Bone < LibBin::DataConverter
+    class Bone < LibBin::Structure
       int16 :id
       int16 :parent_index
       register_field :local_position, Position
@@ -223,16 +223,16 @@ module Bayonetta
       register_field :t_position, Position
     end
 
-    class Unknown1 < LibBin::DataConverter
+    class Unknown1 < LibBin::Structure
       uint32 :data, length: 6
     end
 
-    class InfoPair < LibBin::DataConverter
+    class InfoPair < LibBin::Structure
       uint32 :offset
       uint32 :number
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       def self.info_pair(field, length: nil, count: nil, offset: nil, sequence: false, condition: nil)
         register_field(field, InfoPair, length: length, count: count, offset: offset, sequence: sequence, condition: condition)
       end

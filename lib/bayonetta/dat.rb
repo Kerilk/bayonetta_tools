@@ -1,6 +1,6 @@
 require 'stringio'
 module Bayonetta
-  class DATFile < LibBin::DataConverter
+  class DATFile < LibBin::Structure
     attr_reader :big
     ALIGNMENTS = {
       'dat' => 0x2000,
@@ -16,7 +16,7 @@ module Bayonetta
     }
     ALIGNMENTS.default = 0x10
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       string :id, 4
       uint32 :num_files
       uint32 :offset_file_offsets
@@ -26,8 +26,8 @@ module Bayonetta
       uint32 :offset_hash_map
     end
 
-    class HashMap < LibBin::DataConverter
-      class Header < LibBin::DataConverter
+    class HashMap < LibBin::Structure
+      class Header < LibBin::Structure
         uint32 :pre_hash_shift
         uint32 :offset_bucket_ranks
         uint32 :offset_hashes

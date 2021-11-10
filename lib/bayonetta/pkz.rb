@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class PKZFile < LibBin::DataConverter
+  class PKZFile < LibBin::Structure
 
-    class FileDescriptor < LibBin::DataConverter
+    class FileDescriptor < LibBin::Structure
       uint64 :offset_name
       uint64 :size
       uint64 :offset
@@ -10,7 +10,7 @@ module Bayonetta
       string :name, offset: 'offset_name + ..\header.offset_file_descriptors + ..\header.num_files * 0x20'
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       uint32 :id
       int32  :unknown
       uint64 :size
