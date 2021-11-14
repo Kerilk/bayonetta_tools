@@ -1,5 +1,6 @@
 module Bayonetta
   class WMB3File < LibBin::Structure
+    include Alignment
 
     class MeshMaterialPair < LibBin::Structure
       uint32 :mesh_index

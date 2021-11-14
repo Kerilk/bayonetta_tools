@@ -1,6 +1,7 @@
 require 'stringio'
 module Bayonetta
   class DATFile < LibBin::Structure
+    include Alignment
     attr_reader :big
     ALIGNMENTS = {
       'dat' => 0x2000,
