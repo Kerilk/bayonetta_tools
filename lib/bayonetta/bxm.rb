@@ -127,7 +127,7 @@ module Bayonetta
       self
     end
 
-    def self.from_xml(xml, tag="BXM\0")
+    def self.from_xml(xml, tag="BXM\x00".b)
       bxm = self.new
       bxm.from_xml(xml, tag)
     end
@@ -145,7 +145,7 @@ module Bayonetta
         }
       end
       tag = input.read(4).unpack("a4").first
-      raise "invalid file type #{tag}!" if tag != "XML\0" && tag != "BXM\0"
+      raise "invalid file type #{tag}!" if tag != "XML\x00".b && tag != "BXM\x00".b
       input.rewind
       bxm = self.new
       big = input_big = is_big?(input)
@@ -159,7 +159,7 @@ module Bayonetta
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
-        output = StringIO::new("", "wb")
+        output = StringIO::new("".b, "wb")
       end
 
       __set_dump_state(output, output_big, nil, nil)

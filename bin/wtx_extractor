@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+require 'bayonetta/tools/wtx_extractor'
