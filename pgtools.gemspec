@@ -14,4 +14,5 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.3.0'
   s.add_dependency 'libbin', '~> 2', '>=2.0.0'
   s.add_dependency 'zstd-ruby', '~> 1', '>=1.5.0'
+  s.add_dependency 'assimp-ffi', '~> 0.1',  '>=0.1.7'
 end
