@@ -3,6 +3,7 @@ require 'optparse'
 require 'set'
 require_relative 'lib/bayonetta.rb'
 require 'yaml'
+require 'shellwords'
 include Bayonetta
 
 def get_bone_mapping(source, target)
@@ -466,5 +467,5 @@ else
 end
 
 if $options[:import_textures]
-  `ruby wtb_import_textures.rb "#{tex1_file_name}" "#{tex2_file_name}"#{$options[:overwrite] ? " --overwrite" : ""}`
+  `ruby #{Shellwords.escape File.join(__dir__,"wtb_import_textures.rb")} #{Shellwords.escape tex1_file_name} #{Shellwords.escape tex2_file_name}#{$options[:overwrite] ? " --overwrite" : ""}`
 end
