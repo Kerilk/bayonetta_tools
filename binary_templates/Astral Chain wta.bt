@@ -92,7 +92,7 @@ struct {
     uint32  headerSize<format=hex>;
     uint32  numMipMap;
     texture_type_t  texture_type;
-    uint32  format<format=hex,comment="42, 46: dxt1; 43, 47: dxt3; 44, 48: dxt5; 79, 87: astc4x4, 80, 8e, astc8x8">;
+    uint32  format<format=hex,comment="42, 46: dxt1; 43, 47: dxt3; 44, 48: dxt5; 79, 87: astc4x4, 7d, 8b: astc6x6, 80, 8e: astc8x8">;
     uint32  width;
     uint32  height;
     uint32  depth;
