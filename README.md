@@ -10,4 +10,4 @@ You will need the nokogiri, libbin and assimp-ffi gems installed.
 ```bash
 gem install --user-install nokogiri libbin assimp-ffi
 ```
-Additional gem may be needed for some tools, like zstd-ruby for Astral Chain archive decompression.
+Additional gem may be needed for some tools, like `zstd-ruby` or `oodle-kraken-ruby` for Astral Chain or Bayonetta 3 archive decompression.

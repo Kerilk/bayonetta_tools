@@ -1,5 +1,7 @@
 require 'optparse'
+require 'fileutils'
 require 'zstd-ruby'
+require 'oodle-kraken-ruby'
 require_relative '../../bayonetta'
 
 $options = {
@@ -44,10 +46,29 @@ ARGV.each { |filename|
 
   pkz.file_descriptors.each { |d|
     f.seek(d.offset)
-    File::open(d.name[0..-2], "wb") { |nf|
-      nf.write Zstd.decompress(f.read(d.compressed_size))
-      raise "Decompression error!" if nf.size != d.size
-    }
+    fname = d.name[0..-2]
+    compression = d.compression[0..-2]
+    dirname = File.dirname(fname)
+    unless File.directory?(dirname)
+      FileUtils.mkdir_p(dirname)
+    end
+    case compression
+    when "ZStandard"
+      File::open(fname, "wb") { |nf|
+        nf.write Zstd.decompress(f.read(d.compressed_size))
+        raise "Decompression error!" if nf.size != d.size
+      }
+    when "OodleKraken"
+      File::open(fname, "wb") { |nf|
+        nf.write OodleKraken.decompress(f.read(d.compressed_size), d.size)
+      }
+    when "None"
+      File::open(fname, "wb") { |nf|
+        nf.write f.read(d.compressed_size)
+      }
+    else
+      warn "Unsupported compression format for #{fname}: #{compression}!"
+    end
   }
   Dir.chdir(save_pwd)
   f.close

@@ -3,11 +3,13 @@ module Bayonetta
   class PKZFile < LibBin::Structure
 
     class FileDescriptor < LibBin::Structure
-      uint64 :offset_name
+      uint32 :offset_name
+      uint32 :offset_compression
       uint64 :size
       uint64 :offset
       uint64 :compressed_size
       string :name, offset: 'offset_name + ..\header.offset_file_descriptors + ..\header.num_files * 0x20'
+      string :compression, offset: 'offset_compression + ..\header.offset_file_descriptors + ..\header.num_files * 0x20'
     end
 
     class Header < LibBin::Structure
@@ -16,7 +18,8 @@ module Bayonetta
       uint64 :size
       uint32 :num_files
       uint32 :offset_file_descriptors
-      uint64 :length_file_name_table
+      uint32 :length_file_name_table
+      uint32 :unknown
     end
 
     register_field :header, Header
