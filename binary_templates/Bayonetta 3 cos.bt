@@ -1,0 +1,22 @@
+LittleEndian();
+
+struct {
+  uint32 size<format=hex>;
+  uint32 version<format=hex>;
+  uint32 offsetEntries;
+  uint32 numEntries;
+} header;
+
+FSeek(header.offsetEntries);
+
+struct color {
+  float r, g, b;
+};
+
+struct {
+  color  colors[7];
+  uint32 textureIdx<format=hex>;
+  uint16 ua;
+  uint16 ub;
+  byte   pading[0x38];
+} entries[header.numEntries];
