@@ -96,7 +96,10 @@ struct {
     uint32  width;
     uint32  height;
     uint32  depth;
-    uint32  u_d;
-    uint32  blockHeightLog2;
+    uint32  specialPad<comment="when flags & 0x4">;;
+    byte    blockHeightLog2;
+    byte    flags<comment="0x4: pad width in GOBs">;
+    byte    u_b;
+    byte    u_c;
     uint32  u_f<format=hex>;
 } textureInfo[header.numTex];
