@@ -1,5 +1,9 @@
 LittleEndian();
 
+struct color {
+  float r, g, b;
+};
+
 struct {
   uint32 size<format=hex>;
   uint32 version<format=hex>;
@@ -9,14 +13,23 @@ struct {
 
 FSeek(header.offsetEntries);
 
-struct color {
-  float r, g, b;
-};
+if (header.size && header.numEntries) {
+  struct {
+    color  colors[7];
+    char name[0x40]<comment="In UTF8">;
+  } entries[header.numEntries];
+} else {
+  struct {
+    uint32 size<format=hex>;
+    uint32 version<format=hex>;
+    uint32 numEntries;
+    uint32 offsetEntries;
+  } header2;
 
-struct {
-  color  colors[7];
-  uint32 textureIdx<format=hex>;
-  uint16 ua;
-  uint16 ub;
-  byte   pading[0x38];
-} entries[header.numEntries];
+  FSeek(header.offsetEntries + header2.offsetEntries);
+
+  struct {
+    color  colors[7];
+    char name[0x40]<comment="In UTF8">;
+  } entries[header2.numEntries];
+}
