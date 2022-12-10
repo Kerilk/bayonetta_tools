@@ -5,6 +5,7 @@ require 'pathname'
 require 'set'
 require_relative '../../bayonetta.rb'
 require 'yaml'
+require 'shellwords'
 include Bayonetta
 
 $is_win = (RbConfig::CONFIG['host_os'] =~ /mswin/)
@@ -679,8 +680,8 @@ def add_textures(tex, path, new_tex_list)
     old_tex_path = Pathname.new(tex_path).absolute? ? tex_path : File.join(path, tex_path)
     if extension.downcase != ".dds"
       tex_path = Pathname.new(tex_path).absolute? ? File.join(File.dirname(tex_path), File.basename(tex_path,extension)) + ".dds" :
-                                      File.join(path, File.join(File.dirname(tex_path), File.basename(tex_path,extension)))+ ".dds"
-      `convert -define dds:compression=dxt5 "#{old_tex_path}" "#{tex_path}"`
+                                      File.join(path, File.join(File.dirname(tex_path), File.basename(tex_path,extension))) + ".dds"
+      `convert -define dds:compression=dxt5 #{Shellwords.escape old_tex_path} #{Shellwords.escape tex_path}`
     else
       tex_path = old_tex_path
     end
@@ -721,7 +722,7 @@ add_textures(tex, File.dirname(source), new_tex_list)
 wmb.recompute_relative_positions
 wmb.recompute_layout
 
-File::open("wmb_output/#{File::basename(source,File::extname(source))}_#{File::basename(target,".wmb")}_bone_map.yaml", "w") { |f|
+File::open(File.join("wmb_output", "#{File::basename(source,File::extname(source))}_#{File::basename(target,".wmb")}_bone_map.yaml"), "w") { |f|
   f.write YAML::dump(common_mapping)
 }
 
@@ -729,6 +730,6 @@ if $options[:overwrite]
   wmb.dump(target)
   tex.dump(tex_file_name)
 else
-  wmb.dump("wmb_output/"+File.basename(target))
-  tex.dump("wtb_output/"+File.basename(tex_file_name))
+  wmb.dump(File.join("wmb_output", File.basename(target)))
+  tex.dump(File.join("wtb_output", File.basename(tex_file_name)))
 end

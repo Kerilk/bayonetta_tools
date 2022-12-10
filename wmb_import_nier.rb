@@ -119,7 +119,7 @@ def merge_geometry(wmb1, wmb2, bone_mapping)
     b_s = wmb2.bone_sets[n_b.bone_set_index]
     b = WMBFile::Batch::new
     first_vertex_index = wmb1.vertexes.length
-    indices = v_g.indices.values.slice(n_b.index_start, n_b.num_indices)
+    indices = v_g.indices.slice(n_b.index_start, n_b.num_indices)
     index_set = indices.uniq.sort
     num_vertex = index_set.length
     index_map = index_set.each_with_index.collect { |ind, i|
@@ -269,17 +269,21 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb1 = WMBFile::load(input_file1)
 wmb2 = WMBFile::load(input_file2)
 
-tex1_file_name = input_file1.gsub(/wmb\z/,"wtb")
-tex1 = WTBFile::new(File::new(tex1_file_name, "rb"))
-begin
-  tex2_file_name = input_file2.gsub(/wmb\z/,"wta")
-  tex2 = WTBFile::new(File::new(tex2_file_name, "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
-rescue
-  tex2_file_name = input_file2.gsub(/wmb\z/,"wtb")
-  tex2 = WTBFile::new(File::new(tex2_file_name, "rb"))
-end
+tex_map = {}
 
-tex_map = get_texture_map(tex1, tex2)
+if $options[:import_textures]
+  tex1_file_name = input_file1.gsub(/wmb\z/,"wtb")
+  tex1 = WTBFile::new(File::new(tex1_file_name, "rb"))
+  begin
+    tex2_file_name = input_file2.gsub(/wmb\z/,"wta")
+    tex2 = WTBFile::new(File::new(tex2_file_name, "rb"), true, File::new(input_file2.gsub(/wmb\z/,"wtp"), "rb"))
+  rescue
+    tex2_file_name = input_file2.gsub(/wmb\z/,"wtb")
+    tex2 = WTBFile::new(File::new(tex2_file_name, "rb"))
+  end
+
+  tex_map = get_texture_map(tex1, tex2)
+end
 
 common_mapping, bone_mapping = merge_bones(wmb1, wmb2)
 
@@ -301,5 +305,5 @@ else
 end
 
 if $options[:import_textures]
-  `ruby wtb_import_textures.rb "#{tex1_file_name}" "#{tex2_file_name}"#{$options[:overwrite] ? " --overwrite" : ""}`
+  `ruby #{Shellwords.escape File.join(__dir__,"wtb_import_textures.rb")} #{Shellwords.escape tex1_file_name} #{Shellwords.escape tex2_file_name}#{$options[:overwrite] ? " --overwrite" : ""}`
 end
