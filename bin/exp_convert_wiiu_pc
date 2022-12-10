@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+require 'bayonetta/tools/exp_convert_wiiu_pc'
