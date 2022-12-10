@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+require 'bayonetta/tools/wmb_import_nier'
