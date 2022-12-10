@@ -649,7 +649,7 @@ module Bayonetta
     def recompute_layout
       @header.num_records = @records.length
       last_offset = @header.offset_records
-      last_offset += @records.collect(&:size).reduce(:+)
+      last_offset += @records.collect(&:__size).reduce(:+)
 
       table = @records.zip(@entries).to_h
       reverse_table = table.invert
@@ -662,7 +662,7 @@ module Bayonetta
       @entries.each { |e|
         if e
           reverse_table[e].offset = last_offset
-          last_offset += e.size
+          last_offset += e.__size
         else
           reverse_table[e].offset = 0
         end
