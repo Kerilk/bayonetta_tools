@@ -6,7 +6,8 @@ include Bayonetta
 
 $options = {
   decode: false,
-  decode_frame: nil
+  decode_frame: nil,
+  swap: false
 }
 
 OptionParser.new do |opts|
@@ -27,6 +28,10 @@ OptionParser.new do |opts|
   opts.on("--[no-]overwrite", "Overwrite source file") { |overwrite|
     $options[:overwrite] = overwrite
   }
+
+  opts.on("-e", "--swap-endianness", "Swap endianness") do |swap|
+    $options[:swap] = swap
+  end
 
   opts.on("-h", "--help", "Prints this help") do
     puts opts
@@ -50,7 +55,7 @@ if $options[:decode] || $options[:decode_frame]
 end
 
 if $options[:overwrite]
-  mot.dump(input_file)
+  mot.dump(input_file, $options[:swap] ? !mot.was_big? : mot.was_big?)
 else
-  mot.dump("mot_output/"+File.basename(input_file))
+  mot.dump("mot_output/"+File.basename(input_file), $options[:swap] ? !mot.was_big? : mot.was_big?)
 end
