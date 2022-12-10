@@ -15,4 +15,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'libbin', '~> 2', '>=2.0.0'
   s.add_dependency 'zstd-ruby', '~> 1', '>=1.5.0'
   s.add_dependency 'assimp-ffi', '~> 0.1',  '>=0.1.7'
+  s.add_dependency 'oodle-kraken-ruby', '~> 0.9', '>=0.9.0'
+  s.add_dependency 'nokogiri', '~> 1', '>=1.11.0'
 end
