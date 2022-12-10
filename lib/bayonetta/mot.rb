@@ -176,7 +176,7 @@ module Bayonetta
     class Interpolation3 < LibBin::Structure
       pghalf :p
       pghalf :dp
-      uint16 :keys, count: '..\records[__index]\num_keys'
+      uint8 :keys, count: '..\records[__index]\num_keys'
 
       def values(frame_count)
         count = frame_count
@@ -356,6 +356,7 @@ module Bayonetta
 
     register_field :header, Header
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
+    register_field :terminator, Record, offset: 'header\offset_records + 12*header\num_records'
     register_field :interpolations,
       'interpolation_type_selector(records[__iterator]\interpolation_type)',
       count: 'header\num_records', sequence: true,
@@ -444,7 +445,7 @@ module Bayonetta
 
       unless is_bayo2?(input)
         input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
-        return MOT2File::load(input_name)
+        return MOTFile::load(input_name)
       end
 
       input_big = is_big?(input)
@@ -457,7 +458,7 @@ module Bayonetta
       mot
     end
 
-    def __dump(output_name, output_big = false)
+    def dump(output_name, output_big = false)
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
@@ -468,6 +469,13 @@ module Bayonetta
       __set_dump_state(output, output_big, nil, nil)
       __dump_fields
       __unset_dump_state
+      sz = output.size
+      sz = align(sz, 0x4)
+      if sz > output.size
+        output.seek(sz-1)
+        output.write("\x00")
+      end
+
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
