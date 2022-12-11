@@ -245,6 +245,15 @@ module Bayonetta
     attr_accessor :normal_small_orig
     attr_accessor :wide
 
+    def is_bayo2?
+      if __parent.__parent.respond_to?(:is_bayo2?)
+        return __parent.__parent.is_bayo2?
+      elsif __parent.__parent.__parent.respond_to?(:is_bayo2?)
+        return __parent.__parent.__parent.is_bayo2?
+      end
+      raise "Cannot determine if Bayo2 or not!"
+    end
+
     def initialize
       @normal = [0.0, 0.0, 0.0]
       @normal_big_orig = nil
@@ -292,8 +301,7 @@ module Bayonetta
       [fx/nrm, fy/nrm, fz/nrm]
     end
 
-    def decode_big_normal(vs)
-      v = vs.unpack("L>").first
+    def unpack_wide(v)
       nx = v & ((1<<10)-1)
       ny = (v >> 10) & ((1<<10)-1)
       nz = (v >> 20) & ((1<<10)-1)
@@ -321,32 +329,16 @@ module Bayonetta
       normalize(fx, fy, fz)
     end
 
-    def redecode_wide
-      v = normal_small_orig.unpack("L<").first
-      nx = v & ((1<<10)-1)
-      ny = (v >> 10) & ((1<<10)-1)
-      nz = (v >> 20) & ((1<<10)-1)
-      sx = nx & (1<<9)
-      sy = ny & (1<<9)
-      sz = nz & (1<<9)
-      if sx
-        nx ^= sx
-        nx = -(sx-nx)
-      end
-      if sy
-        ny ^= sy
-        ny = -(sy-ny)
-      end
-      if sz
-        nz ^= sz
-        nz = -(sz-nz)
-      end
+    def decode_big_normal(vs)
+      unpack_wide(vs.unpack("L>").first)
+    end
 
-      mag = ((1<<9)-1).to_f
-      fx = nx.to_f/mag
-      fy = ny.to_f/mag
-      fz = nz.to_f/mag
-      @normals = normalize(fx, fy, fz)
+    def decode_small_normal_wide(vs)
+      unpack_wide(vs.unpack("L<").first)
+    end
+
+    def redecode_wide
+      @normals = decode_small_normal_wide(normal_small_orig)
     end
 
     def decode_small_normal(v)
@@ -371,8 +363,7 @@ module Bayonetta
       v
     end
 
-    def encode_small_normal(normal)
-      if @wide
+    def pack_wide(normal)
         fx = normal[0]
         fy = normal[1]
         fz = normal[2]
@@ -390,7 +381,16 @@ module Bayonetta
         v |= ny & mask
         v <<= 10
         v |= nx & mask
-        [v].pack("L<")
+        v
+    end
+
+    def encode_small_normal_wide(normal)
+        [pack_wide(normal)].pack("L<")
+    end
+
+    def encode_small_normal(normal)
+      if @wide
+        encode_small_normal_wide(normal)
       else
         fx = normal[0]
         fy = normal[1]
@@ -406,24 +406,7 @@ module Bayonetta
     end
 
     def encode_big_normal(normal)
-      fx = normal[0]
-      fy = normal[1]
-      fz = normal[2]
-      mag = (1<<9)-1
-      nx = (fx*(mag).to_f).to_i
-      ny = (fy*(mag).to_f).to_i
-      nz = (fz*(mag).to_f).to_i
-      nx = clamp(nx, mag, -1-mag)
-      ny = clamp(ny, mag, -1-mag)
-      nz = clamp(nz, mag, -1-mag)
-      mask = (1<<10)-1
-      v = 0
-      v |= nz & mask
-      v <<= 10
-      v |= ny & mask
-      v <<= 10
-      v |= nx & mask
-      [v].pack("L>")
+      [pack_wide(normal)].pack("L>")
     end
 
     def load_normal
@@ -435,16 +418,33 @@ module Bayonetta
       else
         @normal_small_orig = s
         @normal_big_orig = nil
-        @normal = decode_small_normal(s)
+        if is_bayo2?
+          @normal = decode_small_normal_wide(s)
+        else
+          @normal = decode_small_normal(s)
+        end
       end
     end
 
     def dump_normal
-      if __output_big
-        s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
-      else
-        s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
-      end
+      s2 =
+        if __output_big
+          if @normal_big_orig
+            @normal_big_orig
+          elsif is_bayo2? && @normal_small_orig
+            @normal_small_orig.reverse
+          else
+            encode_big_normal(@normal)
+          end
+        else
+          if @normal_small_orig
+            @normal_small_orig
+          elsif is_bayo2?
+            @normal_big_orig ? @normal_big_orig.reverse : encode_small_normal_wide(@normal)
+          else
+            encode_small_normal(@normal)
+          end
+        end
       __output.write(s2)
     end
 
@@ -1282,9 +1282,21 @@ module Bayonetta
       end
       output.rewind
 
+      if was_big? != output_big
+        if output_big
+          u_a = header.u_a
+          header.u_a = -1
+        else
+          u_a = header.u_a
+          header.u_a = 0
+        end
+      end
       __set_dump_state(output, output_big, nil, nil)
       __dump_fields
       __unset_dump_state
+      if was_big? != output_big
+        header.u_a = u_a
+      end
 
       sz = output.size
       sz = align(sz, 0x20)
@@ -1306,7 +1318,7 @@ module Bayonetta
       return self if @__was_big
       wide_normals = false
       @vertexes.each { |v|
-        if v.normal.normal_small_orig.bytes.first == 0
+        if v.normal.normal_small_orig.bytes.first != 0
           wide_normals = true
         end
       }
