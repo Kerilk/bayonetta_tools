@@ -431,6 +431,8 @@ Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
 wmb1 = WMBFile::load(input_file1)
 wmb2 = WMBFile::load(input_file2)
 
+tex_map = {}
+
 if $options[:import_textures]
   tex1_file_name = input_file1.gsub(/wmb\z/,"wtb")
   tex1 = WTBFile::new(File::new(tex1_file_name, "rb"))
@@ -441,9 +443,9 @@ if $options[:import_textures]
     tex2_file_name = input_file2.gsub(/wmb\z/,"wtb")
     tex2 = WTBFile::new(File::new(tex2_file_name, "rb"))
   end
-end
 
-tex_map = get_texture_map(tex1, tex2)
+  tex_map = get_texture_map(tex1, tex2)
+end
 
 merge_vertexes(wmb1, wmb2)
 
