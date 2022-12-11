@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'pgtools'
-  s.version = "1.0.0"
+  s.version = "1.0.1"
   s.author = "Brice Videau"
   s.email = "brice.videau@gmail.com"
   s.homepage = "https://github.com/kerilk/bayonetta_tools"
