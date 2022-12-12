@@ -1,0 +1,82 @@
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector_t<read=vectorRead>;
+
+string vectorRead( vector_t &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+struct {
+    char     id[4];
+    int      num_entries;
+    float    u_a;
+    float    u_b;
+    uint     u_offset<format=hex>;
+    uint     u_c[3];
+} header;
+
+string objectTypes(uint t) {
+    switch(t) {
+    case 0:
+        return "sc";
+    case 1:
+        return "pl";
+    case 2:
+        return "em";
+    case 3:
+        return "wp";
+    case 4:
+        return "bg";
+    case 5:
+        return "gm";
+    case 6:
+        return "et";
+    case 7:
+        return "ef";
+    case 6:
+        return "rp";
+    case 9:
+        return "it";
+    case 10:
+        return "id";
+    case 11:
+        return "es";
+    case 12:
+        return "bm";
+    case 13:
+        return "ic";
+    case 14:
+    case 15:
+        return "??";
+    case 16:
+        return "ct";
+    default:
+        return "??";
+    }
+}
+
+string objectIDRead(uint objectID) {
+    string s;
+    SPrintf(s, "%s%04x", objectTypes(objectID >> 16), objectID & 0xffff);
+    return s;
+}
+
+struct {
+    uint     objectID <format=hex, read=objectIDRead, comment="High 4 bytes: object type 0xXXXX0000 0 to 16: sc, pl, em, wp, bg, gm, et, ef, rp, it, id, es, bm, ic, ??, ??, ct">;
+    int      u_a;
+    int      flags;
+    int      u_b;
+    vector_t position;
+    vector_t orientation;
+    vector_t scale;
+    int      u_c;
+    byte     difficultySelector<comment="0: normal and up, 1: not normal, 2: not hard, 3: not NSIC, 8: normal and below, 9: easy and below">;
+    byte     u_d[3];
+    int      u_e[2];
+    short    u_f[2];
+    int      u_g[14];
+} entries[header.num_entries];
