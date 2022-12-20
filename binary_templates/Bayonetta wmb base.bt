@@ -2486,9 +2486,9 @@ struct {
     int32   numMeshes;
     uint32  offsetMeshesOffsets;
     uint32  offsetMeshes;
-    int32   unknownK;
-    int32   unknownL;
-    uint32  offsetUnknownJ;
+    int32   numPolygons;
+    int32   numbShaderSetting;
+    uint32  offsetInverseKinetic;
     uint32  offsetBoneSymmetries;
     uint32  offsetBoneFlags;
     uint32  exMatSahderNamesOffset;
