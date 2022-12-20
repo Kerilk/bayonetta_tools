@@ -24,6 +24,10 @@ class EnumValue
   def initialize(name, value)
     @name, @value = name, value
   end
+
+  def to_s
+    "#{name} = 0x%x" % (value < 0 ? [value].pack('i').unpack('I') : value)
+  end
 end
 
 class Enum
@@ -36,6 +40,13 @@ class Enum
     str = "#{name}"
     str << " #{n}" if n
     str
+  end
+
+  def print
+    pr "enum #{@name}#{@type ? " /* #{type} */" : ""}"
+    opn
+    @values.each { |v| pr v.to_s << "," } if @values
+    cls
   end
 
   def size
@@ -652,4 +663,4 @@ frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
 }.to_h
 
 
-types_LF.values.select { |t| t.kind_of?(Cls) ||  t.kind_of?(Structure) ||  t.kind_of?(Union) }.uniq.each { |t| t.print }
+types_LF.values.select { |t| t.kind_of?(Cls) ||  t.kind_of?(Structure) ||  t.kind_of?(Union) || t.kind_of?(Enum) }.uniq.each { |t| t.print }
