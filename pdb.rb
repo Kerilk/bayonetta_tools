@@ -1,5 +1,30 @@
+require 'set'
+
 pdb = File.read("txt").tr("\r","")
 $indent = 0
+
+# Patch table due to off by one offset due to multiple page
+lines = pdb.lines
+missing_value = "0x0001D87B"
+linebeg = 544360
+lineend = 544927
+new_pdb = lines[0...linebeg]
+new_pdb += lines[linebeg...lineend].map { |l|
+  match = l.match(/index = ([^,]+)/)
+  if match
+    l = l.sub(match[1], "#{missing_value}")
+    missing_value = match[1]
+  else
+    match = l.match(/list = ([^,]+)/)
+    if match
+      l = l.sub(match[1], "#{missing_value}")
+      missing_value = match[1]
+    end
+  end
+  l
+}
+new_pdb += lines[lineend..-1]
+pdb = new_pdb.join
 
 def opn
   pr "{"
@@ -31,7 +56,8 @@ class EnumValue
 end
 
 class Enum
-  attr_reader :name, :type, :values
+  attr_reader :name
+  attr_accessor :values, :type
   def initialize(name, type, values)
     @name, @type, @values = name, type, values
   end
@@ -72,7 +98,7 @@ class Member
   end
 
   def to_s
-    @type.to_s(name)
+    @type.to_s(name) << " /* #{visibility} */"
   end
 end
 
@@ -81,42 +107,112 @@ class StaticMember
   def initialize(name, type, visibility)
     @name, @type, @visibility = name, type, visibility
   end
+
+  def to_s
+    "static " << @type.to_s(name) << " /* #{visibility} */"
+  end
 end
 
-class Union
-  attr_reader :name
-  attr_accessor :members, :size
-  def initialize(name, members, size)
-    @name, @members, @size = name, members, size
+class MFunction
+  attr_reader :return_type, :args, :class_type
+  def initialize(return_type, args, class_type)
+    @return_type, @args, @class_type = return_type, args, class_type
   end
-  def print
-    if !size
-      pr "union #{@name};"
-      return
-    end
-    if @members
-      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.is_a?(String) ? p.type : p.type.name}" }
-      list = @members ? @members.select { |m| m.kind_of?(Member) } : []
+
+  def to_s(name = nil)
+    scoped_name = "#{@class_type.name}::#{name}"
+    frame_args = $frames[[scoped_name, self]]
+    if (frame_args)
+      if frame_args.first && frame_args.first[1] == "this"
+        raise "Error invalid class type #{scoped_name}" if !frame_args.first[0].is_a?(Pointer)
+        this_type = frame_args.first[0].type
+        while this_type.is_a?(Modifier) do
+          this_type = this_type.type
+        end
+        raise "Error invalid class type #{scoped_name}" if @class_type != this_type
+        frame_args = frame_args[1..-1]
+      end
+      arg_names = frame_args.map { |_, n, _| n }
     else
-      parents = []
-      list = []
+      #$stderr.puts "Warning #{scoped_name} missing frame!"
+      #$stderr.puts "Warning a similarly named frame exists!" if $frame_names.include? scoped_name
+      arg_names = nil
     end
-    pr "union #{@name}#{!parents.empty? ? " : " << parents.join(", ") : ""} /* size : 0x%08x */" % size
-    opn
-    list.each { |m| pr m.to_s << ";" << (m.offset ? " // 0x%08x" % m.offset : "") }
-    cls
+    str = ""
+    if @args
+      if @args.empty?
+        str << "void"
+      else
+        if arg_names
+          @args.each_with_index { |a, i|
+            if a == BaseType::NOTYPE # varargs
+              arg_names[i] = "..."
+            else
+              if frame_args[i] && a != frame_args[i][0]
+                arg_names.insert(i, nil) #unused and optimized away when inlining
+              end
+              # most probably unused
+              #$stderr.puts "Warning #{i} #{scoped_name} #{a.class} no args"  unless frame_args[i]
+            end
+          }
+          str << @args.zip(arg_names).map { |a, n| a.to_s(n) }.join(", ")
+        else
+          str <<  @args.join(", ")
+        end
+      end
+    end
+    str = "#{name}(#{str})"
+    if @return_type
+      @return_type.to_s(str)
+    else
+      str
+    end
   end
 
-  def to_s(n = nil)
-    str = "#{name}"
-    str << " #{n}" if n
-    str
+end
+
+class Meth
+  attr_reader :mfunc, :visibility, :inheritance
+  def initialize(mfunc, visibility, inheritance)
+    @mfunc, @visibility, @inheritance = mfunc, visibility, inheritance
+  end
+
+  def to_s(name = nil)
+    if !@mfunc.is_a?(MFunction)
+      $stderr.puts @mfunc.class
+      @mfunc.each { |f|
+        $stderr.puts f.class
+      }
+    end
+    s = @mfunc.to_s(name)
+    s = s << " = 0" if @inheritance.match(/PURE/)
+    s = "virtual " << s if @inheritance.match(/INTRO/)
+    s = "static " << s if @inheritance.match(/STATIC/)
+    s << " /* #{visibility} */"
   end
 end
 
-class Structure
+class NamedMeth
+  attr_reader :name, :methods
+  def initialize(name, methods)
+    @name, @methods = name, methods
+  end
+
+  def print
+    $stderr.puts "Warning #{name} not an arr #{methods.class}" if !@methods.is_a?(Array)
+    @methods.each { |m|
+      pr m.to_s(name) << ";"
+    }
+  end
+end
+
+class Composite
   attr_reader :name
   attr_accessor :members, :size
+  class << self
+    attr_reader :tag
+  end
+
   def initialize(name, members, size)
     @name, @members, @size = name, members, size
   end
@@ -127,16 +223,30 @@ class Structure
       return
     end
     if @members
-      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.is_a?(String) ? p.type : p.type.name}" }
-      list = @members ? @members.select { |m| m.kind_of?(Member) } : []
+      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.name}" }
+      named_meths = @members.select { |m| m.kind_of?(NamedMeth) }
+      static_members = @members.select { |m| m.kind_of?(StaticMember) }
+      list = @members.select { |m| m.kind_of?(Member) }
     else
       parents = []
+      named_meths = []
+      static_members = []
       list = []
     end
-    pr "struct #{@name}#{!parents.empty? ? " : " << parents.join(", ") : ""} /* size : 0x%08x */" % size
+    pr "#{tag} #{@name}#{!parents.empty? ? " : " << parents.join(", ") : ""} /* size : 0x%08x */" % size
     opn
+    named_meths.each { |meth|
+      meth.print
+    }
+    pr "/*****************************************/"
+    static_members .each { |m| pr m.to_s << ";" }
+    pr "/*****************************************/"
     list.each { |m| pr m.to_s << ";" << (m.offset ? " // 0x%08x" % m.offset : "") }
     cls
+  end
+
+  def tag
+    self.class.tag
   end
 
   def to_s(n = nil)
@@ -144,6 +254,19 @@ class Structure
     str << " #{n}" if n
     str
   end
+end
+
+class Union < Composite
+  @tag = "union"
+end
+
+
+class Structure < Composite
+  @tag = "struct"
+end
+
+class Cls < Composite
+  @tag = "class"
 end
 
 class Pointer
@@ -235,45 +358,6 @@ class Modifier
   end
 end
 
-class MFunction
-  attr_reader :return_type, :args, :class_type
-  def initialize(return_type, args, class_type)
-    @return_type, @args, @class_type = return_type, args, class_type
-  end
-
-  def to_s(name = nil)
-    str = ""
-    if @args
-      if @args.empty?
-        str << "void"
-      else
-        str << @args.join(", ")
-      end
-    end
-    str = "#{name}(#{str})"
-    if @return_type
-      @return_type.to_s(str)
-    else
-      str
-    end
-  end
-
-end
-
-class Meth
-  attr_reader :mfunc, :visibility, :inheritance
-  def initialize(mfunc, visibility, inheritance)
-    @mfunc, @visibility, @inheritance = mfunc, visibility, inheritance
-  end
-end
-
-class NamedMeth
-  attr_reader :name, :methods
-  def initialize(name, methods)
-    @name, @methods = name, methods
-  end
-end
-
 class Parent
   attr_reader :type, :visibility
   def initialize(type, visibility)
@@ -285,38 +369,6 @@ class Nested
   attr_reader :name, :type
   def initialize(name, type)
     @name, @type = name, type
-  end
-end
-
-class Cls
-  attr_reader :name
-  attr_accessor :members, :size
-  def initialize(name, members, size)
-    @name, @members, @size = name, members, size
-  end
-
-  def print
-    if !size
-      pr "class #{@name};"
-      return
-    end
-    if @members
-      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.is_a?(String) ? p.type : p.type.name}" }
-      list = @members ? @members.select { |m| m.kind_of?(Member) } : []
-    else
-      parents = []
-      list = []
-    end
-    pr "class #{@name}#{!parents.empty? ? " : " << parents.join(", ") : ""} /* size : 0x%08x */" % size
-    opn
-    list.each { |m| pr m.to_s << ";" << (m.offset ? " // 0x%08x" % m.offset : "") }
-    cls
-  end
-
-  def to_s(n = nil)
-    str = "#{name}"
-    str << " #{n}" if n
-    str
   end
 end
 
@@ -455,6 +507,10 @@ types = {}
 
 pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map(&:chomp) }.each { |t|
   id, length, leaf, type = t[0].match(/0x(\h+) : Length = (\d+), Leaf = 0x(\h+) (.*)/).captures
+  next if id == "0001d87b" # off by one error
+  if id == "e2c2"
+    types_LF[0x1d87b].args[0] = types_LF[0xE2C1]
+  end
   t2 = []
   t.each { |l|
     l.start_with?("\t\t") ? t2[-1] += l : t2.push(l)
@@ -501,11 +557,20 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
       when "LF_ONEMETHOD"
         name = options.match(/name = '(.*)'/)[1]
         type = options.match(/index = 0x(\h+)/)
-        type = types_LF[type[1].to_i(16)] if type
+        if type
+          if type[1] == "0001D87B" # off by one error
+            types_LF["0001D87B".to_i(16)] =
+              MFunction.new(BaseType.from_str("T_INT4"),
+                            [],
+                            types_LF[0xC537])
+            
+          end
+          type = types_LF[type[1].to_i(16)]
+        end
         type = BaseType.from_str(options.match(/index = (\w+)\(\d+\)/)[1]) unless type
         mfunc = type
         visibility, inheritance = options.match(/^(\w+), ([^,]+),/).captures
-        NamedMeth.new(name, Meth.new(mfunc, visibility, inheritance))
+        NamedMeth.new(name, [Meth.new(mfunc, visibility, inheritance)])
       when "LF_BCLASS"
         visibility = options.match(/^(\w+), type/)[1]
         type = options.match(/type = 0x(\h+)/)
@@ -528,11 +593,20 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     udt = nil
     udt = t[2].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
-    type = BaseType.from_str(t[1].match(/type = (\w+)\(\d+\)/)[1])
-    values = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)]
-    enum = Enum.new(name, type, values)
-    types[udt] = enum if udt
-    enum
+    type = nil
+    type = BaseType.from_str(t[1].match(/type = (\w+)\(\d+\)/)[1]) unless t[2].match(/FORWARD REF/)
+    values = nil
+    values = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)] unless t[2].match(/FORWARD REF/)
+    decl = types[udt]
+    if decl
+      decl.values = values unless decl.values
+      decl.type = type unless decl.type
+      decl
+    else
+      enum = Enum.new(name, type, values)
+      types[udt] = enum if udt
+      enum
+    end
   when "LF_BITFIELD"
     bits = t[1].match(/bits = (\d+)/)[1].to_i
     start = t[1].match(/starting position = (\d+)/)[1].to_i
@@ -646,8 +720,8 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
   end
 }
 
-frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
-  [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER/) }]
+$frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
+  [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER|S_REGREL32/) }]
 }.map { |(type, name), args|
   args.map! { |l|
     match = l.match(/Type:\s+0x(\h+), (.*)/)
@@ -655,12 +729,13 @@ frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
       t, n = *match.captures
       t = types_LF[t.to_i(16)]
     else
-      t, n = *l.match(/Type:\s+(\w+)\(\d+\), (.*)/)
+      t, n = *l.match(/Type:\s+(\w+)\(\d+\), (.*)/).captures
+      t = BaseType.from_str(t)
     end
-    [t, n]
+    [t, n, l.match(/S_REGISTER|S_REGREL32/)[0]]
   }
   [[name, types_LF[type.to_i(16)]], args]
 }.to_h
+$frame_names = Set.new( $frames.keys.map { |n, _| n } )
 
-
-types_LF.values.select { |t| t.kind_of?(Cls) ||  t.kind_of?(Structure) ||  t.kind_of?(Union) || t.kind_of?(Enum) }.uniq.each { |t| t.print }
+types_LF.values.select { |t| t.kind_of?(Composite) || t.kind_of?(Enum) }.uniq.each { |t| t.print }
