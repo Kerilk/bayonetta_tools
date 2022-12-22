@@ -1,30 +1,58 @@
 require 'set'
+require 'optparse'
 
-pdb = File.read("txt").tr("\r","")
+$wa = false
+$cmode = false
 $indent = 0
 
-# Patch table due to off by one offset due to multiple page
-lines = pdb.lines
-missing_value = "0x0001D87B"
-linebeg = 544360
-lineend = 544927
-new_pdb = lines[0...linebeg]
-new_pdb += lines[linebeg...lineend].map { |l|
-  match = l.match(/index = ([^,]+)/)
-  if match
-    l = l.sub(match[1], "#{missing_value}")
-    missing_value = match[1]
-  else
-    match = l.match(/list = ([^,]+)/)
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: pdb.rb target_file [options]"
+
+  opts.on("--[no-]workaround", "Activate workaround for off by one bug") do |wa|
+    $wa = wa
+  end
+
+  opts.on("--[no-]c-output", "Activate c output mode") do |c|
+    $cmode = c
+  end
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+end
+parser.parse!
+
+input_file = ARGV[0]
+raise "Invalid file #{input_file}" unless File::file?(input_file)
+
+pdb = File.read(input_file).tr("\r","")
+
+if $wa
+  # Patch table due to off by one offset due to multiple page
+  lines = pdb.lines
+  missing_value = "0x0001D87B"
+  linebeg = 544360
+  lineend = 544927
+  new_pdb = lines[0...linebeg]
+  new_pdb += lines[linebeg...lineend].map { |l|
+    match = l.match(/index = ([^,]+)/)
     if match
       l = l.sub(match[1], "#{missing_value}")
       missing_value = match[1]
+    else
+      match = l.match(/list = ([^,]+)/)
+      if match
+        l = l.sub(match[1], "#{missing_value}")
+        missing_value = match[1]
+      end
     end
-  end
-  l
-}
-new_pdb += lines[lineend..-1]
-pdb = new_pdb.join
+    l
+  }
+  new_pdb += lines[lineend..-1]
+  pdb = new_pdb.join
+end
 
 def opn
   pr "{"
@@ -87,7 +115,7 @@ class BitfieldValue
   end
 
   def to_s(name)
-    "#{@type.to_s(name)} : #{@bits}#{@start ? " /* start #{@start} */" : "" }" 
+    "#{@type.to_s(name)} : #{@bits}#{@start ? " /* start #{@start} */" : "" }"
   end
 end
 
@@ -114,23 +142,20 @@ class StaticMember
 end
 
 class MFunction
-  attr_reader :return_type, :args, :class_type
-  def initialize(return_type, args, class_type)
-    @return_type, @args, @class_type = return_type, args, class_type
+  attr_reader :return_type, :args, :class_type, :this_type
+  def initialize(return_type, args, class_type, this_type)
+    @return_type, @args, @class_type, @this_type = return_type, args, class_type, this_type
   end
 
   def to_s(name = nil)
     scoped_name = "#{@class_type.name}::#{name}"
     frame_args = $frames[[scoped_name, self]]
     if (frame_args)
-      if frame_args.first && frame_args.first[1] == "this"
-        raise "Error invalid class type #{scoped_name}" if !frame_args.first[0].is_a?(Pointer)
-        this_type = frame_args.first[0].type
-        while this_type.is_a?(Modifier) do
-          this_type = this_type.type
+      if @this_type
+        if frame_args.first && frame_args.first[1] == "this"
+          raise "Error invalid class type #{scoped_name}" if frame_args.first[0] != @this_type
+          frame_args = frame_args[1..-1] unless $cmode
         end
-        raise "Error invalid class type #{scoped_name}" if @class_type != this_type
-        frame_args = frame_args[1..-1]
       end
       arg_names = frame_args.map { |_, n, _| n }
     else
@@ -139,26 +164,27 @@ class MFunction
       arg_names = nil
     end
     str = ""
-    if @args
-      if @args.empty?
-        str << "void"
-      else
-        if arg_names
-          @args.each_with_index { |a, i|
-            if a == BaseType::NOTYPE # varargs
-              arg_names[i] = "..."
-            else
-              if frame_args[i] && a != frame_args[i][0]
-                arg_names.insert(i, nil) #unused and optimized away when inlining
-              end
-              # most probably unused
-              #$stderr.puts "Warning #{i} #{scoped_name} #{a.class} no args"  unless frame_args[i]
+    args2 = []
+    args2 << @this_type if @this_type && $cmode
+    args2 += @args if @args
+    if args2.empty?
+      str << "void"
+    else
+      if arg_names
+        args2.each_with_index { |a, i|
+          if a == BaseType::NOTYPE # varargs
+            arg_names[i] = "..."
+          else
+            if frame_args[i] && a != frame_args[i][0]
+              arg_names.insert(i, nil) #unused and optimized away when inlining
             end
-          }
-          str << @args.zip(arg_names).map { |a, n| a.to_s(n) }.join(", ")
-        else
-          str <<  @args.join(", ")
-        end
+            # most probably unused
+            #$stderr.puts "Warning #{i} #{scoped_name} #{a.class} no args"  unless frame_args[i]
+          end
+        }
+        str << args2.zip(arg_names).map { |a, n| a.to_s(n) }.join(", ")
+      else
+        str << args2.join(", ")
       end
     end
     str = "#{name}(#{str})"
@@ -172,9 +198,25 @@ class MFunction
 end
 
 class Meth
-  attr_reader :mfunc, :visibility, :inheritance
-  def initialize(mfunc, visibility, inheritance)
-    @mfunc, @visibility, @inheritance = mfunc, visibility, inheritance
+  attr_reader :mfunc, :visibility, :inheritance, :vfptr_offset
+  def initialize(mfunc, visibility, inheritance, vfptr_offset)
+    @mfunc, @visibility, @inheritance, @vfptr_offset = mfunc, visibility, inheritance, vfptr_offset
+  end
+
+  def introducing_virtual?
+    @inheritance.match(/INTRO/)
+  end
+
+  def pure?
+    @inheritance.match(/PURE/)
+  end
+
+  def virtual?
+    @inheritance.match(/VIRTUAL/) || pure?
+  end
+
+  def static?
+    @inheritance.match(/STATIC/)
   end
 
   def to_s(name = nil)
@@ -185,10 +227,11 @@ class Meth
       }
     end
     s = @mfunc.to_s(name)
-    s = s << " = 0" if @inheritance.match(/PURE/)
-    s = "virtual " << s if @inheritance.match(/INTRO/)
-    s = "static " << s if @inheritance.match(/STATIC/)
-    s << " /* #{visibility} */"
+    s = s << " = 0" if pure?
+    s = "virtual " << s if introducing_virtual?
+    s = "static " << s if static?
+    s = s << " /* #{visibility} */"
+    s
   end
 end
 
@@ -219,19 +262,43 @@ class Composite
 
   def print
     if !size
-      pr "struct #{@name};"
+      pr "#{tag} #{@name};"
       return
     end
+    parents = []
+    named_meths = []
+    static_members = []
+    list = []
     if @members
       parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.name}" }
       named_meths = @members.select { |m| m.kind_of?(NamedMeth) }
       static_members = @members.select { |m| m.kind_of?(StaticMember) }
       list = @members.select { |m| m.kind_of?(Member) }
-    else
-      parents = []
-      named_meths = []
-      static_members = []
-      list = []
+    end
+    vftable = nil
+    if self.is_a?(TableComposite) && @members
+      if has_vftable?
+        vftable = @members.find { |m| m.kind_of?(VFTable) }
+        parent = @members.find { |m| m.kind_of?(Parent) }
+        entries = []
+        named_meths.each { |nm|
+          nm.methods.filter(&:vfptr_offset).each { |m|
+            i = m.vfptr_offset/Pointer.size
+            # virtual __vecDelDtor seem to override application defined destructor
+            entries[i] = [nm.name, m] unless entries[i]
+          }
+        }
+        pr "struct #{@name}::__vftable /* size : 0x%08x */" % (vtshape.num * Pointer.size)
+        opn
+        if parent && parent.type.vftable_name
+          pr "#{parent.type.vftable_name} _base; /* size : 0x%08x */" % (parent.type.vtshape.num * Pointer.size)
+          range = parent.type.vtshape.num..-1
+        else
+          range = 0..-1
+        end
+        entries[range].each { |n, t| pr Pointer.new(t.mfunc).to_s(n) }
+        cls
+      end
     end
     pr "#{tag} #{@name}#{!parents.empty? ? " : " << parents.join(", ") : ""} /* size : 0x%08x */" % size
     opn
@@ -239,8 +306,9 @@ class Composite
       meth.print
     }
     pr "/*****************************************/"
-    static_members .each { |m| pr m.to_s << ";" }
+    static_members.each { |m| pr m.to_s << ";" }
     pr "/*****************************************/"
+    pr "#{@name}::__vftable *_vftable; // 0x%08x" % 0 if vftable
     list.each { |m| pr m.to_s << ";" << (m.offset ? " // 0x%08x" % m.offset : "") }
     cls
   end
@@ -260,12 +328,35 @@ class Union < Composite
   @tag = "union"
 end
 
+class TableComposite < Composite
+  attr_accessor :vtshape
+  def initialize(name, members, size, vtshape)
+    super(name, members, size)
+    @vtshape = vtshape
+  end
 
-class Structure < Composite
+  def has_vftable?
+    if @vtshape
+      p = @members.find { |m| m.kind_of?(Parent) }
+      return false if p && p.type.vtshape && p.type.vtshape.num == @vtshape.num
+      return true
+    end
+    false
+  end
+
+  def vftable_name
+    return "#{@name}::__vftable" if has_vftable?
+    p = @members.find { |m| m.kind_of?(Parent) } if @members
+    return p.type.vftable_name if p
+    nil
+  end
+end
+
+class Structure < TableComposite
   @tag = "struct"
 end
 
-class Cls < Composite
+class Cls < TableComposite
   @tag = "class"
 end
 
@@ -283,7 +374,11 @@ class Pointer
       when Procedure, Arr
         "(#{str})"
       when MFunction
-        "(#{@type.class_type.name}::#{str})"
+        if $cmode
+          "(#{str})"
+        else
+          "(#{@type.class_type.name}::#{str})"
+        end
       else
         str
       end
@@ -295,6 +390,10 @@ class Pointer
   end
 
   def size
+    4
+  end
+
+  def self.size
     4
   end
 end
@@ -507,9 +606,11 @@ types = {}
 
 pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map(&:chomp) }.each { |t|
   id, length, leaf, type = t[0].match(/0x(\h+) : Length = (\d+), Leaf = 0x(\h+) (.*)/).captures
-  next if id == "0001d87b" # off by one error
-  if id == "e2c2"
-    types_LF[0x1d87b].args[0] = types_LF[0xE2C1]
+  if $wa
+    next if id == "0001d87b" # off by one error
+    if id == "e2c2"
+      types_LF[0x1d87b].args[0] = types_LF[0xE2C1]
+    end
   end
   t2 = []
   t.each { |l|
@@ -558,19 +659,21 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         name = options.match(/name = '(.*)'/)[1]
         type = options.match(/index = 0x(\h+)/)
         if type
-          if type[1] == "0001D87B" # off by one error
+          if $wa && type[1] == "0001D87B" # off by one error
             types_LF["0001D87B".to_i(16)] =
               MFunction.new(BaseType.from_str("T_INT4"),
                             [],
-                            types_LF[0xC537])
-            
+                            types_LF[0xC537],
+                            types_LF[0xC538])
           end
           type = types_LF[type[1].to_i(16)]
         end
         type = BaseType.from_str(options.match(/index = (\w+)\(\d+\)/)[1]) unless type
         mfunc = type
+        vfptr_offset = options.match(/vfptr offset = (\d+)/)
+        vfptr_offset = vfptr_offset[1].to_i if vfptr_offset
         visibility, inheritance = options.match(/^(\w+), ([^,]+),/).captures
-        NamedMeth.new(name, [Meth.new(mfunc, visibility, inheritance)])
+        NamedMeth.new(name, [Meth.new(mfunc, visibility, inheritance, vfptr_offset)])
       when "LF_BCLASS"
         visibility = options.match(/^(\w+), type/)[1]
         type = options.match(/type = 0x(\h+)/)
@@ -579,7 +682,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         Parent.new(type, visibility)
       when "LF_VFUNCTAB"
         type = options.match(/type = 0x(\h+)/)
-        types_LF[type[1].to_i(16)]
+        type = types_LF[type[1].to_i(16)]
         VFTable.new(type)
       when "LF_INDEX"
         type = options.match(/Type Index = 0x(\h+)/)
@@ -637,16 +740,22 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     udt = t[3].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
     members = nil
-    members = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)] unless t[1].match(/FORWARD REF/)
     size = nil
-    size = t[3].match(/Size = (?:\(\w+\) )?(\d+)/)[1].to_i unless t[1].match(/FORWARD REF/)
+    vtshape = nil
+    unless t[1].match(/FORWARD REF/)
+      members = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)]
+      size = t[3].match(/Size = (?:\(\w+\) )?(\d+)/)[1].to_i
+      vtshape = types_LF[t[2].match(/VT shape type 0x(\h+)/)[1].to_i(16)]
+    end
+
     decl = types[udt]
     if decl
-      decl.members = members unless decl.members
-      decl.size = size unless decl.size
+      decl.members = members if members
+      decl.size = size if size
+      decl.vtshape = vtshape if vtshape
       decl
     else
-      struct = Structure.new(name, members, size)
+      struct = Structure.new(name, members, size, vtshape)
       types[udt] = struct if udt
       struct
     end
@@ -655,16 +764,21 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     udt = t[3].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
     members = nil
-    members = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)] unless t[1].match(/FORWARD REF/)
     size = nil
-    size = t[3].match(/Size = (?:\(\w+\) )?(\d+)/)[1].to_i unless t[1].match(/FORWARD REF/)
+    unless t[1].match(/FORWARD REF/)
+      members = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)]
+      size = t[3].match(/Size = (?:\(\w+\) )?(\d+)/)[1].to_i
+      vtshape = types_LF[t[2].match(/VT shape type 0x(\h+)/)[1].to_i(16)]
+    end
+
     decl = types[udt]
     if decl
-      decl.members = members unless decl.members
-      decl.size = size unless decl.size
+      decl.members = members if members
+      decl.size = size if size
+      decl.vtshape = vtshape if vtshape
       decl
     else
-      struct = Cls.new(name, members, size)
+      struct = Cls.new(name, members, size, vtshape)
       types[udt] = struct if udt
       struct
     end
@@ -704,16 +818,20 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     type = types_LF[type[1].to_i(16)] if type
     type = BaseType.from_str(t[1].match(/Return type = (\w+)\(\d+\)/)[1]) unless type
     class_type = types_LF[t[1].match(/Class type = 0x(\h+)/)[1].to_i(16)]
+    this_type = t[1].match(/This type = 0x(\h+)/)
+    this_type = types_LF[t[1].match(/This type = 0x(\h+)/)[1].to_i(16)] if this_type
     args = types_LF[t[3].match(/Arg list type = 0x(\h+)/)[1].to_i(16)]
-    MFunction.new(type, args, class_type)
+    MFunction.new(type, args, class_type, this_type)
   when "LF_METHODLIST"
     t[1..-1].map { |l|
       visibility, inheritance = l.match(/list\[\d+\] = (\w+), ([^,]+)/).captures
       mfunc = types_LF[l.match(/, 0x(\h+),/)[1].to_i(16)]
-      Meth.new(mfunc, visibility, inheritance)
+      vfptr_offset = l.match(/vfptr offset = (\d+)/)
+      vfptr_offset = vfptr_offset[1].to_i if vfptr_offset
+      Meth.new(mfunc, visibility, inheritance, vfptr_offset)
     }
   when "LF_VTSHAPE"
-    num = t[0].match(/Length = (\d+)/)[0].to_i
+    num = t[1].match(/Number of entries : (\d+)/)[1].to_i
     VFTableShape.new(num)
   else
     raise "unsupported #{type}"
@@ -738,4 +856,7 @@ $frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
 }.to_h
 $frame_names = Set.new( $frames.keys.map { |n, _| n } )
 
-types_LF.values.select { |t| t.kind_of?(Composite) || t.kind_of?(Enum) }.uniq.each { |t| t.print }
+types_LF.values.select { |t| t.kind_of?(Composite) || t.kind_of?(Enum) }.uniq.each { |t|
+  pr "/*--------------------------------------------------*/"
+  t.print
+}
