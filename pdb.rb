@@ -59,9 +59,11 @@ def opn
   $indent += 1
 end
 
-def cls
+def cls(t = true)
   $indent -= 1
-  pr "}"
+  s = "}"
+  s << ";" if t
+  pr s
 end
 
 def indent(v)
@@ -138,6 +140,49 @@ class StaticMember
 
   def to_s
     "static " << @type.to_s(name) << " /* #{visibility} */"
+  end
+end
+
+class Procedure
+  attr_reader :return_type, :args
+  def initialize(return_type, args)
+    @return_type, @args = return_type, args
+  end
+
+  def to_s(name = nil)
+    frame_args = $frames[[name, self]]
+    if (frame_args)
+      arg_names = frame_args.map { |_, n, _| n } 
+    else
+      arg_names = nil
+    end
+    str = ""
+    if @args
+      if @args.empty?
+        str << "void"
+      else
+        if arg_names
+          @args.each_with_index { |a, i|
+            if a == BaseType::NOTYPE # varargs
+              arg_names[i] = "..."
+            else
+              if frame_args[i] && a != frame_args[i][0]
+                arg_names.insert(i, nil)
+              end
+            end
+          }
+          str << @args.zip(arg_names).map { |a, n| a.to_s(n) }.join(", ")
+        else
+          str << @args.join(", ")
+        end
+      end
+    end
+    str = "#{name}(#{str})"
+    if @return_type
+      @return_type.to_s(str)
+    else
+      str
+    end
   end
 end
 
@@ -270,7 +315,7 @@ class Composite
     static_members = []
     list = []
     if @members
-      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.name}" }
+      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.name} /* 0x%08x */" % p.offset }
       named_meths = @members.select { |m| m.kind_of?(NamedMeth) }
       static_members = @members.select { |m| m.kind_of?(StaticMember) }
       list = @members.select { |m| m.kind_of?(Member) }
@@ -398,30 +443,6 @@ class Pointer
   end
 end
 
-class Procedure
-  attr_reader :return_type, :args
-  def initialize(return_type, args)
-    @return_type, @args = return_type, args
-  end
-
-  def to_s(name = nil)
-    str = ""
-    if @args
-      if @args.empty?
-        str << "void"
-      else
-        str << @args.join(", ")
-      end
-    end
-    str = "#{name}(#{str})"
-    if @return_type
-      @return_type.to_s(str)
-    else
-      str
-    end
-  end
-end
-
 class Arr
   attr_reader :type, :length
   def initialize(type, length)
@@ -458,9 +479,9 @@ class Modifier
 end
 
 class Parent
-  attr_reader :type, :visibility
-  def initialize(type, visibility)
-    @type, @visibility = type, visibility
+  attr_reader :type, :visibility, :offset
+  def initialize(type, visibility, offset)
+    @type, @visibility, @offset = type, visibility, offset
   end
 end
 
@@ -676,10 +697,11 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         NamedMeth.new(name, [Meth.new(mfunc, visibility, inheritance, vfptr_offset)])
       when "LF_BCLASS"
         visibility = options.match(/^(\w+), type/)[1]
+        offset = options.match(/offset = (?:\(\w+\) )?(\d+)/)[1]
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
         type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
-        Parent.new(type, visibility)
+        Parent.new(type, visibility, offset)
       when "LF_VFUNCTAB"
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)]
@@ -838,7 +860,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
   end
 }
 
-$frames = pdb.scan(/\(\h+\) S_GPROC32: .*?S_END/m).map(&:lines).map { |b|
+$frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).map { |b|
   [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER|S_REGREL32/) }]
 }.map { |(type, name), args|
   args.map! { |l|
@@ -860,3 +882,42 @@ types_LF.values.select { |t| t.kind_of?(Composite) || t.kind_of?(Enum) }.uniq.ea
   pr "/*--------------------------------------------------*/"
   t.print
 }
+
+pr "/****************************************************/"
+
+$frames.each { |(n, t), _|
+  pr t.to_s(n) if t.kind_of?(Procedure)
+}
+
+pr "/****************************************************/"
+
+symbols = pdb.scan(/^S_(?:G|L)DATA32: .*$/).map { |l|
+  match = l.match(/32: \[(\h+:\h+)\]/)
+  location = match[1].split(":").map { |s| s.to_i(16) }
+  match = l.match(/Type:\s+0x(\h+), (.*)/)
+  if match
+    t, n = *match.captures
+    t = types_LF[t.to_i(16)]
+  else
+    t, n = *l.match(/Type:\s+(\w+)\(\d+\), (.*)/).captures
+    t = BaseType.from_str(t)
+  end
+  [t, n, location]
+}
+
+symbols.sort { |s1, s2| s1[2] <=> s2[2] }.each { |t, n, (s, a)|
+  pr t.to_s(n) + "; // [%04x:%08x]" % [s, a]
+}
+#pr "/****************************************************/"
+#
+#pdb.scan(/^S_LDATA32: .*$/).map { |l|
+#  match = l.match(/Type:\s+0x(\h+), (.*)/)
+#  if match
+#    t, n = *match.captures
+#    t = types_LF[t.to_i(16)]
+#  else
+#    t, n = *l.match(/Type:\s+(\w+)\(\d+\), (.*)/).captures
+#    t = BaseType.from_str(t)
+#  end
+#  pr t.to_s(n) + ";"
+#}
