@@ -315,16 +315,18 @@ class Composite
     static_members = []
     list = []
     if @members
-      parents = @members.select { |m| m.kind_of?(Parent) }.map { |p| "#{p.visibility} #{p.type.name} /* 0x%08x */" % p.offset }
+      parents = @members.select { |m| m.kind_of?(Parent) || m.kind_of?(VirtualParent) }.map { |p|
+        "#{p.visibility} #{p.type.name}" + (p.kind_of?(Parent) ? " /* 0x%08x */" % p.offset : "") }
       named_meths = @members.select { |m| m.kind_of?(NamedMeth) }
       static_members = @members.select { |m| m.kind_of?(StaticMember) }
       list = @members.select { |m| m.kind_of?(Member) }
     end
+    vbtable = nil
     vftable = nil
     if self.is_a?(TableComposite) && @members
       if has_vftable?
         vftable = @members.find { |m| m.kind_of?(VFTable) }
-        parent = @members.find { |m| m.kind_of?(Parent) }
+        parent = @members.find { |m| m.kind_of?(Parent) && m.type.vftable_name }
         entries = []
         named_meths.each { |nm|
           nm.methods.filter(&:vfptr_offset).each { |m|
@@ -335,13 +337,23 @@ class Composite
         }
         pr "struct #{@name}::__vftable /* size : 0x%08x */" % (vtshape.num * Pointer.size)
         opn
-        if parent && parent.type.vftable_name
+        if parent
           pr "#{parent.type.vftable_name} _base; /* size : 0x%08x */" % (parent.type.vtshape.num * Pointer.size)
           range = parent.type.vtshape.num..-1
         else
           range = 0..-1
         end
-        entries[range].each { |n, t| pr Pointer.new(t.mfunc).to_s(n) }
+        entries[range].each { |n, t| pr "#{Pointer.new(t.mfunc).to_s(n)}; // 0x%08x" % t.vfptr_offset.to_i if t } if entries[range]
+        cls
+      end
+      if has_vbtable?
+        vbtable = true
+        virtual_parents = @members.select { |m| m.kind_of?(VirtualParent) || m.kind_of?(IndirectVirtualParent) }
+        pr "struct #{@name}::__vbtable /* size : 0x%08x */" % (virtual_parents.size * Pointer.size)
+        opn
+        virtual_parents.sort { |p1, p2| p1.vbpoff <=> p2.vbpoff }.each_with_index { |p, i|
+          pr "#{Pointer.new(p.type).to_s("base%02i" % i)}; // 0x%08x" % p.vbpoff
+        }
         cls
       end
     end
@@ -354,6 +366,7 @@ class Composite
     static_members.each { |m| pr m.to_s << ";" }
     pr "/*****************************************/"
     pr "#{@name}::__vftable *_vftable; // 0x%08x" % 0 if vftable
+    pr "#{@name}::__vbtable _vbtable; // 0x%08x" % (vftable ? Pointer.size : 0) if vbtable
     list.each { |m| pr m.to_s << ";" << (m.offset ? " // 0x%08x" % m.offset : "") }
     cls
   end
@@ -394,6 +407,11 @@ class TableComposite < Composite
     p = @members.find { |m| m.kind_of?(Parent) } if @members
     return p.type.vftable_name if p
     nil
+  end
+
+  def has_vbtable?
+    return true if @members.find { |m| m.kind_of?(VirtualParent) || m.kind_of?(IndirectVirtualParent) }
+    return false
   end
 end
 
@@ -482,6 +500,20 @@ class Parent
   attr_reader :type, :visibility, :offset
   def initialize(type, visibility, offset)
     @type, @visibility, @offset = type, visibility, offset
+  end
+end
+
+class VirtualParent
+  attr_reader :type, :visibility, :vbpoff
+  def initialize(type, visibility, vbpoff)
+    @type, @visibility, @vbpoff = type, visibility + " virtual", vbpoff
+  end
+end
+
+class IndirectVirtualParent
+  attr_reader :type, :visibility, :vbpoff
+  def initialize(type, visibility, vbpoff)
+    @type, @visibility, @vbpoff = type, visibility, vbpoff
   end
 end
 
@@ -702,6 +734,20 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         type = types_LF[type[1].to_i(16)] if type
         type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
         Parent.new(type, visibility, offset)
+      when "LF_VBCLASS"
+        visibility = options.match(/^(\w+), direct base type/)[1]
+        vbpoff = options.match(/vbpoff = (?:\(\w+\) )?(\d+)/)[1].to_i
+        type = options.match(/type = 0x(\h+)/)
+        type = types_LF[type[1].to_i(16)] if type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        VirtualParent.new(type, visibility, vbpoff)
+      when "LF_IVBCLASS"
+        visibility = options.match(/^(\w+), indirect base type/)[1]
+        vbpoff = options.match(/vbpoff = (?:\(\w+\) )?(\d+)/)[1].to_i
+        type = options.match(/type = 0x(\h+)/)
+        type = types_LF[type[1].to_i(16)] if type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        IndirectVirtualParent.new(type, visibility, vbpoff)
       when "LF_VFUNCTAB"
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)]
@@ -782,7 +828,13 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
       struct
     end
   when "LF_CLASS"
-    name = t[3].match(/class name = (.*), unique name/)[1] #.yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
+    if t[3].match(/unique name =/)
+      name = t[3].match(/class name = (.*), unique name/)[1] #.yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
+    elsif t[3].match(/, UDT\(0x\h+\)/)
+      name = t[3].match(/class name = (.*), UDT/)[1]
+    else
+      name = t[3].match(/class name = (.*)/)[1]
+    end
     udt = t[3].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
     members = nil
@@ -860,7 +912,9 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
   end
 }
 
-$frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).map { |b|
+$frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).select { |b|
+  !b[0].match(/Type:\s+T_NOTYPE/)
+}.map { |b|
   [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER|S_REGREL32/) }]
 }.map { |(type, name), args|
   args.map! { |l|
