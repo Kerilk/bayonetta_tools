@@ -823,6 +823,11 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     name = t[3].match(/class name = ([^,]+)/)[1] #.yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
     udt = t[3].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
+    # try using unique name as udt
+    if !udt
+      udt = t[3].match(/unique name = ([^,]+)/)
+      udt = udt[1] if udt
+    end
     members = nil
     size = nil
     vtshape = nil
