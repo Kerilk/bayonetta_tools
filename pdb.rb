@@ -581,7 +581,7 @@ class BaseType
   PUQUAD = Pointer.new(UQUAD)
 
   FLOAT = BaseType.new("float", 4)
-  DOUBLE = BaseType.new("double", 4)
+  DOUBLE = BaseType.new("double", 8)
   PFLOAT = Pointer.new(FLOAT)
   PDOUBLE = Pointer.new(DOUBLE)
 
@@ -619,6 +619,7 @@ class BaseType
     "T_32PQUAD" => PQUAD,
     "T_32PUQUAD" => PUQUAD,
     "T_32PVOID" => PVOID,
+    "T_PVOID" => PVOID,
 
     "T_REAL32" => FLOAT,
     "T_REAL64" => DOUBLE,
