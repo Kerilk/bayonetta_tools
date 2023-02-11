@@ -566,6 +566,8 @@ class BaseType
   QUAD = BaseType.new("int64_t", 8)
   UQUAD = BaseType.new("uint64_t", 8)
   VOID = BaseType.new("void", nil)
+  CHAR16 = BaseType.new("char16_t", 2)
+  CHAR32 = BaseType.new("char32_t", 4)
 
   NOTYPE = BaseType.new(nil, nil)
 
@@ -582,6 +584,8 @@ class BaseType
   P32RCHAR = Pointer.new(RCHAR, 4)
   P32QUAD = Pointer.new(QUAD, 4)
   P32UQUAD = Pointer.new(UQUAD, 4)
+  PCHAR16 = Pointer.new(CHAR16, 4)
+  PCHAR32 = Pointer.new(CHAR32, 4)
   P64VOID = Pointer.new(VOID, 8)
   PVOID = Pointer.new(VOID)
 
@@ -606,9 +610,13 @@ class BaseType
     "T_LONG" => INT,
     "T_ULONG" => UINT,
     "T_INT8" => QUAD,
+    "T_UINT8" => UQUAD,
     "T_QUAD" => QUAD,
     "T_UQUAD" => UQUAD,
     "T_VOID" => VOID,
+    "T_CHAR32" => CHAR32,
+    "T_CHAR16" => CHAR16,
+
     "T_32PCHAR" => P32CHAR,
     "T_32PUCHAR" => P32UCHAR,
     "T_32PRCHAR" => P32RCHAR,
@@ -624,6 +632,8 @@ class BaseType
     "T_32PUQUAD" => P32UQUAD,
     "T_32PVOID" => P32VOID,
     "T_PVOID" => PVOID,
+    "T_32PCHAR16" => PCHAR16,
+    "T_32PCHAR32" => PCHAR32,
     "T_64PVOID" =>  P64VOID,
 
     "T_REAL32" => FLOAT,
