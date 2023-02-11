@@ -4,6 +4,7 @@ require 'optparse'
 $wa = false
 $cmode = false
 $indent = 0
+$pointer_size = 4
 
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: pdb.rb target_file [options]"
@@ -14,6 +15,10 @@ parser = OptionParser.new do |opts|
 
   opts.on("--[no-]c-output", "Activate c output mode") do |c|
     $cmode = c
+  end
+
+  opts.on("-p", "--pointer-size SIZE", Integer, "Size in byte of pointers, default 4") do |sz|
+    $pointer_size = sz
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -425,8 +430,10 @@ end
 
 class Pointer
   attr_reader :type
-  def initialize(type)
+  attr_reader :size
+  def initialize(type, size = Pointer.size)
     @type = type
+    @size = size
   end
 
   def to_s(name = nil)
@@ -452,12 +459,8 @@ class Pointer
     end
   end
 
-  def size
-    4
-  end
-
   def self.size
-    4
+    $pointer_size
   end
 end
 
@@ -566,19 +569,21 @@ class BaseType
 
   NOTYPE = BaseType.new(nil, nil)
 
-  PCHAR = Pointer.new(CHAR)
-  PUCHAR = Pointer.new(UCHAR)
-  PSHORT = Pointer.new(SHORT)
-  PUSHORT = Pointer.new(USHORT)
-  PWCHAR = Pointer.new(WCHAR)
-  PINT = Pointer.new(INT)
-  PUINT = Pointer.new(UINT)
-  PLONG = Pointer.new(LONG)
-  PULONG = Pointer.new(ULONG)
+  P32CHAR = Pointer.new(CHAR, 4)
+  P32UCHAR = Pointer.new(UCHAR, 4)
+  P32SHORT = Pointer.new(SHORT, 4)
+  P32USHORT = Pointer.new(USHORT, 4)
+  P32WCHAR = Pointer.new(WCHAR, 4)
+  P32INT = Pointer.new(INT, 4)
+  P32UINT = Pointer.new(UINT, 4)
+  P32LONG = Pointer.new(LONG, 4)
+  P32ULONG = Pointer.new(ULONG, 4)
+  P32VOID = Pointer.new(VOID, 4)
+  P32RCHAR = Pointer.new(RCHAR, 4)
+  P32QUAD = Pointer.new(QUAD, 4)
+  P32UQUAD = Pointer.new(UQUAD, 4)
+  P64VOID = Pointer.new(VOID, 8)
   PVOID = Pointer.new(VOID)
-  PRCHAR = Pointer.new(RCHAR)
-  PQUAD = Pointer.new(QUAD)
-  PUQUAD = Pointer.new(UQUAD)
 
   FLOAT = BaseType.new("float", 4)
   DOUBLE = BaseType.new("double", 8)
@@ -604,22 +609,22 @@ class BaseType
     "T_QUAD" => QUAD,
     "T_UQUAD" => UQUAD,
     "T_VOID" => VOID,
-
-    "T_32PCHAR" => PCHAR,
-    "T_32PUCHAR" => PUCHAR,
-    "T_32PRCHAR" => PRCHAR,
-    "T_32PBOOL08" => PCHAR,
-    "T_32PSHORT" => PSHORT,
-    "T_32PUSHORT" => PUSHORT,
-    "T_32PWCHAR" => PWCHAR,
-    "T_32PINT4" => PINT,
-    "T_32PUINT4" => PUINT,
-    "T_32PLONG" => PLONG,
-    "T_32PULONG" => PULONG,
-    "T_32PQUAD" => PQUAD,
-    "T_32PUQUAD" => PUQUAD,
-    "T_32PVOID" => PVOID,
+    "T_32PCHAR" => P32CHAR,
+    "T_32PUCHAR" => P32UCHAR,
+    "T_32PRCHAR" => P32RCHAR,
+    "T_32PBOOL08" => P32CHAR,
+    "T_32PSHORT" => P32SHORT,
+    "T_32PUSHORT" => P32USHORT,
+    "T_32PWCHAR" => P32WCHAR,
+    "T_32PINT4" => P32INT,
+    "T_32PUINT4" => P32UINT,
+    "T_32PLONG" => P32LONG,
+    "T_32PULONG" => P32ULONG,
+    "T_32PQUAD" => P32QUAD,
+    "T_32PUQUAD" => P32UQUAD,
+    "T_32PVOID" => P32VOID,
     "T_PVOID" => PVOID,
+    "T_64PVOID" =>  P64VOID,
 
     "T_REAL32" => FLOAT,
     "T_REAL64" => DOUBLE,
