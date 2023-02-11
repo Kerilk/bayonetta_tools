@@ -691,7 +691,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         name = options.match(/member name = '(<[^>]+>|\w+)'/)[1].yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
-        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\h+\)/)[1]) unless type
         offset = options.match(/offset = (?:\(\w+\) )?(\d+)/)[1]
         Member.new(name, type, offset, visibility)
       when "LF_STATICMEMBER"
@@ -699,7 +699,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         name = options.match(/member name = '(<[^>]+>|\w+)'/)[1].yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
-        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\h+\)/)[1]) unless type
         StaticMember.new(name, type, visibility)
       when "LF_NESTTYPE"
         match = options.match(/type = 0x(\h+)(:?, (.*))/)
@@ -707,7 +707,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
           type, name = *match.captures
           type = types_LF[type[1].to_i(16)]
         else
-          type, name = *options.match(/type = (\w+)\(\d+\)(:?, (.*))/)
+          type, name = *options.match(/type = (\w+)\(\h+\)(:?, (.*))/)
         end
         Nested.new(name, type)
       when "LF_METHOD"
@@ -727,7 +727,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
           end
           type = types_LF[type[1].to_i(16)]
         end
-        type = BaseType.from_str(options.match(/index = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/index = (\w+)\(\h+\)/)[1]) unless type
         mfunc = type
         vfptr_offset = options.match(/vfptr offset = (\d+)/)
         vfptr_offset = vfptr_offset[1].to_i if vfptr_offset
@@ -738,21 +738,21 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
         offset = options.match(/offset = (?:\(\w+\) )?(\d+)/)[1]
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
-        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\h+\)/)[1]) unless type
         Parent.new(type, visibility, offset)
       when "LF_VBCLASS"
         visibility = options.match(/^(\w+), direct base type/)[1]
         vbpoff = options.match(/vbpoff = (?:\(\w+\) )?(\d+)/)[1].to_i
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
-        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\h+\)/)[1]) unless type
         VirtualParent.new(type, visibility, vbpoff)
       when "LF_IVBCLASS"
         visibility = options.match(/^(\w+), indirect base type/)[1]
         vbpoff = options.match(/vbpoff = (?:\(\w+\) )?(\d+)/)[1].to_i
         type = options.match(/type = 0x(\h+)/)
         type = types_LF[type[1].to_i(16)] if type
-        type = BaseType.from_str(options.match(/type = (\w+)\(\d+\)/)[1]) unless type
+        type = BaseType.from_str(options.match(/type = (\w+)\(\h+\)/)[1]) unless type
         IndirectVirtualParent.new(type, visibility, vbpoff)
       when "LF_VFUNCTAB"
         type = options.match(/type = 0x(\h+)/)
@@ -771,7 +771,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     udt = t[2].match(/UDT\(0x(\h+)\)/)
     udt = udt[1].to_i(16) if udt
     type = nil
-    type = BaseType.from_str(t[1].match(/type = (\w+)\(\d+\)/)[1]) unless t[2].match(/FORWARD REF/)
+    type = BaseType.from_str(t[1].match(/type = (\w+)\(\h+\)/)[1]) unless t[2].match(/FORWARD REF/)
     values = nil
     values = types_LF[t[1].match(/field list type 0x(\h+)/)[1].to_i(16)] unless t[2].match(/FORWARD REF/)
     decl = types[udt]
@@ -789,7 +789,7 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
     start = t[1].match(/starting position = (\d+)/)[1].to_i
     type = t[1].match(/Type = 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[1].match(/Type = (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[1].match(/Type = (\w+)\(\h+\)/)[1]) unless type
     BitfieldValue.new(bits, start, type)
   when "LF_UNION"
     name = t[1].match(/class name = ([^,]+)/)[1] #.yield_self { |v| v.match(/<[^>]+>/) ? nil : v }
@@ -865,38 +865,38 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
   when "LF_POINTER"
     type = t[2].match(/Element type : 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[2].match(/Element type : (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[2].match(/Element type : (\w+)\(\h+\)/)[1]) unless type
     Pointer.new(type)
   when /LF_ARGLIST/
     t[1..-1].map { |l|
       type = l.match(/list\[\d+\] = 0x(\h+)/)
       type = types_LF[type[1].to_i(16)] if type
-      type = BaseType.from_str(l.match(/list\[\d+\] = (\w+)\(\d+\)/)[1]) unless type
+      type = BaseType.from_str(l.match(/list\[\d+\] = (\w+)\(\h+\)/)[1]) unless type
       type
     }
   when "LF_PROCEDURE"
     type = t[1].match(/Return type = 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[1].match(/Return type = (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[1].match(/Return type = (\w+)\(\h+\)/)[1]) unless type
     args = types_LF[t[3].match(/Arg list type = 0x(\h+)/)[1].to_i(16)]
     Procedure.new(type, args)
   when "LF_ARRAY"
     type = t[1].match(/Element type = 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[1].match(/Element type = (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[1].match(/Element type = (\w+)\(\h+\)/)[1]) unless type
     length = t[3].match(/length = (?:\(\w+\) )?(\d+)/)
     length = length[1].to_i if length
     Arr.new(type, length)
   when "LF_MODIFIER"
     type = t[1].match(/modifies type 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[1].match(/modifies type (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[1].match(/modifies type (\w+)\(\h+\)/)[1]) unless type
     mod = t[1].match(/^\t(.*), modifies type/)[1]
     Modifier.new(type, mod)
   when "LF_MFUNCTION"
     type = t[1].match(/Return type = 0x(\h+)/)
     type = types_LF[type[1].to_i(16)] if type
-    type = BaseType.from_str(t[1].match(/Return type = (\w+)\(\d+\)/)[1]) unless type
+    type = BaseType.from_str(t[1].match(/Return type = (\w+)\(\h+\)/)[1]) unless type
     class_type = types_LF[t[1].match(/Class type = 0x(\h+)/)[1].to_i(16)]
     this_type = t[1].match(/This type = 0x(\h+)/)
     this_type = types_LF[t[1].match(/This type = 0x(\h+)/)[1].to_i(16)] if this_type
@@ -929,7 +929,7 @@ $frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).select { |
       t, n = *match.captures
       t = types_LF[t.to_i(16)]
     else
-      t, n = *l.match(/Type:\s+(\w+)\(\d+\), (.*)/).captures
+      t, n = *l.match(/Type:\s+(\w+)\(\h+\), (.*)/).captures
       t = BaseType.from_str(t)
     end
     [t, n, l.match(/S_REGISTER|S_REGREL32/)[0]]
