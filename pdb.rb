@@ -591,6 +591,7 @@ class BaseType
 
   FLOAT = BaseType.new("float", 4)
   DOUBLE = BaseType.new("double", 8)
+  REAL80 = BaseType.new("long double", 10)
   PFLOAT = Pointer.new(FLOAT)
   PDOUBLE = Pointer.new(DOUBLE)
 
@@ -638,6 +639,7 @@ class BaseType
 
     "T_REAL32" => FLOAT,
     "T_REAL64" => DOUBLE,
+    "T_REAL80" => REAL80,
     "T_32PREAL32" => PFLOAT,
     "T_32PREAL64" => PDOUBLE,
 
