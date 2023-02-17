@@ -10,7 +10,9 @@ include Bayonetta
 
 $is_win = (RbConfig::CONFIG['host_os'] =~ /mswin/)
 
-$options = {}
+$options = {
+  import_textures: true
+}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: wmb_import_assim.rb target_file source_file [options]"
@@ -23,9 +25,9 @@ OptionParser.new do |opts|
     $options[:update_bones] = update_bones
   end
 
-#  opts.on("-t", "--[no-]import-textures", "Import textures also") do |import_textures|
-#    $options[:import_textures] = import_textures
-#  end
+  opts.on("--[no-]import-textures", "Import textures (default true)") do |import_textures|
+    $options[:import_textures] = import_textures
+  end
 
   opts.on("-t", "--[no-]transform-meshes", "Apply node transformation to meshes, conflicts with --group-batch-by-name") do |transform|
     $options[:transform] = transform
@@ -620,9 +622,14 @@ def get_new_tex_list(scene)
 end
 
 def merge_materials(wmb, scene, tex)
-  old_tex_count = tex.each.count
-  new_tex_list = get_new_tex_list(scene)
-  new_tex_map = new_tex_list.each_with_index.collect { |t, i| [t, i+old_tex_count] }.to_h
+  if tex
+    old_tex_count = tex.each.count
+    new_tex_list = get_new_tex_list(scene)
+    new_tex_map = new_tex_list.each_with_index.collect { |t, i| [t, i+old_tex_count] }.to_h
+  else
+    new_tex_list = []
+    new_tex_map = {}
+  end
 
   mat_offset = wmb.materials_offsets.last + wmb.materials.last.__size
   new_materials = []
@@ -697,8 +704,12 @@ Dir.mkdir("wtb_output") unless Dir.exist?("wtb_output")
 
 wmb = WMBFile::load(target)
 
-tex_file_name = target.gsub(/wmb\z/,"wtb")
-tex = WTBFile::new(File::new(tex_file_name, "rb"))
+if $options[:import_textures]
+  tex_file_name = target.gsub(/wmb\z/,"wtb")
+  tex = WTBFile::new(File::new(tex_file_name, "rb"))
+else
+  tex = nil
+end
 
 if $options[:verbose]
   log = Assimp::LogStream::stderr
@@ -717,7 +728,7 @@ merge_geometry(wmb, scene, bone_mapping)
 
 new_tex_list = merge_materials(wmb, scene, tex)
 
-add_textures(tex, File.dirname(source), new_tex_list)
+add_textures(tex, File.dirname(source), new_tex_list) if $options[:import_textures]
 
 wmb.recompute_relative_positions
 wmb.recompute_layout
@@ -728,8 +739,12 @@ File::open(File.join("wmb_output", "#{File::basename(source,File::extname(source
 
 if $options[:overwrite]
   wmb.dump(target)
-  tex.dump(tex_file_name)
+  if $options[:import_textures]
+    tex.dump(tex_file_name)
+  end
 else
   wmb.dump(File.join("wmb_output", File.basename(target)))
-  tex.dump(File.join("wtb_output", File.basename(tex_file_name)))
+  if $options[:import_textures]
+    tex.dump(File.join("wtb_output", File.basename(tex_file_name)))
+  end
 end
