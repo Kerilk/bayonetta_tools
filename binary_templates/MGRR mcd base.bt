@@ -129,8 +129,8 @@ struct {
     struct {
         uint stringsOffset<format=hex>;
         int stringCount;
-        float belowSpacing;
-        float horizontalSpacing;
+        int belowSpacing;
+        int horizontalSpacing;
         lang languageFlags;
         short padding<hidden=true>;
         pos2 = FTell();
