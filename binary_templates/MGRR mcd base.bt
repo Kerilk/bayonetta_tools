@@ -1,0 +1,194 @@
+struct {
+    uint offsetEvents<format=hex>;
+    uint eventCount;
+    uint offsetCharSet<format=hex>;
+    uint charCount;
+    uint offsetCharGraphs<format=hex>;
+    uint charGraphsCount;
+    uint offsetSpecialGraphs<format=hex>;
+    uint specialGraphsCount;
+    uint offsetUsedEvents<format=hex>;
+    uint usedEventCount;
+} header;
+
+typedef struct {
+    ushort code;
+    short positionOffset;
+}letter<read=letter_Read>;
+
+typedef short lang<comment="0x1: subtitle, 0x2: Japanese alphabet, 0x4: Latin alphabet, 0x10: unknown (always on)">;
+
+FSeek(header.offsetCharSet);
+typedef struct char_s {
+    lang languageFlags;
+    wchar_t c;
+    uint index;
+} char_t;
+char_t chars[header.charCount];
+
+local int charmap[header.charCount];
+local int i;
+for (i = 0; i < header.charCount; i++) {
+    charmap[chars[i].index] = i;
+}
+
+wstring letter_Read(letter &let) {
+    wstring s = L"";
+    if(let.code <= 0x8000) {
+        s += chars[charmap[let.code]].c;
+    } else if (let.code == 0x8001) {
+        s += L' ';
+    } else if (let.code == 0x8003) {
+        s += L"<";
+        switch(let.positionOffset) {
+            case 0:
+                s+= L"+";
+                break;
+            case 1:
+                s+= L"-";
+                break;
+            case 2:
+                s += L"B";
+                break;
+            case 3:
+                s += L"A";
+                break;
+            case 4:
+                s += L"Y";
+                break;
+            case 5:
+                s += L"X";
+                break;
+            case 6:
+                s += L"R";
+                break;
+            case 8:
+                s += L"L";
+                break;
+            case 11:
+                s += L"DPadUpDown";
+                break;
+            case 12:
+                s += L"DPadLeftRight";
+                break;
+            case 17:
+                s += L"RightStick";
+                break;
+            case 18:
+                s += L"RightStickPress";
+                break;
+            case 19:
+                s += L"LeftStick";
+                break;
+            case 20:
+                s += L"LeftStickPress";
+                break;
+            case 24:
+                s += L"RightStickRotate";
+                break;
+            case 25:
+                s += L"LeftStickUpDown";
+                break;
+            case 113:
+                s += L"SwapWeapons";
+                break;
+            case 114:
+                s += L"Evade";
+                break;
+            case 115:
+                s += L"UmbranClimax";
+                break;
+            case 116:
+                s += L"LockOn";
+                break;
+            default:
+                string s2 = L"";
+                SPrintf(s2, L"%d", let.positionOffset);
+                s += s2;
+        }
+        s += L">";
+    } else {
+        string s2 = L"";
+        SPrintf(s2, L"<Special0x%x_%d>", let.code & 0xff, let.positionOffset);
+        s += s2;
+    }
+    return s;
+}
+
+FSeek(header.offsetEvents);
+local uint pos;
+local uint pos2;
+local uint pos3;
+struct {
+    uint paragraphsOffset<format=hex>;
+    uint paragraphCount;
+    uint sequenceNumber<comment="Unknown usage">;
+    uint eventID<format=hex>;
+    pos = FTell();
+    FSeek(paragraphsOffset);
+    struct {
+        uint stringsOffset<format=hex>;
+        int stringCount;
+        float belowSpacing;
+        float horizontalSpacing;
+        lang languageFlags;
+        short padding<hidden=true>;
+        pos2 = FTell();
+        FSeek(stringsOffset);
+        struct strng{
+            uint stringOffset<format=hex>;
+            uint u_a<comment="always found 0">;
+            uint length;
+            uint length2<comment="always same as length">;
+            int  belowSpacing;
+            int  horizontalSpacing;
+            pos3 = FTell();
+            FSeek(stringOffset);
+            if (length>0) {
+                letter letters[length];
+            }
+            ushort terminator;
+            FSeek(pos3);
+        }strs[stringCount]<optimize=false,read=read_strng>;
+        FSeek(pos2);
+    } paragraph[paragraphCount]<optimize=false>;
+    FSeek(pos);
+} events[header.eventCount]<optimize=false>;
+
+wstring read_strng(strng &str) {
+    wstring s = L"";
+    int i = 0;
+    for(i = 0; i < str.length; i++) {
+        s += letter_Read(str.letters[i]);
+    }
+    return s;
+}
+
+FSeek(header.offsetCharGraphs);
+struct {
+    uint textureID<format=hex>;
+    float u1;
+    float v1;
+    float u2;
+    float v2;
+    float width;
+    float height;
+    float u_a;
+    float belowSpacing;
+    float horizontalSpacing;
+} charGraphs[header.charGraphsCount];
+
+FSeek(header.offsetSpecialGraphs);
+struct {
+    uint languageFlags;
+    float width;
+    float height;
+    float belowSpacing;
+    float horizontalSpacing;
+} specialGraphs[header.specialGraphsCount];
+
+FSeek(header.offsetUsedEvents);
+struct {
+    uint eventID<format=hex>;
+    uint enventIndex;
+} usedEvents[header.usedEventCount]<comment="Ordered by eventID">;
