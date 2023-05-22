@@ -1,0 +1,44 @@
+#include "Nier Automata items.bt"
+
+LittleEndian();
+
+string readItemID(uint32 id) {
+  string out;
+  SPrintf(out, "%u: %s", id, getItemName(id));
+  return out;
+}
+
+FSeek(0);
+struct {
+    char     id[4];
+    float    version;
+    uint32   offsetBoxDropData <format=hex>;
+    uint32   boxDropDataSize;
+    uint32   dropItemSize;
+    uint16   numBoxes;
+    uint16   numDropItems;
+} header;
+
+FSeek(header.offsetBoxDropData);
+if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
+    struct {
+        short   unknownShort;
+        uint16  unknownActorClass;
+        uint32  itemTableID <format=hex>;
+        ubyte   unknownStart;
+        ubyte   unknownEnd;
+        uint16  unknownIndex;
+        uint16  indexFirstDropItem;
+        uint16  numDropItems0;
+        uint16  numDropItems1;
+        ubyte   dropAmount;
+        ubyte   dropGoldAmount;
+        uint16  unknownInt16;
+        uint16  unknownInt16;
+    } boxDropData[header.numBoxes] <optimize=false>;
+}
+
+struct {
+    uint32   itemID <read=readItemID>;
+    uint32   dropWeight;
+} dropItem[header.numDropItems];
