@@ -1,8 +1,16 @@
+#include "Nier Automata items.bt"
+
 LittleEndian();
 
 string readEmID(uint16 id) {
   string out;
   SPrintf(out, "em%04x", id);
+  return out;
+}
+
+string readItemID(uint32 id) {
+  string out;
+  SPrintf(out, "%u: %s", id, getItemName(id));
   return out;
 }
 
@@ -48,6 +56,6 @@ if( header.enemyDropDataSize == 0xE ) {     // enemyDropDataSize 14
 }
 
 struct {
-    uint32   itemID;
+    uint32   itemID <read=readItemID>;
     uint32   dropWeight;
-} dropItems[header.numDropItems];
+} dropItem[header.numDropItems];
