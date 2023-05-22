@@ -1,0 +1,59 @@
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BTW", id, 4) == 0, "Wrong file type");
+FSeek(0);
+struct {
+    char    id[4]; //WTB\0
+    int32   unknown;
+    int32   numTex;
+    uint32  offsetTextureOffsets <format=hex>;
+    uint32  offsetTextureSizes <format=hex>;
+    uint32  offsetTextureFlags <format=hex, comment="0x2 regular, 0x20000002 alpha, 0x10000002 1bit alpha, 0x3 dummy">;
+    uint32  offsetTextureIdx <format=hex>;
+    uint32  offsetTextureInfo <format=hex>;
+} header;
+
+FSeek( header.offsetTextureOffsets );
+uint32  textureOffsets[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureSizes );
+int32  textureSizes[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureFlags );
+uint32  textureFlags[header.numTex] <format=hex, comment="0x2 regular, 0x20000002 alpha, 0x10000002 1bit alpha, 0x3 dummy">;
+
+if (header.offsetTextureIdx) {
+    FSeek( header.offsetTextureIdx );
+    uint32  textureIdxs[header.numTex] <format=hex>;
+}
+
+//https://github.com/gdkchan/IDDTool/blob/master/IDDTool/IO/Format/IDD.cs
+local int i;
+for ( i = 0; i < header.numTex; i++) {
+    FSeek(textureOffsets[i]);
+    if ( textureSizes[i] > 0 ) {
+        struct {
+            uint    flags <format=hex>;
+            uint    length;
+            uint    textureCount;
+            uint    id;
+            uint    textureDataOffset;
+            uint    textureDataLength;
+            byte    textureFormat <format=hex, comment="0x20: swizzle, 0x40: normalized, 0x9f: format mask. 0x86: DXT1, 0x87: DXT3 0x88: DXT5">;
+            byte    mimaps;
+            byte    dimensions;
+            byte    cubemaps;
+            uint    remap;
+            ushort  width;
+            ushort  height;
+            ushort  depth;
+            ushort  pitch;
+            FSeek(textureOffsets[i]+textureDataOffset);
+            byte data[textureDataLength];//-128];
+        } texture;
+    } else {
+        struct {
+        } texture;
+    }
+    BigEndian();
+}

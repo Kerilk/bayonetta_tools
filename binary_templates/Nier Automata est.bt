@@ -1,0 +1,152 @@
+LittleEndian();
+
+struct {
+    char id[4];
+    uint32 recordCount;
+    uint32 recordOffsetsOffset <format=hex>;
+    uint32 typeOffset <format=hex>;
+    uint32 typeEndOffset <format=hex>;
+    uint32 typeSize;
+    uint32 typeNumber;
+} header;
+
+FSeek(header.recordOffsetsOffset);
+uint32 offsets[header.recordCount];
+
+FSeek(header.typeOffset);
+struct {
+    struct {
+        uint32 u_a;
+        char id[4];
+        uint32 size;
+        uint32 offset;
+    } types[header.typeNumber];
+}typeGroups[header.recordCount] <optimize=true>;
+
+typedef struct {
+    int16   u_a;
+    int16   u_b;
+    uint32  u_c <format=hex>;
+    uint32  u_d;
+    int16   u_e[8];
+    uint32  uf[9];
+} part_s;
+
+typedef struct {
+    uint32  u_a;
+    float   offset_x;
+    float   offset_y;
+    float   offset_z;
+    float   u_b[29];
+    float   scale;
+    float   u_c[16];
+    float   red;
+    float   green;
+    float   blue;
+    float   alpha;//intensity?
+    float   u_d[42];
+} move_s;
+
+typedef struct {
+    int16 u_a[6];
+    float u_b[9];
+} emif_s;
+
+typedef struct {
+    float u_a;
+    int16 u_b;
+    int16 u_c;
+    float u_d[4];
+    struct {
+        float u_d1;
+        int16 u_e;
+        char  u_f[2];
+        float u_g;
+        char  u_h[4];
+        float u_i[15];
+    } substruct[2];
+} tex_s;
+
+typedef struct {
+    float u_a[24];
+} pssa_s;
+
+typedef struct {
+    float u_a[20];
+} fvwk_s;
+
+typedef struct {
+    int16 u_a[6];
+    int32 u_c[5];
+} fwk_s;
+
+typedef struct {
+    uint32 u_a;
+    float u_b[107];   
+} emmv_s;
+
+typedef struct {
+    int32 u_a;
+    int16 u_b[2];
+    int32 u_c[6];
+} emfw_s;
+
+typedef struct {
+    char u_a[4];
+    float u_b[4];
+    char u_c[4];
+    int32 u_d[2];
+} mjsg_s;
+
+typedef struct {
+    int16 u_a[40];
+} mjcm_s;
+
+local int i;
+local int j;
+for ( i=0; i<header.recordCount; i++ ) {
+    FSeek(offsets[i]);
+    struct {
+        for ( j=0; j<23; j++ ) {
+            if (typeGroups[i].types[j].size > 0) {
+                FSeek(offsets[i] + typeGroups[i].types[j].offset);
+                if ( Strncmp( typeGroups[i].types[j].id, "PART", 4 ) == 0 ) {
+                    part_s part;
+                    if (sizeof(part) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "MOVE", 4 ) == 0 ) {
+                    move_s move;
+                    if (sizeof(move) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "EMIF", 4 ) == 0 ) {
+                    emif_s emif;
+                    if (sizeof(emif) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "TEX ", 4 ) == 0 ) {
+                    tex_s tex;
+                    if (sizeof(tex) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "PSSA", 4 ) == 0 ) {
+                    pssa_s pssa;
+                    if (sizeof(pssa) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "FVWK", 4 ) == 0 ) {
+                    fvwk_s fvwk;
+                    if (sizeof(fvwk) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "FWK ", 4 ) == 0 ) {
+                    fwk_s fwk;
+                    if (sizeof(fwk) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "EMMV", 4 ) == 0 ) {
+                    emmv_s emmv;
+                    if (sizeof(emmv) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "EMFW", 4 ) == 0 ) {
+                    emfw_s emfw;
+                    if (sizeof(emfw) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "MJSG", 4 ) == 0 ) {
+                    mjsg_s mjsg;
+                    if (sizeof(mjsg) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else if ( Strncmp( typeGroups[i].types[j].id, "MJCM", 4 ) == 0 ) {
+                    mjcm_s mjcm;
+                    if (sizeof(mjcm) != typeGroups[i].types[j].size) Warning("Warning incoherent size i: %d, j: %d", i, j);
+                } else {
+                    Warning("Unknown type %4s", typeGroups[i].types[j].id);
+                }
+            }
+        }
+    } record;
+}

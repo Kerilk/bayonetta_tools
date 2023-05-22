@@ -1,0 +1,113 @@
+BigEndian();
+char id[4] <hidden=true>;
+Assert( Memcmp("\0BTW", id, 4) == 0, "Wrong file type");
+FSeek(0);
+struct {
+    char    id[4]; //WTB\0
+    int32   unknown;
+    int32   numTex;
+    uint32  offsetTextureOffsets <format=hex>;
+    uint32  offsetTextureSizes <format=hex>;
+    uint32  offsetTextureFlags <format=hex, comment="0x2 regular, 0x20000002 alpha, 0x10000002 1bit alpha, 0x3 dummy">;
+    uint32  offsetTextureIdx <format=hex>;
+    uint32  offsetTextureInfo <format=hex>;
+} header;
+
+FSeek( header.offsetTextureOffsets );
+uint32  textureOffsets[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureSizes );
+int32  textureSizes[header.numTex] <format=hex>;
+
+FSeek( header.offsetTextureFlags );
+uint32  textureFlags[header.numTex] <format=hex, comment="0x2 regular, 0x20000002 alpha, 0x10000002 1bit alpha, 0x3 dummy">;
+
+if (header.offsetTextureIdx) {
+    FSeek( header.offsetTextureIdx );
+    uint32  textureIdxs[header.numTex] <format=hex>;
+}
+
+//Thanks Ritch Whitehouse
+string widthBits_read(uint16 &value) {
+    string res;
+    uint16 v;
+    v = (((value>>5) & 127)+1) << 5;
+    SPrintf(res, "%d", v);
+    return res;
+}
+string heightBits_read(uint16 &value) {
+    string res;
+    uint16 v;
+    v = ((value & 1023)+1) << 3;
+    SPrintf(res, "%d", v);
+    return res;
+}
+string textureFormatread(int &value) {
+    string res;
+    switch(value) {
+    case 82:
+        res = "DXT1";
+        break;
+    case 83:
+        res = "DXT3";
+        break;
+    case 84:
+        res = "DXT5";
+        break;
+    case 134:
+        res = "RGBA32";
+        break;
+    default:
+        res = "Unknown Format";
+    }
+    return res;
+}
+
+struct textureInfo_s;
+string textureInfo_read(struct textureInfo_s &infos){
+    string res;
+    SPrintf(res, "%s: %s x %s", textureFormatread(infos.texFmt), heightBits_read(infos.height), widthBits_read(infos.width));
+    return res;
+}
+
+struct textureInfo_s{
+    int     unknownA;
+    int     unknownB;
+    int     unknownC;
+    int     unknownD;
+    int     unknownE;
+    short   unknownF;
+    short   unknownG;
+    short   unknownH;
+    short   unknownI;
+    uint16  flags <format=hex, comment="0x8000: tiled">;
+    short   unknownK;
+    //Thanks again Ritch
+    int     texFmt <comment="82: DXT1, 83: DXT3, 84: DTX5, 134: RGBA32 & channel swizzle">; 
+    uint16  height <read=heightBits_read>;
+    uint16  width <read=widthBits_read>;
+    int     unknown0;
+    int     unknownP;
+    int     unknownQ;
+};
+
+if (header.offsetTextureInfo) {
+FSeek( header.offsetTextureInfo );
+struct textureInfo_s textureInfos[header.numTex] <read=textureInfo_read>;
+}
+
+local int i;
+for ( i = 0; i < header.numTex; i++) {
+    FSeek(textureOffsets[i]);
+    if ( textureSizes[i] > 0 ) {
+        struct {
+            if (!header.offsetTextureInfo)
+                struct textureInfo_s textureInfo  <read=textureInfo_read>;
+            byte data[textureSizes[i]-sizeof(struct textureInfo_s)];//-128];
+        } texture;
+    } else {
+        struct {
+        } texture;
+    }
+    BigEndian();
+}

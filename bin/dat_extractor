@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+require 'bayonetta/tools/dat_extractor'

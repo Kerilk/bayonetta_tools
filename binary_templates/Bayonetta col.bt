@@ -1,0 +1,7 @@
+LittleEndian();
+
+char id[4] <hidden=true>;
+Assert( Memcmp("col\0", id, 4) == 0 || Memcmp("scm\0", id, 4) == 0, "Wrong file type");
+FSeek(0);
+
+#include "Bayonetta col base.bt"

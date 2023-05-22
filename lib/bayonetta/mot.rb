@@ -85,13 +85,8 @@ module Bayonetta
 
   module RelativeIndexes
     def key_frame_indexes
-      res = []
       index = 0
-      (@keys.length).times { |i|
-        index = @keys[i].index + index
-        res.push index
-      }
-      res
+      @keys.collect { |k| index += k.index }
     end
   end
 
@@ -139,11 +134,11 @@ module Bayonetta
 
   end
 
-  class MOT2File < LibBin::DataConverter
+  class MOT2File < LibBin::Structure
     include MOTDecoder
     include MOTRemaper
 
-    class Interpolation1 < LibBin::DataConverter
+    class Interpolation1 < LibBin::Structure
       float :keys, count: '..\records[__index]\num_keys'
 
       def values(frame_count)
@@ -159,14 +154,14 @@ module Bayonetta
 
     end
 
-    class Interpolation2 < LibBin::DataConverter
+    class Interpolation2 < LibBin::Structure
       float :p
       float :dp
       uint16 :keys, count: '..\records[__index]\num_keys'
 
       def values(frame_count)
         count = frame_count
-        res = @keys.collect { |k| @p + k*@cp }
+        res = @keys.collect { |k| @p + k*@dp }
         res + [res.last] * (frame_count - keys.length)
       end
 
@@ -178,14 +173,14 @@ module Bayonetta
 
     end
 
-    class Interpolation3 < LibBin::DataConverter
+    class Interpolation3 < LibBin::Structure
       pghalf :p
       pghalf :dp
-      uint16 :keys, count: '..\records[__index]\num_keys'
+      uint8 :keys, count: '..\records[__index]\num_keys'
 
       def values(frame_count)
         count = frame_count
-        res = @keys.collect { |k| @p + k*@cp }
+        res = @keys.collect { |k| @p + k*@dp }
         res + [res.last] * (frame_count - keys.length)
       end
 
@@ -197,7 +192,7 @@ module Bayonetta
 
     end
 
-    class Key4 < LibBin::DataConverter
+    class Key4 < LibBin::Structure
       uint16 :index
       uint16 :dummy
       float :p
@@ -210,7 +205,7 @@ module Bayonetta
 
     end
 
-    class Interpolation4 < LibBin::DataConverter
+    class Interpolation4 < LibBin::Structure
       include DirectValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -222,14 +217,14 @@ module Bayonetta
 
     end
 
-    class Key5 < LibBin::DataConverter
+    class Key5 < LibBin::Structure
       uint16 :index
       uint16 :cp
       uint16 :cm0
       uint16 :cm1
     end
 
-    class Interpolation5 < LibBin::DataConverter
+    class Interpolation5 < LibBin::Structure
       include QuantizedValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -247,14 +242,14 @@ module Bayonetta
 
     end
 
-    class Key6 < LibBin::DataConverter
+    class Key6 < LibBin::Structure
       uint8 :index
       uint8 :cp
       uint8 :cm0
       uint8 :cm1
     end
 
-    class Interpolation6 < LibBin::DataConverter
+    class Interpolation6 < LibBin::Structure
       include QuantizedValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -272,14 +267,14 @@ module Bayonetta
 
     end
 
-    class Key7 < LibBin::DataConverter
+    class Key7 < LibBin::Structure
       uint8 :index
       uint8 :cp
       uint8 :cm0
       uint8 :cm1
     end
 
-    class Interpolation7 < LibBin::DataConverter
+    class Interpolation7 < LibBin::Structure
       include QuantizedValues
       include RelativeIndexes
       include KeyFrameInterpolate
@@ -297,7 +292,7 @@ module Bayonetta
 
     end
 
-    class Key8 < LibBin::DataConverter
+    class Key8 < LibBin::Structure
       uint8 :index_proxy, count: 2
       uint8 :cp
       uint8 :cm0
@@ -312,7 +307,7 @@ module Bayonetta
       end
     end
 
-    class Interpolation8 < LibBin::DataConverter
+    class Interpolation8 < LibBin::Structure
       include QuantizedValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -330,7 +325,7 @@ module Bayonetta
 
     end
 
-    class Record < LibBin::DataConverter
+    class Record < LibBin::Structure
       int16 :bone_index
       int8 :animation_track
       int8 :interpolation_type
@@ -348,7 +343,7 @@ module Bayonetta
       end
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       string :id, 4
       uint32 :version
       uint16 :flag
@@ -361,6 +356,7 @@ module Bayonetta
 
     register_field :header, Header
     register_field :records, Record, count: 'header\num_records', offset: 'header\offset_records'
+    register_field :terminator, Record, offset: 'header\offset_records + 12*header\num_records'
     register_field :interpolations,
       'interpolation_type_selector(records[__iterator]\interpolation_type)',
       count: 'header\num_records', sequence: true,
@@ -449,7 +445,7 @@ module Bayonetta
 
       unless is_bayo2?(input)
         input.close unless input_name.respond_to?(:read) && input_name.respond_to?(:seek)
-        return MOT2File::load(input_name)
+        return MOTFile::load(input_name)
       end
 
       input_big = is_big?(input)
@@ -462,7 +458,7 @@ module Bayonetta
       mot
     end
 
-    def __dump(output_name, output_big = false)
+    def dump(output_name, output_big = false)
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
@@ -470,9 +466,16 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
+      sz = output.size
+      sz = align(sz, 0x4)
+      if sz > output.size
+        output.seek(sz-1)
+        output.write("\x00")
+      end
+
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end
@@ -483,11 +486,11 @@ module Bayonetta
 
   end
 
-  class MOTFile < LibBin::DataConverter
+  class MOTFile < LibBin::Structure
     include MOTDecoder
     include MOTRemaper
 
-    class Interpolation1 < LibBin::DataConverter
+    class Interpolation1 < LibBin::Structure
       float :keys, count: '..\records[__index]\num_keys'
 
       def values(frame_count)
@@ -503,7 +506,7 @@ module Bayonetta
 
     end
 
-    class Key4 < LibBin::DataConverter
+    class Key4 < LibBin::Structure
       uint16 :index
       uint16 :cp
       uint16 :cm0
@@ -518,7 +521,7 @@ module Bayonetta
 
     end
 
-    class Interpolation4 < LibBin::DataConverter
+    class Interpolation4 < LibBin::Structure
       include QuantizedValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -536,7 +539,7 @@ module Bayonetta
 
     end
 
-    class Key6 < LibBin::DataConverter
+    class Key6 < LibBin::Structure
       uint8 :index
       uint8 :cp
       uint8 :cm0
@@ -555,7 +558,7 @@ module Bayonetta
 
     end
 
-    class Interpolation6 < LibBin::DataConverter
+    class Interpolation6 < LibBin::Structure
       include QuantizedValues
       include RelativeIndexes
       include KeyFrameInterpolate
@@ -573,7 +576,7 @@ module Bayonetta
 
     end
 
-    class Key7 < LibBin::DataConverter
+    class Key7 < LibBin::Structure
       uint16 :index
       uint8 :dummy
       uint8 :cp
@@ -594,7 +597,7 @@ module Bayonetta
 
     end
 
-    class Interpolation7 < LibBin::DataConverter
+    class Interpolation7 < LibBin::Structure
       include QuantizedValues
       include AbsoluteIndexes
       include KeyFrameInterpolate
@@ -612,7 +615,7 @@ module Bayonetta
 
     end
 
-    class Record < LibBin::DataConverter
+    class Record < LibBin::Structure
       int16 :bone_index
       int8 :animation_track
       int8 :interpolation_type
@@ -630,7 +633,7 @@ module Bayonetta
       end
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       string :id, 4
       uint16 :flag
       uint16 :frame_count
@@ -748,9 +751,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self
     end

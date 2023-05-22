@@ -1,8 +1,8 @@
 module Bayonetta
 
-  class CLWFile < LibBin::DataConverter
+  class CLWFile < LibBin::Structure
 
-    class FVector < LibBin::DataConverter
+    class FVector < LibBin::Structure
       float :x
       float :y
       float :z
@@ -20,7 +20,7 @@ module Bayonetta
 
     end
 
-    class ClothWind < LibBin::DataConverter
+    class ClothWind < LibBin::Structure
       int32 :wind_type
       int32 :parts_no
       register_field :offset,  FVector
@@ -153,9 +153,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
 
       output.close unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
       self

@@ -19,8 +19,10 @@ uint32  textureOffsets[header.numTex] <format=hex>;
 FSeek( header.offsetTextureSizes );
 int32  textureSizes[header.numTex] <format=hex>;
 
-FSeek( header.offsetTextureIdx );
-uint32 textureIndexes[header.numTex] <format=hex>;
+if (header.offsetTextureIdx) {
+    FSeek( header.offsetTextureIdx );
+    uint32 textureIndexes[header.numTex] <format=hex>;
+}
 
 FSeek( header.offsetTextureFlags );
 uint32  textureFlags[header.numTex] <format=hex, comment="0x20000000 alpha, 0x10000000 1bit alpha, 0x3 dummy">;

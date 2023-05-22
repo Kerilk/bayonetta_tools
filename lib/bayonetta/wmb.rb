@@ -5,8 +5,8 @@ $material_db = YAML::load_file(File.join( File.dirname(__FILE__), 'material_data
 
 module Bayonetta
 
-  class UByteList < LibBin::DataConverter
-    register_field :data, :L
+  class UByteList < LibBin::Structure
+    uint32 :data
 
     def self.is_bayo2?(parent)
       if parent.__parent.respond_to?(:is_bayo2?)
@@ -21,54 +21,27 @@ module Bayonetta
       subclass.instance_variable_set(:@fields, @fields.dup)
     end
 
-    def self.convert(input, output, input_big, output_big, parent, index, length)
-      if length
-        length.times.collect {
-          h = self::new
-          if is_bayo2?(parent) && input_big
-            h.__convert(input, output, false, output_big, parent, index)
-          else
-            h.__convert(input, output, input_big, output_big, parent, index)
-          end
-        }
-      else
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.__convert(input, output, false, output_big, parent, index)
-        else
-          h.__convert(input, output, input_big, output_big, parent, index)
-        end
-      end
+    def __convert(input, output, input_big, output_big, parent = nil, index = nil)
+      __set_convert_state(input, output,
+                         input_big && self.class.is_bayo2?(parent) ? false : input_big,
+                         output_big && self.class.is_bayo2?(parent) ? false : output_big,
+                         parent, index)
+      __convert_fields
+      __unset_convert_state
+      self
     end
 
-    def self.load(input, input_big, parent, index, length)
-      if length
-        length.times.collect {
-          h = self::new
-          if is_bayo2?(parent) && input_big
-            h.__load(input, false, parent, index)
-          else
-            h.__load(input, input_big, parent, index)
-          end
-        }
-      else
-        h = self::new
-        if is_bayo2?(parent) && input_big
-          h.__load(input, false, parent, index)
-        else
-          h.__load(input, input_big, parent, index)
-        end
-      end
+    def __load(input, input_big, parent = nil, index = nil)
+      __set_load_state(input, input_big && self.class.is_bayo2?(parent) ? false : input_big, parent, index)
+      __load_fields
+      __unset_load_state
+      self
     end
 
     def __dump(output, output_big, parent = nil, index = nil)
-      if self.class.is_bayo2?(parent) && output_big
-        __set_dump_type(output, false, parent, index)
-      else
-        __set_dump_type(output, output_big, parent, index)
-      end
+      __set_dump_state(output, output_big && self.class.is_bayo2?(parent) ? false : output_big, parent, index)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
       self
     end
 
@@ -168,7 +141,7 @@ module Bayonetta
     end
 
     def y
-(((@data >> 8) & 0xff) - 127.0)/127.0
+      (((@data >> 8) & 0xff) - 127.0)/127.0
     end
 
     def z
@@ -224,53 +197,62 @@ module Bayonetta
 
   end
 
-  class Mapping < LibBin::DataConverter
-    register_field :u, :half
-    register_field :v, :half
+  class Mapping < LibBin::Structure
+    half :u
+    half :v
 
     def to_a
       [u, v]
     end
   end
 
-  class FloatMapping < LibBin::DataConverter
-    register_field :u, :F
-    register_field :v, :F
+  class FloatMapping < LibBin::Structure
+    float :u
+    float :v
 
     def to_a
       [u, v]
     end
   end
 
-  class FloatNormal < LibBin::DataConverter
+  class FloatNormal < LibBin::Structure
     include VectorAccessor
-    register_field :x, :F
-    register_field :y, :F
-    register_field :z, :F
+    float :x
+    float :y
+    float :z
 
     def to_a
       [x, y, z]
     end
   end
 
-  class HalfNormal < LibBin::DataConverter
+  class HalfNormal < LibBin::Structure
     include VectorAccessor
-    register_field :x, :half
-    register_field :y, :half
-    register_field :z, :half
-    register_field :dummy, :half
+    half :x
+    half :y
+    half :z
+    half :dummy
 
     def to_a
       [x, y, z]
     end
   end
 
-  class Normal < LibBin::DataConverter
+  class Normal < LibBin::Structure
     include VectorAccessor
     attr_accessor :normal
     attr_accessor :normal_big_orig
     attr_accessor :normal_small_orig
     attr_accessor :wide
+
+    def is_bayo2?
+      if __parent.__parent.respond_to?(:is_bayo2?)
+        return __parent.__parent.is_bayo2?
+      elsif __parent.__parent.__parent.respond_to?(:is_bayo2?)
+        return __parent.__parent.__parent.is_bayo2?
+      end
+      raise "Cannot determine if Bayo2 or not!"
+    end
 
     def initialize
       @normal = [0.0, 0.0, 0.0]
@@ -319,8 +301,7 @@ module Bayonetta
       [fx/nrm, fy/nrm, fz/nrm]
     end
 
-    def decode_big_normal(vs)
-      v = vs.unpack("L>").first
+    def unpack_wide(v)
       nx = v & ((1<<10)-1)
       ny = (v >> 10) & ((1<<10)-1)
       nz = (v >> 20) & ((1<<10)-1)
@@ -348,32 +329,16 @@ module Bayonetta
       normalize(fx, fy, fz)
     end
 
-    def redecode_wide
-      v = normal_small_orig.unpack("L<").first
-      nx = v & ((1<<10)-1)
-      ny = (v >> 10) & ((1<<10)-1)
-      nz = (v >> 20) & ((1<<10)-1)
-      sx = nx & (1<<9)
-      sy = ny & (1<<9)
-      sz = nz & (1<<9)
-      if sx
-        nx ^= sx
-        nx = -(sx-nx)
-      end
-      if sy
-        ny ^= sy
-        ny = -(sy-ny)
-      end
-      if sz
-        nz ^= sz
-        nz = -(sz-nz)
-      end
+    def decode_big_normal(vs)
+      unpack_wide(vs.unpack("L>").first)
+    end
 
-      mag = ((1<<9)-1).to_f
-      fx = nx.to_f/mag
-      fy = ny.to_f/mag
-      fz = nz.to_f/mag
-      @normals = normalize(fx, fy, fz)
+    def decode_small_normal_wide(vs)
+      unpack_wide(vs.unpack("L<").first)
+    end
+
+    def redecode_wide
+      @normals = decode_small_normal_wide(normal_small_orig)
     end
 
     def decode_small_normal(v)
@@ -398,8 +363,7 @@ module Bayonetta
       v
     end
 
-    def encode_small_normal(normal)
-      if @wide
+    def pack_wide(normal)
         fx = normal[0]
         fy = normal[1]
         fz = normal[2]
@@ -417,7 +381,16 @@ module Bayonetta
         v |= ny & mask
         v <<= 10
         v |= nx & mask
-        [v].pack("L<")
+        v
+    end
+
+    def encode_small_normal_wide(normal)
+        [pack_wide(normal)].pack("L<")
+    end
+
+    def encode_small_normal(normal)
+      if @wide
+        encode_small_normal_wide(normal)
       else
         fx = normal[0]
         fy = normal[1]
@@ -433,46 +406,46 @@ module Bayonetta
     end
 
     def encode_big_normal(normal)
-      fx = normal[0]
-      fy = normal[1]
-      fz = normal[2]
-      mag = (1<<9)-1
-      nx = (fx*(mag).to_f).to_i
-      ny = (fy*(mag).to_f).to_i
-      nz = (fz*(mag).to_f).to_i
-      nx = clamp(nx, mag, -1-mag)
-      ny = clamp(ny, mag, -1-mag)
-      nz = clamp(nz, mag, -1-mag)
-      mask = (1<<10)-1
-      v = 0
-      v |= nz & mask
-      v <<= 10
-      v |= ny & mask
-      v <<= 10
-      v |= nx & mask
-      [v].pack("L>")
+      [pack_wide(normal)].pack("L>")
     end
 
     def load_normal
-      s = @__input.read(4)
-      if @__input_big
+      s = __input.read(4)
+      if __input_big
         @normal_big_orig = s
         @normal_small_orig = nil
         @normal = decode_big_normal(s)
       else
         @normal_small_orig = s
         @normal_big_orig = nil
-        @normal = decode_small_normal(s)
+        if is_bayo2?
+          @normal = decode_small_normal_wide(s)
+        else
+          @normal = decode_small_normal(s)
+        end
       end
     end
 
     def dump_normal
-      if @__output_big
-        s2 = (@normal_big_orig ? @normal_big_orig : encode_big_normal(@normal))
-      else
-        s2 = (@normal_small_orig ? @normal_small_orig : encode_small_normal(@normal))
-      end
-      @__output.write(s2)
+      s2 =
+        if __output_big
+          if @normal_big_orig
+            @normal_big_orig
+          elsif is_bayo2? && @normal_small_orig
+            @normal_small_orig.reverse
+          else
+            encode_big_normal(@normal)
+          end
+        else
+          if @normal_small_orig
+            @normal_small_orig
+          elsif is_bayo2?
+            @normal_big_orig ? @normal_big_orig.reverse : encode_small_normal_wide(@normal)
+          else
+            encode_small_normal(@normal)
+          end
+        end
+      __output.write(s2)
     end
 
     def convert_normal
@@ -498,11 +471,11 @@ module Bayonetta
     end
   end
 
-  class Position < LibBin::DataConverter
+  class Position < LibBin::Structure
     include VectorAccessor
-    register_field :x, :F
-    register_field :y, :F
-    register_field :z, :F
+    float :x
+    float :y
+    float :z
 
     def -(other)
       b = Position::new
@@ -549,7 +522,7 @@ module Bayonetta
     end
   end
 
-  class BoneInfos < LibBin::DataConverter
+  class BoneInfos < LibBin::Structure
     register_field :indexes, UByteList
     register_field :weights, UByteList
 
@@ -601,8 +574,8 @@ module Bayonetta
     end
   end
 
-  class BoneIndexTranslateTable < LibBin::DataConverter
-    register_field :offsets, :s, length: 16
+  class BoneIndexTranslateTable < LibBin::Structure
+    int16 :offsets, length: 16
     #attr_accessor :second_levels
     #attr_accessor :third_levels
     attr_reader :table
@@ -629,7 +602,7 @@ module Bayonetta
     end
 
     def __convert(input, output, input_big, output_big, parent, index, level = 1)
-      __set_convert_type(input, output, input_big, output_big, parent, index)
+      __set_convert_state(input, output, input_big, output_big, parent, index)
       __convert_fields
       if level == 1
         @second_levels = []
@@ -655,12 +628,12 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      __unset_convert_type
+      __unset_convert_state
       self
     end
 
     def __load(input, input_big, parent, index, level = 1)
-      __set_load_type(input, input_big, parent, index)
+      __set_load_state(input, input_big, parent, index)
       __load_fields
       if level == 1
         @second_levels = []
@@ -686,7 +659,7 @@ module Bayonetta
         @second_levels = nil
         @third_levels = nil
       end
-      __unset_load_type
+      __unset_load_state
       self
     end
 
@@ -742,7 +715,7 @@ module Bayonetta
     private :encode
 
     def __dump(output, output_big, parent, index, level = 1)
-      __set_dump_type(output, output_big, parent, index)
+      __set_dump_state(output, output_big, parent, index)
       encode if level == 1
       __dump_fields
       if @second_levels
@@ -755,7 +728,7 @@ module Bayonetta
           e.__dump(output, output_big, self, nil, level+2)
         }
       end
-      __unset_dump_type
+      __unset_dump_state
     end
 
   end
@@ -772,28 +745,28 @@ module Bayonetta
     fmapping_t: [ FloatMapping, 8]
   }
 
-  class WMBFile < LibBin::DataConverter
+  class WMBFile < LibBin::Structure
     include Alignment
 
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types.yaml')) )
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types2.yaml')) )
 
-    class UnknownStruct < LibBin::DataConverter
-      register_field :u_a1, :C, length: 4
-      register_field :u_b1, :L
-      register_field :u_c1, :s, length: 4
-      register_field :u_a2, :C, length: 4
-      register_field :u_b2, :L
-      register_field :u_c2, :s, length: 4
-      register_field :u_a3, :C, length: 4
-      register_field :u_b3, :L
+    class UnknownStruct < LibBin::Structure
+      uint8  :u_a1, length: 4
+      uint32 :u_b1
+      int16  :u_c1, length: 4
+      uint8  :u_a2, length: 4
+      uint32 :u_b2
+      int16  :u_c2, length: 4
+      uint8  :u_a3, length: 4
+      uint32 :u_b3
     end
 
-    class Material < LibBin::DataConverter
-      register_field :type, :s
-      register_field :flag, :S
-      register_field :material_data, :L,
+    class Material < LibBin::Structure
+      int16  :type
+      uint16 :flag
+      uint32 :material_data,
         length: '(..\materials_offsets[__index+1] ? ..\materials_offsets[__index+1] - ..\materials_offsets[__index] - 4 : ..\header\offset_meshes_offsets - __position - 4)/4'
 
       def __size(position = 0, parent = nil, index = nil)
@@ -827,22 +800,22 @@ module Bayonetta
 
     end
 
-    class BatchHeader < LibBin::DataConverter
-      register_field :batch_id, :s #Bayo 2
-      register_field :mesh_id, :s
-      register_field :flags, :S
-      register_field :ex_mat_id, :s
-      register_field :material_id, :C
-      register_field :has_bone_refs, :C
-      register_field :u_e1, :C
-      register_field :u_e2, :C
-      register_field :vertex_start, :L
-      register_field :vertex_end, :L
-      register_field :primitive_type, :l
-      register_field :offset_indices, :L
-      register_field :num_indices, :l
-      register_field :vertex_offset, :l
-      register_field :u_f, :l, length: 7
+    class BatchHeader < LibBin::Structure
+      int16  :batch_id #Bayo 2
+      int16  :mesh_id
+      uint16 :flags
+      int16  :ex_mat_id
+      uint8  :material_id
+      uint8  :has_bone_refs
+      uint8  :u_e1
+      uint8  :u_e2
+      uint32 :vertex_start
+      uint32 :vertex_end
+      int32  :primitive_type
+      uint32 :offset_indices
+      int32  :num_indices
+      int32  :vertex_offset
+      int32  :u_f, length: 7
 
       def initialize
         @batch_id = 0
@@ -863,12 +836,12 @@ module Bayonetta
       end
     end
 
-    class Batch < LibBin::DataConverter
+    class Batch < LibBin::Structure
       register_field :header, BatchHeader
-      register_field :num_bone_ref, :l, condition: 'header\has_bone_refs != 0'
-      register_field :bone_refs, :C, length: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
-      register_field :unknown, :F, length: 4, condition: 'header\has_bone_refs == 0'
-      register_field :indices, :S, length: 'header\num_indices', offset: '__position + header\offset_indices'
+      int32  :num_bone_ref, condition: 'header\has_bone_refs != 0'
+      uint8  :bone_refs, length: 'num_bone_ref', condition: 'header\has_bone_refs != 0'
+      float  :unknown, length: 4, condition: 'header\has_bone_refs == 0'
+      uint16 :indices, length: 'header\num_indices', offset: '__position + header\offset_indices'
 
       def initialize
         @header = BatchHeader::new
@@ -1000,16 +973,16 @@ module Bayonetta
 
     end
 
-    class MeshHeader < LibBin::DataConverter
-      register_field :id, :s
-      register_field :num_batch, :s
-      register_field :u_a1, :s
-      register_field :u_a2, :s
-      register_field :offset_batch_offsets, :L
-      register_field :u_b, :L
-      register_field :u_c, :l, length: 4
-      string         :name, 32
-      register_field :mat, :F, length: 12
+    class MeshHeader < LibBin::Structure
+      int16  :id
+      int16  :num_batch
+      int16  :u_a1
+      int16  :u_a2
+      uint32 :offset_batch_offsets
+      uint32 :u_b
+      int32  :u_c, length: 4
+      string :name, 32
+      float  :mat, length: 12
 
       def initialize
         @id = 0
@@ -1025,9 +998,9 @@ module Bayonetta
       end
     end
 
-    class Mesh < LibBin::DataConverter
+    class Mesh < LibBin::Structure
       register_field :header, MeshHeader
-      register_field :batch_offsets, :L, length: 'header\num_batch',
+      uint32         :batch_offsets, length: 'header\num_batch',
                      offset: '__position + header\offset_batch_offsets'
       register_field :batches, Batch, count: 'header\num_batch', sequence: true,
                      offset: '__position + header\offset_batch_offsets + batch_offsets[__iterator]'
@@ -1070,52 +1043,52 @@ module Bayonetta
 
     end
 
-    class ShaderName < LibBin::DataConverter
-      register_field :name, :c, length: 16
+    class ShaderName < LibBin::Structure
+      string :name, 16
     end
 
-    class TexInfo < LibBin::DataConverter
-      register_field :id, :L
-      register_field :info, :l
+    class TexInfo < LibBin::Structure
+      uint32 :id
+      int32  :info
     end
 
-    class TexInfos < LibBin::DataConverter
-      register_field :num_tex_infos, :l
+    class TexInfos < LibBin::Structure
+      int32 :num_tex_infos
       register_field :tex_infos, TexInfo, length: 'num_tex_infos'
     end
 
-    class WMBFileHeader < LibBin::DataConverter
-      register_field :id, :L
-      register_field :u_a, :l
-      register_field :u_b, :l
-      register_field :num_vertexes, :l
-      register_field :vertex_ex_data_size, :c
-      register_field :vertex_ex_data, :c
-      register_field :u_e, :s
-      register_field :offset_positions, :l
-      register_field :offset_vertexes, :L
-      register_field :offset_vertexes_ex_data, :L
-      register_field :u_g, :l, length: 4
-      register_field :num_bones, :l
-      register_field :offset_bone_hierarchy, :L
-      register_field :offset_bone_relative_position, :L
-      register_field :offset_bone_position, :L
-      register_field :offset_bone_index_translate_table, :L
-      register_field :num_materials, :l
-      register_field :offset_materials_offsets, :L
-      register_field :offset_materials, :L
-      register_field :num_meshes, :l
-      register_field :offset_meshes_offsets, :L
-      register_field :offset_meshes, :L
-      register_field :u_k, :l
-      register_field :u_l, :l
-      register_field :offset_u_j, :L
-      register_field :offset_bone_symmetries, :L
-      register_field :offset_bone_flags, :L
-      register_field :offset_shader_names, :L
-      register_field :offset_tex_infos, :L
-      register_field :u_m, :L
-      register_field :u_n, :L
+    class WMBFileHeader < LibBin::Structure
+      uint32 :id
+      int32  :u_a
+      int32  :u_b
+      int32  :num_vertexes
+      int8   :vertex_ex_data_size
+      int8   :vertex_ex_data
+      int16  :u_e
+      int32  :offset_positions
+      uint32 :offset_vertexes
+      uint32 :offset_vertexes_ex_data
+      int32  :u_g, length: 4
+      int32  :num_bones
+      uint32 :offset_bone_hierarchy
+      uint32 :offset_bone_relative_position
+      uint32 :offset_bone_position
+      uint32 :offset_bone_index_translate_table
+      int32  :num_materials
+      uint32 :offset_materials_offsets
+      uint32 :offset_materials
+      int32  :num_meshes
+      uint32 :offset_meshes_offsets
+      uint32 :offset_meshes
+      int32  :u_k
+      int32  :u_l
+      uint32 :offset_u_j
+      uint32 :offset_bone_symmetries
+      uint32 :offset_bone_flags
+      uint32 :offset_shader_names
+      uint32 :offset_tex_infos
+      uint32 :u_m
+      uint32 :u_n
     end
 
     register_field :header, WMBFileHeader
@@ -1123,21 +1096,21 @@ module Bayonetta
     register_field :vertexes, 'get_vertex_types[0]', length: 'header\num_vertexes', offset: 'header\offset_vertexes'
     register_field :vertexes_ex_data, 'get_vertex_types[1]', length: 'header\num_vertexes',
                    offset: 'header\offset_vertexes_ex_data'
-    register_field :bone_hierarchy, :s, length: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
+    int16          :bone_hierarchy, length: 'header\num_bones', offset: 'header\offset_bone_hierarchy'
     register_field :bone_relative_positions, Position, length: 'header\num_bones',
                    offset: 'header\offset_bone_relative_position'
     register_field :bone_positions, Position, length: 'header\num_bones', offset: 'header\offset_bone_position'
     register_field :bone_index_translate_table, BoneIndexTranslateTable,
                    offset: 'header\offset_bone_index_translate_table'
     register_field :u_j, UnknownStruct, offset: 'header\offset_u_j'
-    register_field :bone_symmetries, :s, length: 'header\num_bones', offset: 'header\offset_bone_symmetries'
-    register_field :bone_flags, :c, length: 'header\num_bones', offset: 'header\offset_bone_flags'
+    int16          :bone_symmetries, length: 'header\num_bones', offset: 'header\offset_bone_symmetries'
+    int8           :bone_flags, length: 'header\num_bones', offset: 'header\offset_bone_flags'
     register_field :shader_names, ShaderName, length: 'header\num_materials', offset: 'header\offset_shader_names'
     register_field :tex_infos, TexInfos, offset: 'header\offset_tex_infos'
-    register_field :materials_offsets, :L, length: 'header\num_materials', offset: 'header\offset_materials_offsets'
+    uint32         :materials_offsets, length: 'header\num_materials', offset: 'header\offset_materials_offsets'
     register_field :materials, Material, count: 'header\num_materials', sequence: true,
                    offset: 'header\offset_materials + materials_offsets[__iterator]'
-    register_field :meshes_offsets, :L, length: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
+    uint32         :meshes_offsets, length: 'header\num_meshes', offset: 'header\offset_meshes_offsets'
     register_field :meshes, Mesh, count: 'header\num_meshes', sequence: true,
                    offset: 'header\offset_meshes + meshes_offsets[__iterator]'
 
@@ -1159,7 +1132,7 @@ module Bayonetta
         return [@vertex_type, @vertex_ex_type]
       else
         types = VERTEX_TYPES[ [ @header.u_b, @header.vertex_ex_data_size, @header.vertex_ex_data] ]
-        @vertex_type = Class::new(LibBin::DataConverter)
+        @vertex_type = Class::new(LibBin::Structure)
         @vertex_size = 0
         if types[0]
           types[0].each { |name, type|
@@ -1167,7 +1140,7 @@ module Bayonetta
             @vertex_size += VERTEX_FIELDS[type][1]
           }
         end
-        @vertex_ex_type = Class::new(LibBin::DataConverter)
+        @vertex_ex_type = Class::new(LibBin::Structure)
         @vertex_ex_size = 0
         if types[1]
           types[1].each { |name, type|
@@ -1309,9 +1282,21 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      if was_big? != output_big
+        if output_big
+          u_a = header.u_a
+          header.u_a = -1
+        else
+          u_a = header.u_a
+          header.u_a = 0
+        end
+      end
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
+      if was_big? != output_big
+        header.u_a = u_a
+      end
 
       sz = output.size
       sz = align(sz, 0x20)
@@ -1333,7 +1318,7 @@ module Bayonetta
       return self if @__was_big
       wide_normals = false
       @vertexes.each { |v|
-        if v.normal.normal_small_orig.bytes.first == 0
+        if v.normal.normal_small_orig.bytes.first != 0
           wide_normals = true
         end
       }
@@ -1781,6 +1766,15 @@ module Bayonetta
       }
       @meshes += new_meshes
       @header.num_meshes = @meshes.size
+      self
+    end
+
+    def dummy_meshes(list)
+      list.map { |i| m = @meshes[i]
+        m.header.num_batch = 1
+        m.batches = [m.batches.first]
+        m.batches[0].set_triangles([m.batches[0].triangles.first[0]]*3)
+      }
       self
     end
 
@@ -2310,6 +2304,56 @@ module Bayonetta
       vertex_indices.uniq!
       vertex_indices.each { |i|
         @vertexes[i].tangents.data = [@vertexes[i].tangents.data].pack("L<").unpack("L>").first
+      }
+    end
+
+    def recompute_batch_tangents(batch)
+      vertex_indices = batch.vertex_indices.uniq
+      tangents = vertex_indices.collect { |i| [i, Linalg::Vector::new(0, 0, 0, 0)] }.to_h
+      indices = batch.triangles.flatten
+      inconsistentuvs = 0
+      # https://stackoverflow.com/a/66918075
+      indices.each_with_index { |i, l|
+        j = indices[(l + 1) % 3 + (l / 3) * 3]
+        k = indices[(l + 2) % 3 + (l / 3) * 3]
+        n = Linalg::Vector::new(*@vertexes[i].normal.to_a, 0.0)
+        pi = Linalg::Vector::new(*@vertexes[i].position.to_a, 0.0)
+        mi = Linalg::Vector::new(*@vertexes[i].mapping.to_a, 0.0, 0.0)
+        pj = Linalg::Vector::new(*@vertexes[j].position.to_a, 0.0)
+        mj = Linalg::Vector::new(*@vertexes[j].mapping.to_a, 0.0, 0.0)
+        pk = Linalg::Vector::new(*@vertexes[k].position.to_a, 0.0)
+        mk = Linalg::Vector::new(*@vertexes[k].mapping.to_a, 0.0, 0.0)
+        v1 = pj - pi
+        v2 = pk - pi
+        t1 = mj - mi
+        t2 = mk - mi
+        uv2xArea = t1.x * t2.y - t1.y * t2.x
+        next if (uv2xArea.abs < 9.5367431640625e-07)
+        flip = uv2xArea > 0.0 ? 1.0 : -1.0
+        inconsistentuvs += 1 if (tangents[i].w != 0 && tangents[i].w != flip)
+        tangents[i].w = flip
+        c = v1.x * n.x + v1.y * n.y + v1.z * n.z
+        v1 -= n * (v1.dot(n));
+        v2 -= n * (v2.dot(n));
+        s = ((v1 * t2.y - v2 * t1.y) * flip).normalize
+        ac = v1.dot(v2) / (v1.length * v2.length)
+        ac = (ac > 1.0 ? 1.0 : (ac < -1.0 ? -1.0 : ac))
+        angle = Math.acos(ac);
+        tangents[i] += s*angle
+      }
+      warn "Found #{inconsistentuvs} inconsistent UVs" if inconsistentuvs > 0
+      tangents.each { |i, t|
+        t.normalize!
+        @vertexes[i].tangents.set(t.x, t.y, t.z, -t.w)
+      }
+    end
+
+    def recompute_tangents(mesh_list)
+      raise "Vertex don't have tangents information!" unless @vertexes[0].respond_to?(:tangents)
+      mesh_list.each { |i|
+        @meshes[i].batches.each { |b|
+          recompute_batch_tangents(b)
+        }
       }
     end
 

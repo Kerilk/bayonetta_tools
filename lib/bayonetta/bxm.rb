@@ -3,21 +3,21 @@ require 'set'
 
 module Bayonetta
 #=begin
-  class BXMFile < LibBin::DataConverter
+  class BXMFile < LibBin::Structure
 
-    class Datum < LibBin::DataConverter
+    class Datum < LibBin::Structure
       uint16 :name_offset
       int16 :value_offset
     end
 
-    class Node < LibBin::DataConverter
+    class Node < LibBin::Structure
       uint16 :child_count
       uint16 :first_child_index
       uint16 :attribute_count
       uint16 :datum_index
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       string :id, 4
       uint32 :unknown
       uint16 :node_count
@@ -127,7 +127,7 @@ module Bayonetta
       self
     end
 
-    def self.from_xml(xml, tag="BXM\0")
+    def self.from_xml(xml, tag="BXM\x00".b)
       bxm = self.new
       bxm.from_xml(xml, tag)
     end
@@ -145,7 +145,7 @@ module Bayonetta
         }
       end
       tag = input.read(4).unpack("a4").first
-      raise "invalid file type #{tag}!" if tag != "XML\0" && tag != "BXM\0"
+      raise "invalid file type #{tag}!" if tag != "XML\x00".b && tag != "BXM\x00".b
       input.rewind
       bxm = self.new
       big = input_big = is_big?(input)
@@ -159,12 +159,12 @@ module Bayonetta
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
       else
-        output = StringIO::new("", "wb")
+        output = StringIO::new("".b, "wb")
       end
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
 
       unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         File.open(output_name, "wb") { |f|

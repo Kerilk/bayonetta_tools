@@ -1,0 +1,242 @@
+typedef struct {
+    float x;
+    float y;
+} vector2_t<read=vector2Read>;
+
+string vector2Read( vector2_t &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f", value.x, value.y);
+    return s;
+}
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} vector_t<read=vectorRead>;
+
+string vectorRead( vector_t &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+    float w;
+} vector4_t<read=vector4Read>;
+
+typedef struct {
+    vector4_t r0;
+    vector4_t r1;
+    vector4_t r2;
+    vector4_t r3;
+} matrix_t;
+
+string vector4Read( vector4_t &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f, w: %f", value.x, value.y, value.z, value.w);
+    return s;
+}
+
+string objectTypes(uint t) {
+    switch(t) {
+    case 0:
+        return "sc";
+    case 1:
+        return "pl";
+    case 2:
+        return "em";
+    case 3:
+        return "wp";
+    case 4:
+        return "bg";
+    case 5:
+        return "gm";
+    case 6:
+        return "et";
+    case 7:
+        return "ef";
+    case 6:
+        return "rp";
+    case 9:
+        return "it";
+    case 10:
+        return "id";
+    case 11:
+        return "es";
+    case 12:
+        return "bm";
+    case 13:
+        return "ic";
+    case 14:
+    case 15:
+        return "??";
+    case 16:
+        return "ct";
+    default:
+        return "??";
+    }
+}
+
+string objectIDRead(uint objectID) {
+    string s;
+    SPrintf(s, "%s%04x", objectTypes(objectID >> 16), objectID & 0xffff);
+    return s;
+}
+
+struct {
+    char     id[4];
+    float    version;
+    byte     num_verse;
+    byte     u_a[3];
+    uint     u_b;
+} header;
+
+typedef struct {
+    uint     objectID <format=hex, read=objectIDRead>;
+    short    flags<format=hex>;
+    byte     type;
+    byte     count<comment="summed by engine (maybe a count: 3 for dears em0010)">;
+    byte     u_d[2]<comment="first 2 bytes set by engine to u_c and 0">;
+    uchar    flags2;
+    char     loot_type;
+    short    loot_id;
+    short    set_frame;
+    vector_t position;
+    uchar    u_f;
+    char     orientation;
+    short    range;
+    float    basex;
+    float    basey;
+    byte     u_h[56];
+} ennemy_t<bgcolor=cRed>;
+
+enum <uchar> PRIMITIVE_TYPE {
+    PRIMITIVE_TYPE_SPHERE = 0,
+    PRIMITIVE_TYPE_CYLINDER,
+    PRIMITIVE_TYPE_HEXAHEDRON,
+    PRIMITIVE_TYPE_CAPSULE,
+    PRIMITIVE_TYPE_CYLINDER_TRANSFORM,
+    PRIMITIVE_TYPE_HEXAHEDRON_TRANSFORM,
+};
+
+typedef struct {
+    PRIMITIVE_TYPE type;
+    uchar          flag;
+    uchar          u_a[2];
+    uint           u_b[2];
+    float          radius;
+    vector4_t      pos;
+    uint           u_c[4];
+    switch (type) {
+    case PRIMITIVE_TYPE_SPHERE:
+        float radius;
+        uint  u_d[7];
+        break;
+    case PRIMITIVE_TYPE_CYLINDER:
+        float rad;
+        float top;
+        float base;
+        uint  u_d[5];
+        break;
+    case PRIMITIVE_TYPE_HEXAHEDRON:
+        vector2_t points[4];
+        float     top;
+        float     base;
+        uint      u_d[6];
+        break;
+    case PRIMITIVE_TYPE_CAPSULE:
+        float radius;
+        uchar point_num;
+        uchar u_d[3];
+        uint  u_e[6];
+        vector4_t points[point_num];
+        break;
+    case PRIMITIVE_TYPE_CYLINDER_TRANSFORM:
+        float    radius;
+        float    half_height;
+        uint     u_d[6];
+        matrix_t transform;
+        break;
+    case PRIMITIVE_TYPE_HEXAHEDRON_TRANSFORM:
+        vector2_t points[4];
+        float     half_height;
+        uint      u_d[7];
+        matrix_t  transform;
+        break;
+
+    }
+} primitive_t<bgcolor=cBlue, optimize=false>;
+
+typedef struct {
+    vector4_t pos;
+    char      orientation;
+    uchar     id;
+    short     timer;
+    uint      u_a[7];
+} pos_t<bgcolor=cGreen>;
+
+local uint pos;
+struct {
+    struct {
+    short    u_a1<comment="Special treatment for level 120 when 4 or 20 (swapped) and 210 when 10 or 40 (swapped)">;
+    short    id<comment="Special treatment for level 120 when 4 or 20 (swapped) and 210 when 10 or 40 (swapped)">;
+    uint     flags<format=hex>;
+    uint     offset_read_at<format=hex>;
+    uint     offset_appear_at<format=hex>;
+    uint     offset_pos<format=hex>;
+    vector_t position;
+    byte     orientation;
+    byte     default_comp;
+    byte     num_pos;
+    byte     u_c3;
+    byte     normal_ennemy_count<comment="Hard limit 32 ennemies">;
+    byte     easy_ennemy_count<comment="Hard limit 32 ennemies">;
+    byte     hard_ennemy_count<comment="Hard limit 32 ennemies">;
+    byte     very_easy_ennemy_count<comment="Hard limit 32 ennemies">;
+    byte     nsic_ennemy_count<comment="Hard limit 32 ennemies">;
+    byte     u_d[3];
+    uint     offset_ennemies_normal<format=hex>;
+    uint     offset_ennemies_easy<format=hex>;
+    uint     offset_ennemies_hard<format=hex>;
+    uint     offset_ennemies_very_easy<format=hex>;
+    uint     offset_ennemies_nsic<format=hex>;
+    matrix_t transform;
+    uint     offset_search_at<format=hex, comment="used when version == 3.2, else offset_a">;
+    int      usedByEngine<comment="set to -1 if version < 4.3">;
+    int      unit_no;
+    byte     normal_comp<comment="if 0default to default, wave size?">;
+    byte     easy_comp<comment="if 0 default to normal, wave size?">;
+    byte     hard_comp<comment="if 0 default to normal, wave size?">;
+    byte     very_easy_comp<comment="if 0 default to easy, wave size?">;
+    byte     nsic_comp<comment="if 0 default to hard, wave size?">;
+    byte     padding[3];
+    uint     u_f[7];
+    } info<bgcolor=cLtBlue>;
+    pos = FTell();
+    FSeek(info.offset_ennemies_normal);
+    ennemy_t ennemies_normal[info.normal_ennemy_count];
+    FSeek(info.offset_ennemies_easy);
+    ennemy_t ennemies_easy[info.easy_ennemy_count];
+    FSeek(info.offset_ennemies_hard);
+    ennemy_t ennemies_hard[info.hard_ennemy_count];
+    FSeek(info.offset_ennemies_very_easy);
+    ennemy_t ennemies_very_easy[info.very_easy_ennemy_count];
+    FSeek(info.offset_ennemies_nsic);
+    ennemy_t ennemies_nsic[info.nsic_ennemy_count];
+
+
+    FSeek(info.offset_read_at);
+    primitive_t read_at;
+    FSeek(info.offset_appear_at);
+    primitive_t appear_at;
+    FSeek(info.offset_search_at);
+    primitive_t search_at;
+    FSeek(info.offset_pos);
+    pos_t positions[info.num_pos];
+    FSeek(pos);
+} verses[header.num_verse]<optimize=false>;
+

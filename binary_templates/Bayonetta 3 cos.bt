@@ -1,0 +1,35 @@
+LittleEndian();
+
+struct color {
+  float r, g, b;
+};
+
+struct {
+  uint32 size<format=hex>;
+  uint32 version<format=hex>;
+  uint32 offsetEntries;
+  uint32 numEntries;
+} header;
+
+FSeek(header.offsetEntries);
+
+if (header.size && header.numEntries) {
+  struct {
+    color  colors[7];
+    char name[0x40]<comment="In UTF8">;
+  } entries[header.numEntries];
+} else {
+  struct {
+    uint32 size<format=hex>;
+    uint32 version<format=hex>;
+    uint32 numEntries;
+    uint32 offsetEntries;
+  } header2;
+
+  FSeek(header.offsetEntries + header2.offsetEntries);
+
+  struct {
+    color  colors[7];
+    char name[0x40]<comment="In UTF8">;
+  } entries[header2.numEntries];
+}

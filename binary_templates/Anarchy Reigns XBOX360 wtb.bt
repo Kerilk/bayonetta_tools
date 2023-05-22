@@ -22,8 +22,10 @@ int32  textureSizes[header.numTex] <format=hex>;
 FSeek( header.offsetTextureFlags );
 uint32  textureFlags[header.numTex] <format=hex, comment="0x2 regular, 0x20000002 alpha, 0x10000002 1bit alpha, 0x3 dummy">;
 
-FSeek( header.offsetTextureIdx );
-uint32  textureIdxs[header.numTex] <format=hex>;
+if (header.offsetTextureIdx) {
+    FSeek( header.offsetTextureIdx );
+    uint32  textureIdxs[header.numTex] <format=hex>;
+}
 
 //Thanks Ritch Whitehouse
 string widthBits_read(uint16 &value) {
@@ -61,15 +63,14 @@ string textureFormatread(int &value) {
     return res;
 }
 
-struct textureInfo;
-string textureInfo_read(struct textureInfo &infos){
+struct textureInfo_s;
+string textureInfo_read(struct textureInfo_s &infos){
     string res;
     SPrintf(res, "%s: %s x %s", textureFormatread(infos.texFmt), heightBits_read(infos.height), widthBits_read(infos.width));
     return res;
 }
 
-FSeek( header.offsetTextureInfo );
-struct textureInfo{
+struct textureInfo_s{
     int     unknownA;
     int     unknownB;
     int     unknownC;
@@ -88,51 +89,21 @@ struct textureInfo{
     int     unknown0;
     int     unknownP;
     int     unknownQ;
-} textureInfos[header.numTex] <read=textureInfo_read>;
+};
 
-typedef struct ddsPixelFormat_s
-{
-	int					size;
-	int					flags <format=hex>;
-	char				id[4];
-	int					rgbBitCount;
-	int					rBitMask;
-	int					gBitMask;
-	int					bBitMask;
-	int					aBitMask;
-} ddsPixelFormat_t <read=ddsPixelFormat_tRead>;
-string ddsPixelFormat_tRead( ddsPixelFormat_t &t) {
-    string s;
-    SPrintf(s, "%s", t.id);
-    return s;
+if (header.offsetTextureInfo) {
+FSeek( header.offsetTextureInfo );
+struct textureInfo_s textureInfos[header.numTex] <read=textureInfo_read>;
 }
-typedef struct ddsTexHdr_s
-{
-	BYTE				id[4];
-	int					hSize;
-	int					flags <format=hex>;
-	int					height;
-	int					width;
-	int					pitchOrLinearSize <format=hex>;
-	int					depth;
-	int					mipMapCount;
-	int					reserved1[11];
-	ddsPixelFormat_t	pixelFormat;
-	int					caps <format=hex>;
-	int					caps2 <format=hex>;
-	int					caps3 <format=hex>;
-	int					caps4 <format=hex>;
-	int					reserved2;
-} ddsTexHdr_t;
 
 local int i;
 for ( i = 0; i < header.numTex; i++) {
     FSeek(textureOffsets[i]);
-    LittleEndian();
     if ( textureSizes[i] > 0 ) {
         struct {
-            //ddsTexHdr_t header;
-            byte data[textureSizes[i]];//-128];
+            if (!header.offsetTextureInfo)
+                struct textureInfo_s textureInfo  <read=textureInfo_read>;
+            byte data[textureSizes[i]-sizeof(struct textureInfo_s)];//-128];
         } texture;
     } else {
         struct {

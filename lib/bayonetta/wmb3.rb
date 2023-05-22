@@ -1,13 +1,14 @@
 module Bayonetta
-  class WMB3File < LibBin::DataConverter
+  class WMB3File < LibBin::Structure
+    include Alignment
 
-    class MeshMaterialPair < LibBin::DataConverter
+    class MeshMaterialPair < LibBin::Structure
       uint32 :mesh_index
       uint32 :material_index
     end
 
-    class Mesh < LibBin::DataConverter
-      class Header < LibBin::DataConverter
+    class Mesh < LibBin::Structure
+      class Header < LibBin::Structure
         uint32 :offset_name
         float  :bounding_box, length: 6
         uint32 :offset_materials
@@ -21,28 +22,28 @@ module Bayonetta
       uint16 :bone_indices, length: 'header\num_bones_indices', offset: 'header\offset_bones_indices'
     end
 
-    class Material < LibBin::DataConverter
+    class Material < LibBin::Structure
 
-      class Variable < LibBin::DataConverter
+      class Variable < LibBin::Structure
         uint32 :offset_name
         float :value
         string :name, offset: 'offset_name'
       end
 
-      class ParameterGroup < LibBin::DataConverter
+      class ParameterGroup < LibBin::Structure
         int32 :index
         uint32 :offset_parameters
         uint32 :num_parameters
         float :parameters, length: 'num_parameters', offset: 'offset_parameters'
       end
 
-      class Texture < LibBin::DataConverter
+      class Texture < LibBin::Structure
         uint32 :offset_name
         uint32 :texture_id
         string :name, offset: 'offset_name'
       end
 
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint16 :date, length: 4
         uint32 :offset_name
         uint32 :offset_shader_name
@@ -68,15 +69,15 @@ module Bayonetta
 
     end
 
-    class BoneSet < LibBin::DataConverter
+    class BoneSet < LibBin::Structure
       uint32 :offset_bone_indices
       uint32 :num_bone_indices
       int16 :bone_indices, length: 'num_bone_indices', offset: 'offset_bone_indices'
     end
 
-    class Lod < LibBin::DataConverter
+    class Lod < LibBin::Structure
 
-      class BatchInfo < LibBin::DataConverter
+      class BatchInfo < LibBin::Structure
         uint32 :vertex_group_index
         uint32 :mesh_index
         uint32 :material_index
@@ -85,7 +86,7 @@ module Bayonetta
         int32 :u_b
       end
 
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint32 :offset_name
         int32 :lod_level
         uint32 :batch_start
@@ -97,14 +98,14 @@ module Bayonetta
       register_field :batch_infos, BatchInfo, length: 'header\num_batch_infos', offset: 'header\offset_batch_infos'
     end
 
-    class ColTreeNode < LibBin::DataConverter
+    class ColTreeNode < LibBin::Structure
       register_field :p1, Position
       register_field :p2, Position
       int32 :left
       int32 :right
     end
 
-    class Batch < LibBin::DataConverter
+    class Batch < LibBin::Structure
       uint32 :vertex_group_index
       int32 :bone_set_index
       uint32 :vertex_start
@@ -117,7 +118,7 @@ module Bayonetta
     VERTEX_TYPES = {}
     VERTEX_TYPES.update( YAML::load_file(File.join( File.dirname(__FILE__), 'vertex_types_nier.yaml')) )
 
-    class VertexGroup < LibBin::DataConverter
+    class VertexGroup < LibBin::Structure
 
       def is_bayo2? #UByteList are arrays of char really
         true
@@ -148,7 +149,7 @@ module Bayonetta
           return [@vertex_type, @vertex_ex_type]
         else
           types = VERTEX_TYPES[ @header.vertex_flags ]
-          @vertex_type = Class::new(LibBin::DataConverter)
+          @vertex_type = Class::new(LibBin::Structure)
           @vertex_size = 0
           if types[0]
             types[0].each { |name, type|
@@ -157,7 +158,7 @@ module Bayonetta
             }
           end
           raise "Invalid size for vertex data #{@vertex_size} != #{@header.vertex_size}!" if @vertex_size != @header.vertex_size
-          @vertex_ex_type = Class::new(LibBin::DataConverter)
+          @vertex_ex_type = Class::new(LibBin::Structure)
           @vertex_ex_size = 0
           if types[1]
             types[1].each { |name, type|
@@ -190,54 +191,7 @@ module Bayonetta
         end
       end
 
-      class IIndices < LibBin::DataConverter
-        uint32 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
-      end
-
-      class SIndices < LibBin::DataConverter
-        uint16 :values, length: '..\header\num_indices', offset: '..\header\offset_indices'
-      end
-
-      class Indices < LibBin::DataConverter
-
-        def self.convert(input, output, input_big, output_big, parent, index, length)
-          flags = parent.__parent.header.flags
-          if flags & 0x8 != 0
-            if length
-              return length.times.collect { IIndices::convert(input, output, input_big, output_big, parent, index) }
-            else
-              return IIndices::convert(input, output, input_big, output_big, parent, index)
-            end
-          else
-            if length
-              return length.times.collect { SIndices::convert(input, output, input_big, output_big, parent, index) }
-
-            else
-              return SIndices::convert(input, output, input_big, output_big, parent, index)
-            end
-          end
-        end
-
-        def self.load(input, input_big, parent, index, length)
-          flags = parent.__parent.header.flags
-          if flags & 0x8 != 0
-            if length
-              return length.times.collect { IIndices::load(input, input_big, parent, index) }
-            else
-              return IIndices::load(input, input_big, parent, index)
-            end
-          else
-            if length
-              return length.times.collect { SIndices::load(input, input_big, parent, index) }
-            else
-              return SIndices::load(input, input_big, parent, index)
-            end
-          end
-        end
-
-      end
-
-      class Header < LibBin::DataConverter
+      class Header < LibBin::Structure
         uint32 :offset_vertexes
         uint32 :offset_vertexes_ex_data
         uint32 :u_a
@@ -255,10 +209,10 @@ module Bayonetta
       register_field :vertexes, 'get_vertex_types[0]', length: 'header\num_vertexes', offset: 'header\offset_vertexes'
       register_field :vertexes_ex_data, 'get_vertex_types[1]', length: 'header\num_vertexes',
                      offset: 'header\offset_vertexes_ex_data'
-      register_field :indices, Indices
+      register_field :indices, '(..\header.flags & 0x8) != 0 ? UInt32 : UInt16' , length: 'header\num_indices', offset: 'header\offset_indices'
     end
 
-    class Bone < LibBin::DataConverter
+    class Bone < LibBin::Structure
       int16 :id
       int16 :parent_index
       register_field :local_position, Position
@@ -270,16 +224,16 @@ module Bayonetta
       register_field :t_position, Position
     end
 
-    class Unknown1 < LibBin::DataConverter
+    class Unknown1 < LibBin::Structure
       uint32 :data, length: 6
     end
 
-    class InfoPair < LibBin::DataConverter
+    class InfoPair < LibBin::Structure
       uint32 :offset
       uint32 :number
     end
 
-    class Header < LibBin::DataConverter
+    class Header < LibBin::Structure
       def self.info_pair(field, length: nil, count: nil, offset: nil, sequence: false, condition: nil)
         register_field(field, InfoPair, length: length, count: count, offset: offset, sequence: sequence, condition: condition)
       end
@@ -357,16 +311,16 @@ module Bayonetta
         vertex_group.header.num_vertexes = vertex_group.vertexes.size
 
         new_index_map = index_usage[vertex_group_index].uniq.sort.each_with_index.to_h
-        vertex_group.indices.values = new_index_map.keys.collect { |i|
-          new_vertex_map[vertex_group.indices.values[i]]
+        vertex_group.indices = new_index_map.keys.collect { |i|
+          new_vertex_map[vertex_group.indices[i]]
         }
-        vertex_group.header.num_indices = vertex_group.indices.values.size
+        vertex_group.header.num_indices = vertex_group.indices.size
         @batches.select { |batch| batch.vertex_group_index == vertex_group_index }.each { |batch|
           batch.vertex_start = new_vertex_map[batch.vertex_start]
           batch.index_start = new_index_map[batch.index_start]
           if batch.vertex_start != 0
             ((batch.index_start)...(batch.index_start + batch.num_indices)).each { |i|
-              vertex_group.indices.values[i] = vertex_group.indices.values[i] - batch.vertex_start
+              vertex_group.indices[i] = vertex_group.indices[i] - batch.vertex_start
             }
           end
         }
@@ -379,7 +333,7 @@ module Bayonetta
       @batches.each { |batch|
         index_range = (batch.index_start)...(batch.index_start + batch.num_indices)
         index_usage[batch.vertex_group_index] += index_range.to_a
-        vertex_usage[batch.vertex_group_index] += @vertex_groups[batch.vertex_group_index].indices.values[index_range].collect { |vertex|
+        vertex_usage[batch.vertex_group_index] += @vertex_groups[batch.vertex_group_index].indices[index_range].collect { |vertex|
           vertex + batch.vertex_start
         }
       }
@@ -684,7 +638,7 @@ module Bayonetta
     def get_vertex_usage
       vertex_usage = Hash::new { |h, k| h[k] = [] }
       @batches.each { |b|
-        @vertex_groups[b.vertex_group_index].indices.values[b.index_start...(b.index_start+b.num_indices)].each { |i|
+        @vertex_groups[b.vertex_group_index].indices[b.index_start...(b.index_start+b.num_indices)].each { |i|
           vertex_usage[[b.vertex_group_index, i]].push( b )
         }
       }
@@ -788,9 +742,9 @@ module Bayonetta
       end
       output.rewind
 
-      __set_dump_type(output, output_big, nil, nil)
+      __set_dump_state(output, output_big, nil, nil)
       __dump_fields
-      __unset_dump_type
+      __unset_dump_state
 
 
       unless output_name.respond_to?(:write) && output_name.respond_to?(:seek)
