@@ -2,6 +2,12 @@
 
 LittleEndian();
 
+string readObjID(uint16 id) {
+  string out;
+  SPrintf(out, "%04x", id);
+  return out;
+}
+
 string readItemID(uint32 id) {
   string out;
   SPrintf(out, "%u: %s", id, getItemName(id));
@@ -22,8 +28,8 @@ struct {
 FSeek(header.offsetBoxDropData);
 if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
     struct {
-        short   unknownShort;
-        uint16  unknownActorClass;
+        short   objID <read=readObjID>;
+        uint16  objClass; // 7=it, 12=bg
         uint32  itemTableID <format=hex>;
         ubyte   unknownStart;
         ubyte   unknownEnd;
