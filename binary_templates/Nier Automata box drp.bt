@@ -8,6 +8,19 @@ string readObjID(uint16 id) {
   return out;
 }
 
+string readObjClass(uint16 class) {
+  switch (class) {
+    case 7:  return "it";
+    case 12: return "bg";
+    case 15: return "ba";
+    default: {
+        string out;
+        SPrintf(out, "%d", class);
+        return out;
+    };
+  }
+}
+
 string readItemID(uint32 id) {
   string out;
   SPrintf(out, "%u: %s", id, getItemName(id));
@@ -29,7 +42,7 @@ FSeek(header.offsetBoxDropData);
 if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
     struct {
         short   objID <read=readObjID>;
-        uint16  objClass; // 7=it, 12=bg
+        uint16  objClass <read=readObjClass>;
         uint32  itemTableID <format=hex>;
         ubyte   unknownStart;
         ubyte   unknownEnd;
