@@ -2,10 +2,21 @@
 
 LittleEndian();
 
-string readEmID(uint16 id) {
+string readActorID(uint16 id) {
   string out;
-  SPrintf(out, "em%04x", id);
+  SPrintf(out, "%04x", id);
   return out;
+}
+
+string readActorClass(uint16 class) {
+  switch (class) {
+    case 2:  return "em";
+    default: {
+        string out;
+        SPrintf(out, "%d", class);
+        return out;
+    };
+  }
 }
 
 string readItemID(uint32 id) {
@@ -20,42 +31,82 @@ struct {
     float    version;
     uint32   offsetEnemyDropData <format=hex>;
     uint32   enemyDropDataSize;
-    uint32   dropItemSize;
+    uint32   dropEntrySize;
     uint16   numEnemies;
-    uint16   numDropItems;
+    uint16   numDropEntries;
 } header;
+
+local uint32 offsetDropEntries = header.offsetEnemyDropData + header.enemyDropDataSize * header.numEnemies;
 
 FSeek(header.offsetEnemyDropData);
 if( header.enemyDropDataSize == 0xE ) {     // enemyDropDataSize 14
     struct {
-        uint16   unknownIndex;
-        uint16   indexFirstDropItem;
-        uint16   numUniqueDropItems;
-        uint16   numGoldDrops;
+        uint16   unknownID <read=readActorID>;
+        uint16   indexFirstDropEntry;
+        uint16   numItemEntries;
+        uint16   numGoldEntries;
         uint16   unknownFlag1;
-        ubyte    dropAmount;
-        ubyte    dropGoldAmount;
+        ubyte    numItemDrops;
+        ubyte    numGoldDrops;
         uint16   unknownInt16;
-    } enemyDropData[header.numEnemies];
+
+        local uint32 returnPos = FTell();
+        FSeek(offsetDropEntries + header.dropEntrySize * indexFirstDropEntry);
+
+        if (numItemEntries > 0) {
+            struct {
+                uint32   itemID <read=readItemID>;
+                uint32   dropWeight;
+            } itemDrops[numItemEntries];
+        }
+
+        if (numGoldEntries > 0) {
+            struct {
+                uint32   goldAmount;
+                uint32   dropWeight;
+            } goldDrops[numGoldEntries];
+        }
+
+        FSeek(returnPos);
+    } enemyDropData[header.numEnemies] <optimize=false>;
 } else if ( header.enemyDropDataSize == 0x18 ) {    // enemyDropDataSize 24
     struct {
-        short   enemyID <read=readEmID>;
-        uint16  unknownActorClass;
+        short   enemyID <read=readActorID>;
+        uint16  actorClass <read=readActorClass>;
         uint32  unknownInt32;
         ubyte   levelRangeStart;
         ubyte   levelRangeEnd;
-        uint16  indexFirstDropItem;
-        uint16  numUniqueDropItems;
-        uint16  numGoldDrops;
+        uint16  indexFirstDropEntry;
+        uint16  numItemEntries;
+        uint16  numGoldEntries;
         uint16  unknownInt16;
-        ubyte   dropAmount;
-        ubyte   dropGoldAmount;
+        ubyte   numItemDrops;
+        ubyte   numGoldDrops;
         uint16  unknownInt16;
         uint16  unknownInt16;
-    } enemyDropData[header.numEnemies];
+
+        local uint32 returnPos = FTell();
+        FSeek(offsetDropEntries + header.dropEntrySize * indexFirstDropEntry);
+
+        if (numItemEntries > 0) {
+            struct {
+                uint32   itemID <read=readItemID>;
+                uint32   dropWeight;
+            } itemDrops[numItemEntries];
+        }
+
+        if (numGoldEntries > 0) {
+            struct {
+                uint32   goldAmount;
+                uint32   dropWeight;
+            } goldDrops[numGoldEntries];
+        }
+
+        FSeek(returnPos);
+    } enemyDropData[header.numEnemies] <optimize=false>;
 }
 
 struct {
-    uint32   itemID <read=readItemID>;
+    uint32   entry;
     uint32   dropWeight;
-} dropItem[header.numDropItems];
+} dropEntries[header.numDropEntries];

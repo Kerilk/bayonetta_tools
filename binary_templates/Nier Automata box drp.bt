@@ -33,10 +33,12 @@ struct {
     float    version;
     uint32   offsetBoxDropData <format=hex>;
     uint32   boxDropDataSize;
-    uint32   dropItemSize;
+    uint32   dropEntrySize;
     uint16   numBoxes;
-    uint16   numDropItems;
+    uint16   numDropEntries;
 } header;
+
+local uint32 offsetDropEntries = header.offsetBoxDropData + header.boxDropDataSize * header.numBoxes;
 
 FSeek(header.offsetBoxDropData);
 if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
@@ -44,20 +46,40 @@ if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
         short   objID <read=readObjID>;
         uint16  objClass <read=readObjClass>;
         uint32  itemTableID <format=hex>;
-        ubyte   unknownStart;
-        ubyte   unknownEnd;
+        ubyte   unknown0;
+        ubyte   unknown1;
         uint16  unknownIndex;
-        uint16  indexFirstDropItem;
-        uint16  numDropItems0;
-        uint16  numDropItems1;
-        ubyte   dropAmount;
-        ubyte   dropGoldAmount;
+        uint16  indexFirstDropEntry;
+        uint16  numItemEntries;
+        uint16  numGoldEntries;
+        ubyte   numItemDrops;
+        ubyte   numGoldDrops;
         uint16  unknownInt16;
         uint16  unknownInt16;
+        
+        local uint32 returnPos = FTell();
+        FSeek(offsetDropEntries + header.dropEntrySize * indexFirstDropEntry);
+
+        if (numItemEntries > 0) {
+            struct {
+                uint32   itemID <read=readItemID>;
+                uint32   dropWeight;
+            } itemDrops[numItemEntries];
+        }
+
+        if (numGoldEntries > 0) {
+            struct {
+                uint32   goldAmount;
+                uint32   dropWeight;
+            } goldDrops[numGoldEntries];
+        }
+
+        FSeek(returnPos);
+
     } boxDropData[header.numBoxes] <optimize=false>;
 }
 
 struct {
-    uint32   itemID <read=readItemID>;
+    uint32   entry;
     uint32   dropWeight;
-} dropItem[header.numDropItems];
+} dropEntries[header.numDropEntries];
