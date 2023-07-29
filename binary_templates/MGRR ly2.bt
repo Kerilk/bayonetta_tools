@@ -1,0 +1,52 @@
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector<read=vectorRead>;
+
+string vectorRead( vector &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+
+struct {
+    char    id[4]; // LY2\0
+    uint32  unknownA; // 4
+    uint32  unknownBNum;
+    uint32  unknownCOffset; // very short chunk
+    uint32  unknownCNum;
+} header;
+
+struct {
+    uint32  unknownB1; // 0
+    uint32  unknownB2; // 0
+    uint32  unknownB3; // big, but not a float nor pointer within the file
+    uint32  unknownB4Offset;
+    uint32  unknownB4Num;
+    local uint32 pos = FTell();
+
+    FSeek(unknownB4Offset);
+    struct {
+        vector  unknownB4A;
+        vector  unknownB4B; // typically (1, 1, 1)... scale?
+        // I guess that would make the other pos,
+        // and leave room for rotation if C-F were reasonably-sized floats
+        uint16  unknownB4C; // 0
+        uint16  unknownB4D; // big
+        uint32  unknownB4E; // small, fits one byte
+        uint32  unknownB4F; // big
+        int32   unknownB4G; // -1
+    } unknownB4[unknownB4Num];
+    FSeek(pos);
+} unknownB[header.unknownBNum];
+
+if ( header.unknownCOffset != 0 ) {
+    FSeek(header.unknownCOffset);
+    struct {
+        uint32 flags; // 0x01000001
+        uint32 unknownC2; // fits one byte
+        uint32 unknownC3; // fits one byte, may be 0
+    } unknownC[header.unknownCNum];
+}
