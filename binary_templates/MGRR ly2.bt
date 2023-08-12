@@ -15,15 +15,16 @@ struct {
     char    id[4]; // LY2\0
     uint32  unknownA; // 4
     uint32  unknownBNum;
-    uint32  unknownCOffset; // very short chunk
+    uint32  unknownCOffset<format=hex>; // very short chunk
     uint32  unknownCNum;
 } header;
 
 struct {
     uint32  unknownB1; // 0
     uint32  unknownB2; // 0
-    uint32  unknownB3; // big, but not a float nor pointer within the file
-    uint32  unknownB4Offset;
+    char itemType[2]; // ba, bh, bm, etc
+    uint16 itemId<format=hex>; // so "ba" then [04 01] becomes ba0104 because little endian
+    uint32  unknownB4Offset<format=hex>;
     uint32  unknownB4Num;
     local uint32 pos = FTell();
 
