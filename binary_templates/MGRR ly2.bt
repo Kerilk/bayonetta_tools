@@ -14,7 +14,7 @@ string vectorRead( vector &value ) {
 struct {
     char    id[4]; // LY2\0
     uint32  unknownA; // 4
-    uint32  unknownBNum;
+    uint32  objectTypeNum;
     uint32  unknownCOffset<format=hex>; // very short chunk
     uint32  unknownCNum;
 } header;
@@ -24,14 +24,14 @@ struct {
     uint32  unknownB2; // 0
     char itemType[2]; // ba, bh, bm, etc
     uint16 itemId<format=hex>; // so "ba" then [04 01] becomes ba0104 because little endian
-    uint32  unknownB4Offset<format=hex>;
-    uint32  unknownB4Num;
+    uint32  objTransformOffset<format=hex>;
+    uint32  objInstancesNum;
     local uint32 pos = FTell();
 
-    FSeek(unknownB4Offset);
+    FSeek(objTransformOffset);
     struct {
-        vector  unknownB4A;
-        vector  unknownB4B; // typically (1, 1, 1)... scale?
+        vector  position;
+        vector  scale;
         // I guess that would make the other pos,
         // and leave room for rotation if C-F were reasonably-sized floats
         uint16  unknownB4C; // 0
@@ -39,9 +39,9 @@ struct {
         uint32  unknownB4E; // small, fits one byte
         uint32  unknownB4F; // big
         int32   unknownB4G; // -1
-    } unknownB4[unknownB4Num];
+    } objectTransforms[objInstancesNum];
     FSeek(pos);
-} unknownB[header.unknownBNum];
+} objects[header.objectTypeNum];
 
 if ( header.unknownCOffset != 0 ) {
     FSeek(header.unknownCOffset);
