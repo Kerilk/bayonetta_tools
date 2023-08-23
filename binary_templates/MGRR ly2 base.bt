@@ -1,0 +1,54 @@
+typedef struct {
+        float  x;
+        float  y;
+        float  z;
+} vector<read=vectorRead>;
+
+string vectorRead( vector &value ) {
+    string s;
+    SPrintf(s, "x: %f, y: %f, z: %f", value.x, value.y, value.z);
+    return s;
+}
+
+
+struct {
+    char    id[4]; // LY2\0
+    uint16  unknownA; // 4
+    uint16  unknownB;
+    uint32  objectTypeNum;
+    uint32  unknownCOffset<format=hex>; // very short chunk
+    uint32  unknownCNum;
+} header;
+
+struct {
+    uint32  unknownB1; // 0
+    uint32  unknownB2; // 0
+    char itemType[2]; // ba, bh, bm, etc
+    uint16 itemId<format=hex>; // so "ba" then [04 01] becomes ba0104 because little endian
+    uint32  objTransformOffset<format=hex>;
+    uint32  objInstancesNum;
+    local uint32 pos = FTell();
+
+    FSeek(objTransformOffset);
+    struct {
+        vector  position;
+        vector  scale;
+        uint32  rotate[3];
+        // I guess that would make the other pos,
+        // and leave room for rotation if C-F were reasonably-sized floats
+        //uint32  unknownB4C; // 0
+        //uint32  unknownB4E; // small, fits one byte
+        //uint32  unknownB4F; // big
+        int32   unknownB4G; // -1
+    } objectTransforms[objInstancesNum];
+    FSeek(pos);
+} objects[header.objectTypeNum]<optimize=false>;
+
+if ( header.unknownCOffset != 0 ) {
+    FSeek(header.unknownCOffset);
+    struct {
+        uint32 flags; // 0x01000001
+        uint32 unknownC2; // fits one byte
+        uint32 unknownC3; // fits one byte, may be 0
+    } unknownC[header.unknownCNum];
+}
