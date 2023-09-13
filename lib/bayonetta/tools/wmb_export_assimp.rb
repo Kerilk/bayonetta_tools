@@ -56,7 +56,7 @@ module Assimp
       super(FFI::Pointer::new(@ref_ptr))
     end
 
-    def self.release
+    def self.release(ptr)
     end
   end
 end
