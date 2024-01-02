@@ -93,9 +93,9 @@ end.parse!
 $mesh_prefix = /mesh_(\d\d)_/
 $batch_prefix = /batch_(\d\d)_/
 if $options[:bone_prefix]
-  $bone_prefix = /#{$options[:bone_prefix]}(\d\d\d)/
+  $bone_prefix = /#{$options[:bone_prefix]}(\d+)/
 else
-  $bone_prefix = /bone_(\d\d\d)/
+  $bone_prefix = /bone_(\d+)/
 end
 $skeleton_prefix = /skeleton/
 
