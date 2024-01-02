@@ -726,7 +726,7 @@ common_mapping, bone_mapping = merge_bones(wmb, scene)
 
 merge_geometry(wmb, scene, bone_mapping)
 
-new_tex_list = merge_materials(wmb, scene, tex)
+new_tex_list = merge_materials(wmb, scene, tex) if $options[:import_textures]
 
 add_textures(tex, File.dirname(source), new_tex_list) if $options[:import_textures]
 
