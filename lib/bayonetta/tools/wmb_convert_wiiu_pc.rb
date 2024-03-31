@@ -30,4 +30,4 @@ if !output_file
   Dir.mkdir("wmb_output") unless Dir.exist?("wmb_output")
   output_file = File.join("wmb_output", File.basename(input_file))
 end
-WMBFile::convert(input_file, output_file)
+WMBFile::convert(input_file, output_file, :swap)

@@ -1205,6 +1205,7 @@ module Bayonetta
         }
       end
       input_big = validate_endianness(input)
+      output_big = !input_big if output_big == :swap
 
       if output_name.respond_to?(:write) && output_name.respond_to?(:seek)
         output = output_name
