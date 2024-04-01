@@ -8,7 +8,7 @@ $options = {
 
 OptionParser.new do |opts|
   opts.banner = <<EOF
-Usage: exp_convert_wiiu_pc target_file
+Usage: clp_convert_wiiu_pc target_file
 EOF
   opts.on("-h", "--help", "Prints this help") do
     puts opts
@@ -27,7 +27,7 @@ raise "Invalid file #{input_file}" unless input_file && File::file?(input_file)
 
 output_file = $options[:output]
 if !output_file
-  Dir.mkdir("exp_output") unless Dir.exist?("exp_output")
-  output_file = File.join("exp_output", File.basename(input_file))
+  Dir.mkdir("clx_output") unless Dir.exist?("clx_output")
+  output_file = File.join("clx_output", File.basename(input_file))
 end
-EXPFile::convert(input_file, output_file, :swap)
+CLPFile::convert(input_file, output_file, :swap)

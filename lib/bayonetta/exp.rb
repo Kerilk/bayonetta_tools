@@ -708,7 +708,7 @@ module Bayonetta
       return version == 0x20110714
     end
 
-    def self.convert(input_name, output_name, input_big = true, output_big = false)
+    def self.convert(input_name, output_name, output_big = false)
       input = File.open(input_name, "rb")
       id = input.read(4).unpack("a4").first
       raise "Invalid file type #{id}!" unless id == "exp\0".b
@@ -716,6 +716,8 @@ module Bayonetta
       output.write("\x00"*input.size)
       input.seek(0);
       output.seek(0);
+      input_big = is_big?(input)
+      output_big = !input_big if output_big == :swap
 
       if is_bayo2?(input, input_big)
         exp = EXPFile2::new
