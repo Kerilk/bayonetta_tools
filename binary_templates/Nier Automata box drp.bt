@@ -1,0 +1,85 @@
+#include "Nier Automata items.bt"
+
+LittleEndian();
+
+string readObjID(uint16 id) {
+  string out;
+  SPrintf(out, "%04x", id);
+  return out;
+}
+
+string readObjClass(uint16 class) {
+  switch (class) {
+    case 7:  return "it";
+    case 12: return "bg";
+    case 15: return "ba";
+    default: {
+        string out;
+        SPrintf(out, "%d", class);
+        return out;
+    };
+  }
+}
+
+string readItemID(uint32 id) {
+  string out;
+  SPrintf(out, "%u: %s", id, getItemName(id));
+  return out;
+}
+
+FSeek(0);
+struct {
+    char     id[4];
+    float    version;
+    uint32   offsetBoxDropData <format=hex>;
+    uint32   boxDropDataSize;
+    uint32   dropEntrySize;
+    uint16   numBoxes;
+    uint16   numDropEntries;
+} header;
+
+local uint32 offsetDropEntries = header.offsetBoxDropData + header.boxDropDataSize * header.numBoxes;
+
+FSeek(header.offsetBoxDropData);
+if ( header.boxDropDataSize == 0x18 ) {    // boxDropDataSize 24
+    struct {
+        short   objID <read=readObjID>;
+        uint16  objClass <read=readObjClass>;
+        uint32  itemTableID <format=hex>;
+        ubyte   unknown0;
+        ubyte   unknown1;
+        uint16  unknownIndex;
+        uint16  indexFirstDropEntry;
+        uint16  numItemEntries;
+        uint16  numGoldEntries;
+        ubyte   numItemDrops;
+        ubyte   numGoldDrops;
+        uint16  unknownInt16;
+        uint16  unknownInt16;
+        
+        local uint32 returnPos = FTell();
+        FSeek(offsetDropEntries + header.dropEntrySize * indexFirstDropEntry);
+
+        if (numItemEntries > 0) {
+            struct {
+                uint32   itemID <read=readItemID>;
+                uint32   dropWeight;
+            } itemDrops[numItemEntries];
+        }
+
+        if (numGoldEntries > 0) {
+            struct {
+                uint32   goldAmount;
+                uint32   dropWeight;
+            } goldDrops[numGoldEntries];
+        }
+
+        FSeek(returnPos);
+
+    } boxDropData[header.numBoxes] <optimize=false>;
+}
+
+struct {
+    uint32   entry;
+    uint32   dropWeight;
+} dropEntries[header.numDropEntries];
