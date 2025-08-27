@@ -1712,31 +1712,56 @@ module Bayonetta
     end
 
     def order_bones
+      # mapping from old local to new global sorted pos
       arr = @bone_index_translate_table.table.sort
-      old_local_to_new_local = {}
-      arr.each_with_index { |(_, old_local), new_local|
-        old_local_to_new_local[old_local] = new_local
+      old_local_to_temp = {}
+      arr.each_with_index { |(_, old_local), temp_index|
+        old_local_to_temp[old_local] = temp_index
       }
-      new_local_to_old_local = old_local_to_new_local.invert
       bones = get_bone_structure
-      new_bones = bones.size.times.collect { |new_bi|
-        b = bones[new_local_to_old_local[new_bi]]
+    
+      # new sorting method
+      visited = {}
+      sorted = []
+      visit = lambda do |bi|
+        return if visited[bi]
+        visited[bi] = true
+        parent = bones[bi].parent
+        visit.call(parent.index) if parent
+        sorted << bi
+      end
+    
+      # sort by global id
+      bones.each_with_index
+           .sort_by { |b, i| old_local_to_temp[i] }
+           .each { |_, bi| visit.call(bi) }
+    
+      # array with new order
+      old_local_to_new_local = {}
+      new_bones = []
+      sorted.each_with_index do |old_bi, new_bi|
+        b = bones[old_bi]
         b.index = new_bi
-        b
-      }
-      new_bones.each { |b|
-        raise "Invali hierarchy: #{b.parent.index} >= #{b.index} !" if b.parent && b.parent.index >= b.index
-      }
+        new_bones << b
+        old_local_to_new_local[old_bi] = new_bi
+      end
       set_bone_structure(new_bones)
+    
       new_table = @bone_index_translate_table.table.collect { |k, v| [k, old_local_to_new_local[v]] }.to_h
       @bone_index_translate_table.table = new_table
-      @meshes.each_with_index { |m, i|
-        m.batches.each_with_index { |b, j|
-          b.bone_refs.collect! { |bi|
-            old_local_to_new_local[bi]
-          }
-        }
-      }
+    
+      @meshes.each do |m|
+        m.batches.each do |b|
+          b.bone_refs.collect! { |bi| old_local_to_new_local[bi] }
+        end
+      end
+    
+      # just in case it dies still (it shouldnt tho)
+      new_bones.each do |b|
+        if b.parent && b.parent.index >= b.index
+          warn "Invalid hierarchy: parent=#{b.parent.index}, child=#{b.index}"
+        end
+      end
       self
     end
 
