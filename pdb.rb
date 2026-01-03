@@ -149,13 +149,13 @@ class StaticMember
 end
 
 class Procedure
-  attr_reader :return_type, :args
+  attr_reader :return_type, :args, :location
   def initialize(return_type, args)
     @return_type, @args = return_type, args
   end
 
   def to_s(name = nil)
-    frame_args = $frames[[name, self]]
+    frame_args, @location = *$frames[[name, self]]
     if (frame_args)
       arg_names = frame_args.map { |_, n, _| n } 
     else
@@ -183,23 +183,20 @@ class Procedure
       end
     end
     str = "#{name}(#{str})"
-    if @return_type
-      @return_type.to_s(str)
-    else
-      str
-    end
+    str = @return_type.to_s(str) if @return_type
+    str
   end
 end
 
 class MFunction
-  attr_reader :return_type, :args, :class_type, :this_type
+  attr_reader :return_type, :args, :class_type, :this_type, :location
   def initialize(return_type, args, class_type, this_type)
     @return_type, @args, @class_type, @this_type = return_type, args, class_type, this_type
   end
 
   def to_s(name = nil)
     scoped_name = "#{@class_type.name}::#{name}"
-    frame_args = $frames[[scoped_name, self]]
+    frame_args, @location = *$frames[[scoped_name, self]]
     if (frame_args)
       if @this_type
         if frame_args.first && frame_args.first[1] == "this"
@@ -238,11 +235,8 @@ class MFunction
       end
     end
     str = "#{name}(#{str})"
-    if @return_type
-      @return_type.to_s(str)
-    else
-      str
-    end
+    str = @return_type.to_s(str) if @return_type
+    str
   end
 
 end
@@ -294,7 +288,9 @@ class NamedMeth
   def print
     $stderr.puts "Warning #{name} not an arr #{methods.class}" if !@methods.is_a?(Array)
     @methods.each { |m|
-      pr m.to_s(name) << ";"
+      str = m.to_s(name) << ";"
+      str << " // [%04x:%08x]" % m.mfunc.location if m.mfunc.location
+      pr str
     }
   end
 end
@@ -938,8 +934,8 @@ pdb[(itypes + "\n*** TYPES\n\n".length)...j].split("\n\n").map { |l| l.lines.map
 $frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).select { |b|
   !b[0].match(/Type:\s+T_NOTYPE/)
 }.map { |b|
-  [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER|S_REGREL32/) }]
-}.map { |(type, name), args|
+  [b[0].match(/Type:\s+0x(\h+), (.*)$/).captures, b.select { |l| l.match(/S_REGISTER|S_REGREL32/) }, b[0].match(/32: \[(\h+:\h+)\]/)[1].split(":").map { |s| s.to_i(16) }]
+}.map { |(type, name), args, location|
   args.map! { |l|
     match = l.match(/Type:\s+0x(\h+), (.*)/)
     if match
@@ -951,7 +947,7 @@ $frames = pdb.scan(/\(\h+\) S_(?:G|L)PROC32: .*?S_END/m).map(&:lines).select { |
     end
     [t, n, l.match(/S_REGISTER|S_REGREL32/)[0]]
   }
-  [[name, types_LF[type.to_i(16)]], args]
+  [[name, types_LF[type.to_i(16)]], [args, location]]
 }.to_h
 $frame_names = Set.new( $frames.keys.map { |n, _| n } )
 
@@ -962,8 +958,12 @@ types_LF.values.select { |t| t.kind_of?(Composite) || t.kind_of?(Enum) }.uniq.ea
 
 pr "/****************************************************/"
 
-$frames.each { |(n, t), _|
-  pr t.to_s(n) if t.kind_of?(Procedure)
+$frames.each { |(n, t), (_, _)|
+  if t.kind_of?(Procedure)
+    str = t.to_s(n)
+    str << "; // [%04x:%08x]" % t.location
+    pr str
+  end
 }
 
 pr "/****************************************************/"
