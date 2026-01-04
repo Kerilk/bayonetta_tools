@@ -467,7 +467,11 @@ class Arr
   end
 
   def to_s(name = nil)
-    str = "#{name}[#{@length/@type.size}]"
+    str = if @type.size
+      "#{name}[#{@length/@type.size}]"
+    else
+      "#{name}[/*unknown type size, total size = 0x#{@length.to_s(16)}*/]"
+    end
     if @type
       type.to_s(str)
     else
