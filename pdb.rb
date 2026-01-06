@@ -553,100 +553,194 @@ class BaseType
     str
   end
 
-  CHAR = BaseType.new("char", 1)
-  UCHAR = BaseType.new("unsigned char", 1)
-  RCHAR = BaseType.new("char", 1)
-  SHORT = BaseType.new("short", 2)
-  USHORT = BaseType.new("ushort", 2)
-  WCHAR = BaseType.new("wchar_t", 2)
-  INT = BaseType.new("int", 4)
-  UINT = BaseType.new("unsigned int", 4)
-  LONG = BaseType.new("long", 4)
-  ULONG = BaseType.new("unsigned long", 4)
-  QUAD = BaseType.new("int64_t", 8)
-  UQUAD = BaseType.new("uint64_t", 8)
-  VOID = BaseType.new("void", nil)
-  CHAR16 = BaseType.new("char16_t", 2)
-  CHAR32 = BaseType.new("char32_t", 4)
+  # size for int, long, and long long should be deduced from the platform...
 
   NOTYPE = BaseType.new(nil, nil)
 
-  P32CHAR = Pointer.new(CHAR, 4)
-  P32UCHAR = Pointer.new(UCHAR, 4)
-  P32SHORT = Pointer.new(SHORT, 4)
-  P32USHORT = Pointer.new(USHORT, 4)
-  P32WCHAR = Pointer.new(WCHAR, 4)
-  P32INT = Pointer.new(INT, 4)
-  P32UINT = Pointer.new(UINT, 4)
-  P32LONG = Pointer.new(LONG, 4)
-  P32ULONG = Pointer.new(ULONG, 4)
-  P32VOID = Pointer.new(VOID, 4)
-  P32RCHAR = Pointer.new(RCHAR, 4)
-  P32QUAD = Pointer.new(QUAD, 4)
-  P32UQUAD = Pointer.new(UQUAD, 4)
-  PCHAR16 = Pointer.new(CHAR16, 4)
-  PCHAR32 = Pointer.new(CHAR32, 4)
-  P64VOID = Pointer.new(VOID, 8)
-  PVOID = Pointer.new(VOID)
+  VOID   = BaseType.new("void",             nil)
+  BOOL   = BaseType.new("bool",               1)
+  CHAR   = BaseType.new("char",               1)
+  UCHAR  = BaseType.new("unsigned char",      1)
+  RCHAR  = BaseType.new("char",               1)
+  SHORT  = BaseType.new("short",              2)
+  USHORT = BaseType.new("unsigned short",     2)
+  WCHAR  = BaseType.new("wchar_t",            2)
+  CHAR16 = BaseType.new("char16_t",           2)
+  CHAR32 = BaseType.new("char32_t",           4)
+  INT    = BaseType.new("int",                4)
+  UINT   = BaseType.new("unsigned int",       4)
+  LONG   = BaseType.new("long",               4)
+  ULONG  = BaseType.new("unsigned long",      4)
+  QUAD   = BaseType.new("long long",          8)
+  UQUAD  = BaseType.new("unsigned long long", 8)
+  INT1   = BaseType.new("int8_t",             1)
+  UINT1  = BaseType.new("uint8_t",            1)
+  INT2   = BaseType.new("int16_t",            2)
+  UINT2  = BaseType.new("uint16_t",           2)
+  INT4   = BaseType.new("int32_t",            4)
+  UINT4  = BaseType.new("uint32_t",           4)
+  INT8   = BaseType.new("int64_t",            8)
+  UINT8  = BaseType.new("uint64_t",           8)
 
-  FLOAT = BaseType.new("float", 4)
-  DOUBLE = BaseType.new("double", 8)
+  FLOAT  = BaseType.new("float",        4)
+  DOUBLE = BaseType.new("double",       8)
   REAL80 = BaseType.new("long double", 10)
-  PFLOAT = Pointer.new(FLOAT)
-  PDOUBLE = Pointer.new(DOUBLE)
 
-  HRESULT = BaseType.new("HRESULT", 4)
-  PHRESULT = Pointer.new(HRESULT)
+  HRESULT= BaseType.new("HRESULT", 4)
+
+  PVOID = Pointer.new(VOID, 2)
+
+  P32VOID   = Pointer.new(VOID,   4)
+  P32BOOL   = Pointer.new(BOOL,   4)
+  P32CHAR   = Pointer.new(CHAR,   4)
+  P32UCHAR  = Pointer.new(UCHAR,  4)
+  P32RCHAR  = Pointer.new(RCHAR,  4)
+  P32WCHAR  = Pointer.new(WCHAR,  4)
+  P32CHAR16 = Pointer.new(CHAR16, 4)
+  P32CHAR32 = Pointer.new(CHAR32, 4)
+  P32SHORT  = Pointer.new(SHORT,  4)
+  P32USHORT = Pointer.new(USHORT, 4)
+  P32INT    = Pointer.new(INT,    4)
+  P32UINT   = Pointer.new(UINT,   4)
+  P32LONG   = Pointer.new(LONG,   4)
+  P32ULONG  = Pointer.new(ULONG,  4)
+  P32QUAD   = Pointer.new(QUAD,   4)
+  P32UQUAD  = Pointer.new(UQUAD,  4)
+  P32INT1   = Pointer.new(INT1,   4)
+  P32UINT1  = Pointer.new(UINT1,  4)
+  P32INT2   = Pointer.new(INT2,   4)
+  P32UINT2  = Pointer.new(UINT2,  4)
+  P32INT8   = Pointer.new(INT8,   4)
+  P32UINT8  = Pointer.new(UINT8,  4)
+  P32INT4   = Pointer.new(INT4,   4)
+  P32UINT4  = Pointer.new(UINT4,  4)
+
+  P32FLOAT  = Pointer.new(FLOAT,  4)
+  P32DOUBLE = Pointer.new(DOUBLE, 4)
+
+  P32HRESULT = Pointer.new(HRESULT, 4)
+
+  P64VOID   = Pointer.new(VOID,   8)
+  P64BOOL   = Pointer.new(BOOL,   8)
+  P64CHAR   = Pointer.new(CHAR,   8)
+  P64UCHAR  = Pointer.new(UCHAR,  8)
+  P64RCHAR  = Pointer.new(RCHAR,  8)
+  P64WCHAR  = Pointer.new(WCHAR,  8)
+  P64CHAR16 = Pointer.new(CHAR16, 8)
+  P64CHAR32 = Pointer.new(CHAR32, 8)
+  P64SHORT  = Pointer.new(SHORT,  8)
+  P64USHORT = Pointer.new(USHORT, 8)
+  P64INT    = Pointer.new(INT,    8)
+  P64UINT   = Pointer.new(UINT,   8)
+  P64LONG   = Pointer.new(LONG,   8)
+  P64ULONG  = Pointer.new(ULONG,  8)
+  P64QUAD   = Pointer.new(QUAD,   8)
+  P64UQUAD  = Pointer.new(UQUAD,  8)
+  P64INT1   = Pointer.new(INT1,   8)
+  P64UINT1  = Pointer.new(UINT1,  8)
+  P64INT2   = Pointer.new(INT2,   8)
+  P64UINT2  = Pointer.new(UINT2,  8)
+  P64INT4   = Pointer.new(INT4,   8)
+  P64UINT4  = Pointer.new(UINT4,  8)
+  P64INT8   = Pointer.new(INT8,   8)
+  P64UINT8  = Pointer.new(UINT8,  8)
+
+  P64FLOAT  = Pointer.new(FLOAT,  8)
+  P64DOUBLE = Pointer.new(DOUBLE, 8)
+
+  P64HRESULT = Pointer.new(HRESULT, 8)
 
   CONVERT = {
+    "T_NOTYPE" => NOTYPE,
+
+    "T_VOID" => VOID,
+    "T_BOOL08" => BOOL,
     "T_CHAR" => CHAR,
     "T_UCHAR" => UCHAR,
     "T_RCHAR" => RCHAR,
-    "T_BOOL08" => CHAR,
+    "T_CHAR16" => CHAR16,
+    "T_CHAR32" => CHAR32,
     "T_SHORT" => SHORT,
     "T_USHORT" => USHORT,
     "T_WCHAR" => WCHAR,
-    "T_INT4" => INT,
-    "T_UINT4" => UINT,
-    "T_LONG" => INT,
-    "T_ULONG" => UINT,
-    "T_INT8" => QUAD,
-    "T_UINT8" => UQUAD,
+    "T_INT" => INT,
+    "T_UINT" => UINT,
+    "T_LONG" => LONG,
+    "T_ULONG" => ULONG,
     "T_QUAD" => QUAD,
     "T_UQUAD" => UQUAD,
-    "T_VOID" => VOID,
-    "T_CHAR32" => CHAR32,
-    "T_CHAR16" => CHAR16,
-
-    "T_32PCHAR" => P32CHAR,
-    "T_32PUCHAR" => P32UCHAR,
-    "T_32PRCHAR" => P32RCHAR,
-    "T_32PBOOL08" => P32CHAR,
-    "T_32PSHORT" => P32SHORT,
-    "T_32PUSHORT" => P32USHORT,
-    "T_32PWCHAR" => P32WCHAR,
-    "T_32PINT4" => P32INT,
-    "T_32PUINT4" => P32UINT,
-    "T_32PLONG" => P32LONG,
-    "T_32PULONG" => P32ULONG,
-    "T_32PQUAD" => P32QUAD,
-    "T_32PUQUAD" => P32UQUAD,
-    "T_32PVOID" => P32VOID,
-    "T_PVOID" => PVOID,
-    "T_32PCHAR16" => PCHAR16,
-    "T_32PCHAR32" => PCHAR32,
-    "T_64PVOID" =>  P64VOID,
+    "T_INT1" => INT1,
+    "T_UINT1" => UINT1,
+    "T_INT2" => INT2,
+    "T_UINT2" => UINT2,
+    "T_INT4" => INT4,
+    "T_UINT4" => UINT4,
+    "T_INT8" => INT8,
+    "T_UINT8" => UINT8,
 
     "T_REAL32" => FLOAT,
     "T_REAL64" => DOUBLE,
     "T_REAL80" => REAL80,
-    "T_32PREAL32" => PFLOAT,
-    "T_32PREAL64" => PDOUBLE,
 
-    "T_32PHRESULT" => PHRESULT,
     "T_HRESULT" => HRESULT,
 
-    "T_NOTYPE" => NOTYPE,
+    "T_PVOID" => PVOID,
+
+    "T_32PVOID"   => P32VOID,
+    "T_32PBOOL08" => P32BOOL,
+    "T_32PCHAR"   => P32CHAR,
+    "T_32PUCHAR"  => P32UCHAR,
+    "T_32PRCHAR"  => P32RCHAR,
+    "T_32PWCHAR"  => P32WCHAR,
+    "T_32PCHAR16" => P32CHAR16,
+    "T_32PCHAR32" => P32CHAR32,
+    "T_32PSHORT"  => P32SHORT,
+    "T_32PUSHORT" => P32USHORT,
+    "T_32PLONG"   => P32LONG,
+    "T_32PULONG"  => P32ULONG,
+    "T_32PQUAD"   => P32QUAD,
+    "T_32PUQUAD"  => P32UQUAD,
+    "T_32PINT1"   => P32INT1,
+    "T_32PUINT1"  => P32UINT1,
+    "T_32PINT2"   => P32INT2,
+    "T_32PUINT2"  => P32UINT2,
+    "T_32PINT4"   => P32INT4,
+    "T_32PUINT4"  => P32UINT4,
+    "T_32PINT8"   => P32INT8,
+    "T_32PUINT8"  => P32UINT8,
+
+    "T_32PREAL32" => P32FLOAT,
+    "T_32PREAL64" => P32DOUBLE,
+
+    "T_32PHRESULT" => P32HRESULT,
+
+    "T_64PVOID"   => P64VOID,
+    "T_64PBOOL08" => P64BOOL,
+    "T_64PCHAR"   => P64CHAR,
+    "T_64PUCHAR"  => P64UCHAR,
+    "T_64PRCHAR"  => P64RCHAR,
+    "T_64PWCHAR"  => P64WCHAR,
+    "T_64PCHAR16" => P64CHAR16,
+    "T_64PCHAR32" => P64CHAR32,
+    "T_64PSHORT"  => P64SHORT,
+    "T_64PUSHORT" => P64USHORT,
+    "T_64PLONG"   => P64LONG,
+    "T_64PULONG"  => P64ULONG,
+    "T_64PQUAD"   => P64QUAD,
+    "T_64PUQUAD"  => P64UQUAD,
+    "T_64PINT1"   => P64INT1,
+    "T_64PUINT1"  => P64UINT1,
+    "T_64PINT2"   => P64INT2,
+    "T_64PUINT2"  => P64UINT2,
+    "T_64PINT4"   => P64INT4,
+    "T_64PUINT4"  => P64UINT4,
+    "T_64PINT8"   => P64INT8,
+    "T_64PUINT8"  => P64UINT8,
+
+    "T_64PREAL32" => P64FLOAT,
+    "T_64PREAL64" => P64DOUBLE,
+
+    "T_64PHRESULT" => P64HRESULT,
   }
 
   def self.from_str(str)
