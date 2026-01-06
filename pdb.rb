@@ -4,7 +4,7 @@ require 'optparse'
 $wa = false
 $cmode = false
 $indent = 0
-$pointer_size = 4
+$pointer_size = nil
 
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: pdb.rb target_file [options]"
@@ -17,7 +17,7 @@ parser = OptionParser.new do |opts|
     $cmode = c
   end
 
-  opts.on("-p", "--pointer-size SIZE", Integer, "Size in byte of pointers, default 4") do |sz|
+  opts.on("-p", "--pointer-size SIZE", Integer, "Size in byte of pointers, default is autodetection") do |sz|
     $pointer_size = sz
   end
 
@@ -33,6 +33,20 @@ input_file = ARGV[0]
 raise "Invalid file #{input_file}" unless File::file?(input_file)
 
 pdb = File.read(input_file).tr("\r","")
+
+# Detect pointer size
+
+unless $pointer_size
+  if pdb.match(/Pointer .*?, Size: 8/)
+    $pointer_size = 8
+  elsif pdb.match(/Pointer .*?, Size: 4/)
+    $pointer_size = 4
+  elsif pdb.match(/Pointer .*?, Size: 2/)
+    $pointer_size = 2
+  else
+    raise "Could not determine pointer size"
+  end
+end
 
 if $wa
   # Patch table due to off by one offset due to multiple page
